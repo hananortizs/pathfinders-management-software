@@ -1,0 +1,348 @@
+---
+description: Você é um engenheiro sênior .NET e também um gerente técnico disciplinado. Construa a API REST **pms-backend** do projeto **PathfinderManagementSoftware** em **ASP.NET Core .NET 8 (LTS)** com **EF Core (code-first)** e **PostgreSQL 16**.
+
+============================================================
+GOVERNANÇA DE MVPs (SCOPE LOCK) — OBRIGATÓRIO
+============================================================
+- Entregas por MVP em fatias verticais. O projeto possui os MVPs: **MVP-0 (Núcleo operacional)**, **MVP-1 (Programa/Aprovações/Investiduras)**, **MVP-2 (Operação ampliada)**.
+- **NÃO implementar nada fora do MVP vigente.** Qualquer item fora do escopo deve ir para **OPEN_QUESTIONS** no **PROGRESS.md**.
+- Cada MVP possui **CRITÉRIOS DE ACEITE**. Ao finalizar, gere o relatório em **ACCEPTANCE.md** com casos verificados e testes que cobrem os critérios.
+- **Só avançar para o próximo MVP quando o atual for explicitamente ACEITO** (flag “MVP-X: ACCEPTED” no PROGRESS.md). Até lá, PRs que incluam escopo do próximo MVP devem **falhar no CI** (gate descrito nas TRAVAS).
+- Ordem de execução recomendada: **Backend do MVP vigente → Integração mínima Frontend do mesmo MVP → Aceite → Próximo MVP**. (Não implemente itens do MVP seguinte antes do aceite do atual.)
+
+============================================================
+FASE & CONTEXTO
+============================================================
+- ⚠️ **Fase 1 = BACKEND** (esta entrega). **Fase 2 = FRONTEND React** (consumirá OpenAPI).
+- Gere **OpenAPI 3.1 (JSON e YAML)** e **client TypeScript (NSwag)**.
+- Habilite **CORS** e inclua no README exemplos (login, paginação, fluxos).
+- Atue como **Dev + PM**: mantenha **PROGRESS.md**, **ROADMAP.md**, **CHANGELOG.md** (semver + conventional commits).
+
+============================================================
+PLATAFORMA & QUALIDADE
+============================================================
+- TargetFramework: **net8.0 (LTS)**. Planejar migração para **.NET 10 (LTS)** quando GA; **MIGRATION_NOTES.md**. Sem previews.
+- Banco: **PostgreSQL 16** (Npgsql). Sem SQLite. Use **índices parciais** p/ “unicidade quando ativo”.
+- Observabilidade: Serilog + CorrelationId + OpenTelemetry (DEV).
+- Documentação: Swashbuckle (OpenAPI 3.1) com exemplos.
+- Validações: FluentValidation → **HTTP 422** em violação de regra.
+- Qualidade: analyzers + warnings-as-errors + nullable enable. Testes xUnit/FluentAssertions.
+- CI: GitHub Actions (build+test + verificação de migrações pendentes = **fail**). Docker Compose com Postgres (dev).
+
+============================================================
+ARQUITETURA (Clean)
+============================================================
+- Solution:
+  - `Pms.Backend.Domain` (Entities, ValueObjects, DomainServices, Events)
+  - `Pms.Backend.Application` (UseCases, DTOs, Validation)
+  - `Pms.Backend.Infrastructure` (EF Core, Npgsql, Repos, Migrations, Seeds)
+  - `Pms.Backend.Api` (Controllers, Auth, Swagger, CORS)
+  - `Pms.Backend.Tests`
+
+============================================================
+AUTENTICAÇÃO / AUTORIZAÇÃO (RBAC + ESCOPO)
+============================================================
+- JWT: claims `sub`, `email`, `roles[]`, `scopes[]` (cada escopo = `{Level}:{Id}`), `exp`.
+- Autorização por **papel** + **escopo organizacional**.
+- Login: e-mail único + senha (Argon2/BCrypt; histórico de 5 senhas).
+- Criação inicial:
+  - Sem registro público no MVP. Usuários criados via **`POST /members`**.
+  - Seed de **SystemAdmin** com e-mail e **token de ativação** (primeiro acesso em `/auth/activate`).
+- Member ↔ Credential: relação **1:1**. Convite (token 24h), ativação, esqueci/resetar senha.
+- **E-mail único global**, inclusive para arquivados. Para reutilizar: ação **ReleaseEmail** (SystemAdmin, Regional↑):
+  1) confirmação + motivo; 2) mascarar e-mail no registro antigo; 3) remover UserCredential; 4) logar em SecurityAuditLog.
+
+============================================================
+HIERARQUIA, RELAÇÕES & UNICIDADES
+============================================================
+- Cadeia: **Divisão → União → Associação → Região → Distrito → Clube → Unidade → Membro**.
+- Cada nível tem **1 pai** e **0..N filhos**. **Clube** pertence a **1 Distrito** (obrigatório).
+- **Clube ↔ Igreja**: **1:1 obrigatório**; **Igreja** tem **CEP único global**.
+- Unicidade de nomes: Região por Associação; Distrito por Região; Clube por Distrito; Unidade por Clube.
+- Mudança de pai (ex.: Clube muda de Distrito): **recalcular `CodePath` em cascata** na mesma transação.
+
+============================================================
+CÓDIGOS & CODEPATH
+============================================================
+- `Code` (≤5 chars) **manual** (sugestão automática; operador confirma). UPPERCASE A-Z0-9.
+- `CodePath` (≤60) somente leitura = concat pai-filho com “.” (ex.: `DSA.UCB.APL.APL3RT.DVM.PAC`).
+- Unicidade: `Code` único por nível; `CodePath` **único global**.
+
+============================================================
+PESSOAS, CARGOS E REGRAS
+============================================================
+- Papéis por nível (máx. 1 ativo onde indicado):
+  - União: 1 **Pastor da União** (≥18, Batismo+Lenço).
+  - Associação: 1 **Pastor da Associação** (≥18, Batismo+Lenço).
+  - Região: 1 **Pastor da Região** (≥18, Batismo+Lenço); 1 **Regional** (≥18).
+  - Distrito: 1 **Distrital** (≥18).
+  - Clube (Diretoria): 1 **Diretor** (≥18), até **2 Diretores Associados** (**gêneros distintos**, ≥16), 1 **Secretário** (≥16), **opcionais**: 1 **Ancião** (≥18), 1 **Capelão** (≥18), **Instrutores** (≥16, N), N Unidades.
+  - Unidade: **Conselheiro** (≥18), **Conselheiro Associado** (16–17), juvenis (<18): **Capitão**, **Secretário**, **Tesoureiro**, **Almoxarife**.
+- **Sem acúmulo de cargos de diretoria no Clube** (Instrutor incluso).
+- Requisitos espirituais: **Batismo + Lenço** obrigatórios para toda **liderança** (Diretoria do Clube, Instrutor, Regional, Distrital, Pastores de Região/Associação/União).
+- Promoções/baixas:
+  - Regional/Distrital/Pastores: **proibido** membership de clube e vínculo de unidade no exercício; ao **assumir**, encerrar memberships/cargos de Clube/Unidade; ao **deixar**, serviço “associar a um clube” (cria nova membership).
+  - Rebaixamento Regional ↔ Distrital: cargo anterior é perdido (mantém histórico).
+- Delegado de aprovação (férias/licença): `ApprovalDelegate{ Role, ScopeType, ScopeId, Start, End, DelegatedToAssignmentId }`. Regional pode delegar a Distrital da sua Região **ou** a Regional de outra Região, etc.
+- Conflito de interesse: aprovador **não aprova** o próprio progresso **nem de filho**; **pule a etapa** (fallbacks do fluxo).
+
+============================================================
+MEMBERSHIP & UNIDADES (ALOC. AUTOMÁTICA)
+============================================================
+- Membro **<10 anos**: **422** (sem pré-cadastro).
+- Membership: máx. **1 ativa** por membro (pode ser **0** quando Regional/Distrital/Pastores).
+- Unidades:
+  - `Unit.Gender` ∈ {Masculina, Feminina}; `AgeMin`/`AgeMax` inclusivos.
+  - Matrícula por sexo: Masculino→Unidade Masculina; Feminino→Unidade Feminina.
+  - **Sobreposição de faixas** dentro do mesmo clube/gênero: **permitida**.
+- Regra do **1º de junho**:
+  - Idade de referência = idade do membro em **1º/06** do **ano da matrícula** (mesmo após a data).
+  - **Mudança de clube no mesmo ano**: usa **1º/06** do próprio ano.
+  - ≥16 anos: **não** alocar em unidade infanto-juvenil (pode ter funções; Cons. Assoc. 16–17; Instrutor ≥16, etc.).
+- Capacidade de Unidade:
+  - `Capacity=null/0` ⇒ ilimitado; `>0` ⇒ **bloqueia** associação ao exceder (422 `UnidadeLotada`) + tarefa “Capacidade excedida”.
+  - Alocação/realocação considera apenas unidades com capacidade disponível.
+- Alocação automática (ativar membership):
+  - 1 match (gênero+faixa) ⇒ associar automaticamente.
+  - 0 matches ⇒ permitir sem unidade + tarefa “Alocar Unidade”.
+  - >1 matches ⇒ **422** com opções ordenadas por **menor lotação** (tie-break nome) + tarefa “Escolher Unidade”.
+- Realocação automática:
+  - **Aniversário**: job diário (00:05) **e** on-login/on-write (idempotente). 1 match ⇒ realoca + timeline + tarefa informativa; >1 ⇒ desassocia + tarefa.
+  - **Alterar AgeMin/AgeMax**: mesma regra acima.
+- Override manual (Diretor/Secretário): permitido (respeitando gênero/idade/capacidade); registrar **motivo (opcional)** e logar no **Timeline**.
+- Atualização de **gênero do membro**: não prevista; se ocorrer, **remover associação de Unidade** e abrir tarefa para Diretoria.
+
+============================================================
+PROGRAMA — CLASSES, ESPECIALIDADES, MESTRADOS
+============================================================
+- Regulares (10–15): Amigo(10), Companheiro(11), Pesquisador(12), Pioneiro(13), Excursionista(14), Guia(15).
+- Avançadas: podem **iniciar**; **só concluem** após a respectiva regular estar **Concluída**.
+- Liderança:
+  - Líder: iniciar ≥16 **e** regulares concluídas; investidura ≥18.
+  - Líder Master: requer Líder; Líder Master Avançado: requer Líder Master.
+  - Não é permitido pular regulares e ir direto a Líder.
+- Especialidades:
+  - Categorias canônicas (seed): **AD, HM, AA, AM, AP, AR, CS, EN, HD**.
+  - Chave: **Acronym (≤3 alfanum.) + Code (1..999)**, exibindo D3 (001,010,245).
+  - Um membro pode ter múltiplas especialidades da mesma categoria (códigos distintos).
+  - Pré-requisitos por `(Acronym, Code)`.
+- Mestrados: entidade própria (`Mastery`), independentes de classes; requisitos com **AND/OR/MIN-OF-N** (por especialidades específicas ou por categoria). **Não** repetir itens já Concluídos (histórico único).
+
+============================================================
+STATUS, PROGRESSO, APROVAÇÕES & INVESTIDURAS
+============================================================
+- Status: `NaoIniciada → EmAndamento → Submetida → Aprovada → Concluida` + `Reprovada`, `Suspensa`.
+- Gating por Lenço:
+  - Sem **Lenço**: **bloquear** start/update/approve de qualquer progresso. Membro sem Lenço ainda pode ir a eventos.
+- Cadeias de aprovação:
+  - **Abaixo de Líder**: Diretor → Distrital → Regional (sem Distrital ⇒ pular ao Regional).
+  - **Liderança**: Diretor → Regional → **Pastor da Associação** (**Pastor da Região não participa**).
+  - Falta/Conflito/Delegado aplicam pular etapa. Mesma pessoa pode ser aprovador e, depois, testemunha.
+- Reprovação: re-submissão limpa trilha anterior. **Reabrir “Reprovado”** mantém evidências anteriores **somente-leitura**; pode apontar evidências específicas que motivaram a reprovação.
+- Investiduras (manuais):
+  - Endpoint exige: tipo (Lenço|Classe|Especialidade|Mestrado), data, local, **testemunhas ≥1 (Regional/Distrital ativos na data e no escopo)**, YouTube?, referência do item.
+  - **Lenço** pode ser investido **antes** de qualquer progresso (é requisito).
+  - **Auto-testemunho proibido** (liderança a si mesma). Para investiduras de liderança, **exigir** presença do **Pastor da Associação** como testemunha adicional.
+
+============================================================
+EVENTOS
+============================================================
+- Organizados por qualquer nível (Divisão/União/Associação/Região/Distrito/Clube). Registrar `OrganizerLevel` e `OrganizerId`.
+- Elegibilidade **multi-dia**: membro deve estar **ativo em toda a janela** (Start→End).
+  - Membros de **Clube inativo**: **não** podem participar.
+  - Lideranças sem membership (Regional/Distrital/Pastores): podem participar.
+- Taxa: `FeeAmount?/FeeCurrency?` por evento; **default gratuito**. Moeda global default **BRL** (configurável).
+
+============================================================
+CLUBE INATIVO — EFEITOS
+============================================================
+- Sem Diretor ativo ⇒ `IsActive=false`.
+- Clube inativo **não pode** criar eventos, aprovar fluxos, criar/alterar cargos, admitir memberships ou participar de eventos.
+- Membros do clube inativo **não** podem participar de eventos, iniciar/atualizar/aprovar progressos nem receber investiduras até reativação ou realocação.
+
+============================================================
+TAREFAS (MVP)
+============================================================
+- `TaskItem{ Type, Payload, Assignees, Priority{Low|Normal|High}, DueDate?, Status{Open|InProgress|Blocked|Done} }`
+- Padrões:
+  - “Alocar/Escolher Unidade”, “Realocação (múltiplas opções)”: **Diretor** e **Secretário** (qualquer um conclui).
+  - “Aprovação pendente”: próximo aprovador (com delegado se houver).
+- Sem escalação automática no MVP (reatribuição manual). Notificações externas: não no MVP (apenas tarefas + Timeline).
+
+============================================================
+TIMELINE, AUDITORIA & EXPORTAÇÕES
+============================================================
+- Timeline (append-only): memberships, cargos (promo/baixa), auto-promo Cons. Assoc. aos 18 (on-login/on-write), realocações/overrides, eventos, investiduras, progressos (status), reprovações/re-submissões.
+- Auditoria de segurança separada: **SecurityAuditLog** (logins falhos, reset de senha, MFA, ReleaseEmail).
+- Datas: persistir **UTC**; exibir/validar em **America/Sao_Paulo** (Horário de Brasília).
+- Exportações (MVP): **CSV UTF-8** (separador `;`), datas em America/Sao_Paulo, **somente para Diretor**:
+  - `/reports/members.csv?clubId=...`
+  - `/reports/timeline.csv?memberId=...`
+  - `/reports/participations.csv?clubId=...&start=...&end=...`
+
+============================================================
+PAGINAÇÃO & DESEMPENHO
+============================================================
+- Query params `?page` (1-based), `?pageSize`. Clamp ao `MaxPageSize` (100).
+- **Paginação OBRIGATÓRIA a partir de Região** (Clubes por Região default 50). Demais defaults: 25 (membros, clubes por distrito), 20 (unidades).
+- Cache/Filas: desligado no MVP (deixar interfaces p/ Redis e jobs).
+- Orçamento: até 50k membros, 5k clubes, 100k participações/ano.
+
+============================================================
+MODELO (EF Core) — nomes em inglês (resumo)
+============================================================
+- Estrutura: `Division`, `Union`, `Association`, `Region`, `District`, `Church{ Cep, ... }`, `Club{ IsActive }`, `Unit{ Gender, AgeMin, AgeMax, Capacity? }`.
+- Pessoas: `Member{ Gender∈{Masculino,Feminino}, BirthDate, Address, Baptized(bool)+BaptizedAt?+BaptizedPlace?, ScarfInvested?… }`, `UserCredential{ Hash, Salt, Lockout }`.
+- Vínculos: `Membership{ MemberId, ClubId, Start/End, IsActiveComputed }`.
+- Cargos: `RoleCatalog{ Level, Name, MaxPerScope, GenderRequired?, AgeMin?, AgeMax? }`, `Assignment{ MemberId, RoleId, ScopeType, ScopeId, Start/End }` + constraint “sem acúmulo” no clube.
+- Delegado: `ApprovalDelegate{ Role, ScopeType, ScopeId, Start, End, DelegatedToAssignmentId }`.
+- Trilhas: `Specialty(PK Acronym+Code, Category)`, `SpecialtyPrereq`; `Class` (+prereqs/grupos); `Mastery` (+requisitos).
+- Progresso/Aprovação: `MemberClassProgress`, `MemberSpecialtyProgress`, `MemberMasteryProgress`, `ApprovalRecord{ ItemType, ItemId, Stage, ApprovedBy, ApprovedAt, Notes }`.
+- Investiduras: `Investiture{ Type: Scarf|Class|Specialty|Mastery, Date, Place, WitnessRegionalIds[], WitnessDistrictIds[], YoutubeUrl?, RefItem }`.
+- Eventos: `OfficialEvent{ OrganizerLevel, OrganizerId, FeeAmount?, FeeCurrency? }`, `MemberEventParticipation`.
+- Tarefas: `TaskItem`.
+
+============================================================
+ENDPOINTS (mínimos, `/api/v1`)
+============================================================
+- Organização: CRUD `Divisions/Unions/Associations/Regions/Districts/Churches/Clubs/Units`.
+- Auth: `POST /auth/invite`, `/auth/activate`, `/auth/forgot-password`, `/auth/reset-password`, **ReleaseEmail (admin/Regional↑)**.
+- Pessoas & Membership:
+  - `POST /members` (≥10 anos, endereço, batismo, lenço opcional inicialmente).
+  - `POST /members/{id}/memberships` (regra 1º/06, alocação automática/capacidade; 422 com opções; tarefas).
+  - `POST /memberships/{id}/close`.
+- Cargos:
+  - `POST /assignments` (limites/idade/gênero; Batismo+Lenço p/ liderança; ao promover Regional/Distrital/Pastores: encerrar ocupações e desvincular unidade).
+  - `POST /assignments/{id}/close`, `POST /assignments/associate-to-club`.
+  - **Delegado**: CRUD em `/approval-delegates`.
+- Trilhas (catálogos):
+  - `GET/POST /specialties` (+`/prereqs`), `GET/POST /classes`, `GET/POST /masteries`.
+- Progresso/Aprovações:
+  - `POST /members/{id}/classes/{classId}/start | PATCH` (gating lenço).
+  - Equivalentes p/ especialidades e mestrados.
+  - `POST /progress/{itemType}/{itemId}/approve` (cadeias, pular etapa por ausência/conflito/delegado; re-submissão reinicia trilha).
+- Investiduras:
+  - `POST /members/{id}/investitures` (testemunhas ativas na data/escopo; YouTube opcional).
+- Eventos:
+  - `GET/POST /events` (Fee; BRL default); `POST /members/{id}/events/{eventId}/participations`.
+- Timeline:
+  - `GET /members/{id}/timeline`.
+- Exportações:
+  - CSV (UTF-8, `;`) conforme rotas acima (Diretor).
+
+============================================================
+SEEDS (primeira migração)
+============================================================
+- SystemAdmin (senha expirada + token).
+- Cadeia: **DSA → UCB → APL → APL3RT → DVM → PAC** (Clube vinculado a Igreja placeholder com **CEP exclusivo**).
+- Unidades:
+  - Masculinas: **Gavião** (11–12), **Albatroz** (10), **Falcao** (13–15)
+  - Femininas: **Araras-Azuis** (10–12), **Beija-Flor** (13), **Harpia** (15)
+- Especialidades: seed de categorias canônicas (AD, HM, AA, AM, AP, AR, CS, EN, HD) com 3–5 exemplos por categoria.
+
+============================================================
+TRAVAS DO PROJETO (QUALITY GATES & GOVERNANÇA)
+============================================================
+ARQUIVOS-ÂNCORA (obrigatórios desde o 1º commit)
+- PROGRESS.md (Milestones, backlog, riscos, BLOQUEIOS, OPEN_QUESTIONS com owner/data/decisão)
+- ACCEPTANCE.md (critérios de aceite rastreáveis)
+- QUALITY-GATES.md, SEED_PLAN.md, SECURITY_AUDIT.md, RELEASE_CHECKLIST.md
+- PR template, CODEOWNERS (≥1 revisor), .editorconfig, dotnet-tools.json
+
+QUALITY GATES (CI = FAIL se quebrar)
+1) Build & Analyzers: warnings-as-errors + `dotnet format --verify-no-changes`.
+2) Testes (mínimos): ≥70% Domain+Application; ≥60% total. Cobrir:
+   - Membership única (e “0 ativa” p/ Regional/Distrital/Pastores); Regra 1º/06; capacidade; 0/>1 opções ⇒ tarefas/422.
+   - Diretoria: 1 Diretor; associados (máx. 2, gêneros distintos); **sem acúmulo**; clube sem diretor ⇒ `IsActive=false` + bloqueios.
+   - Cadeias de aprovação (pular Distrital; conflito/auto/familiar ⇒ pular; delegado).
+   - Gating por Lenço; Investidura (testemunhas ativas na data/escopo; auto-testemunho proibido).
+   - CodePath recalculado em cascata ao mover nó.
+   - Clube inativo bloqueia eventos/progressos/investiduras para membros.
+3) Migrations & DB: sem pendências; constraints/índices (unicidades por nível, CEP igreja global, Code/CodePath, parciais “ativos”, checks de gênero/idades).
+4) OpenAPI: esquema 3.1 válido; NSwag TS gera sem erro.
+5) Seeds: mínimos presentes; token de ativação do SystemAdmin em DEV.
+6) Paginação: obrigatória a partir de Região (Clubes por Região default 50).
+7) Segurança: política de senha (min 10; 1 maiúscula; 1 minúscula; 1 dígito; histórico 5); lockout 5/15→15 (configurável); rate limit **global** habilitado (por IP e por usuário; por papel desabilitado).
+8) Observabilidade: Serilog; CorrelationId; logs de decisões de regra crítica.
+
+GOVERNANÇA DE PRs & BRANCH
+- PRs pequenos por tema; roteiro recomendado: (1) Esqueleto/Infra, (2) Hierarquia+Códigos, (3) Members/Auth, (4) Church/Club/Unit/Membership, (5) Programa/Aprovação/Investiduras, (6) Eventos/Participações, (7) Exportações/Paginação.
+- Branch protection: sem commit direto em main; 1+ revisor; todos checks verdes.
+- Conventional commits; CHANGELOG semver automático.
+
+FEATURE FLAGS (default)
+- `Attachments.Enabled=false` (futuro S3/local)
+- `Redis.Enabled=false` (hierarquia/CodePath, catálogos, cargos ativos, contadores)
+- `Jobs.Enabled=true` (realocação diária 00:05 + on-login/on-write)
+- `Exports.Enabled=true` (CSV Director-only)
+- `RateLimit.ByRole=false` (apenas global)
+
+============================================================
+MVPs — ESCOPO E ACEITE
+============================================================
+MVP-0 (Núcleo operacional): plataforma/segurança; hierarquia+igrejas (Code/CodePath); membros (≥10, batismo), convite/ativação; lenço; clubes/unidades/membership (Regra 1º/06, alocação, capacidade, realocação, overrides, tarefas); cargos/sem acúmulo; delegado; eventos (eligibilidade multi-dia; BRL; clube inativo bloqueia); timeline básica; CSV Director.
+→ Aceite: critérios testados e verdes; ACCEPTANCE.md atualizado.
+
+MVP-1 (Programa/Aprovações/Investiduras): categorias/especialidades/classes/mestrados; progressos (status, gating lenço); cadeias (pulos/Delegado/Conflito); reprovação/reabertura mantendo evidências (URL); investiduras (após “Aprovada”; testemunhas ativas; auto-testemunho proibido; Pastor da Associação presente para liderança).
+→ Aceite: critérios testados e verdes; ACCEPTANCE.md atualizado.
+
+MVP-2 (Operação ampliada): relatórios ampliados, caches opcionais, webhooks/notificações, anexos binários (S3/local), rate-limit por papel (se ativado), etc.
+→ Aceite: idem.
+
+============================================================
+ORIENTAÇÃO FINAL AO CURSOR
+============================================================
+- Em caso de ambiguidade: **não implemente**. Registre em **OPEN_QUESTIONS** no PROGRESS.md com proposta técnica.
+- **NÃO avance** para próximo MVP sem o “MVP-X: ACCEPTED” no PROGRESS.md.
+- Mantenha o escopo **estritamente** conforme este documento.
+PATCH — INVESTIDURAS: TESTEMUNHAS (MODELO HÍBRIDO P/ HISTÓRICOS)
+
+OBJETIVO
+- Permitir registrar investiduras antigas/legadas quando não for possível vincular testemunhas a pessoas/cargos existentes no sistema, sem perder rastreabilidade.
+
+MODELO DE DADOS
+- `Investiture` (inalterado nos demais campos).
+- `InvestitureWitness`:
+  - `Id`
+  - `InvestitureId` (FK)
+  - `Type` ∈ { `Structured`, `Text` }
+  - `MemberId?` (quando `Structured`)
+  - `RoleSnapshot?` (quando `Structured`): `{ Role, ScopeType, ScopeCodePath, EffectiveDate }`
+  - `NameText?` (quando `Text`, VARCHAR(200))
+  - `RoleText?` (quando `Text`, VARCHAR(100))  // ex.: "Regional", "Distrital", "Pastor da Associação"
+  - `OrgText?` (opcional, VARCHAR(120))        // ex.: "APL3RT", "DSA.UCB.APL"
+  - `CreatedAtUtc`
+
+REGRAS DE VALIDAÇÃO
+- Toda investidura deve ter **≥1 testemunha** via `InvestitureWitness` (qualquer `Type`).
+- **Preferência**: usar `Structured` quando possível (se o testemunho for de alguém existente no sistema). 
+  - **Não é obrigatório** que o assignment esteja ativo **na data** da investidura; se houver histórico, capturar `RoleSnapshot`. Se não houver, apenas o `MemberId` já é válido.
+- **Fallback texto**: se não existir pessoa/assignment correspondente (casos antigos), usar `Text` com `NameText` + `RoleText` (e `OrgText?` se fizer sentido).
+- **Auto-testemunho**: proibido (o membro não pode ser testemunha de si).
+- **Aprovador ≠ Testemunha**: permitido (a mesma pessoa pode ter sido aprovador e testemunha em momentos diferentes).
+
+LIDERANÇA — EXIGÊNCIAS ESPECÍFICAS
+- Investiduras de **liderança** devem conter, obrigatoriamente:
+  - Pelo menos **uma testemunha** com cargo **“Pastor da Associação”** (aceita `Structured` com `RoleSnapshot.Role="Pastor da Associação"` **ou** `Text` com `RoleText="Pastor da Associação"`).
+  - **Fallback**: se “Pastor da Associação” for inviável, aceitar **“Pastor da União”** (Structured ou Text).
+  - Se nenhum dos dois for viável (casos muito antigos): exigir **override administrativo (SystemAdmin)** com motivo; gerar **Task “Validar Investidura de Liderança (sem Pastor)”** para ciência da Associação.
+- Observação: **Pastor da Região** não substitui a exigência acima.
+
+API (AJUSTES)
+- `POST /members/{id}/investitures` aceita:
+  ```json
+  {
+    "type": "Scarf|Class|Specialty|Mastery",
+    "date": "YYYY-MM-DD",
+    "place": "string",
+    "youtubeUrl": "string|null",
+    "refItem": { ... },
+    "witnesses": [
+      { "type": "Structured", "memberId": "..." , "roleSnapshot": { "role":"Regional","scopeType":"Region","scopeCodePath":"DSA.UCB.APL.APL3RT", "effectiveDate":"YYYY-MM-DD" } },
+      { "type": "Text", "nameText":"Fulano de Tal", "roleText":"Distrital", "orgText":"APL3RT" }
+    ]
+  }
+
+globs:
+alwaysApply: true
+---

@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: pms-postgres
+    environment:
+      POSTGRES_DB: pms_backend_dev
+      POSTGRES_USER: pms_user
+      POSTGRES_PASSWORD: pms_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pms_user -d pms_backend_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pms-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pms-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=pms_backend_dev;Username=pms_user;Password=qazzxc12
+    ports:
+      - "5001:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+
+volumes:
+  postgres_data:
