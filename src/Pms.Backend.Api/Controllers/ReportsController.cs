@@ -9,7 +9,7 @@ namespace Pms.Backend.Api.Controllers;
 /// Controller for CSV exports and reports
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("[controller]")]
 [Authorize] // Only authenticated users can access reports
 public class ReportsController : ControllerBase
 {

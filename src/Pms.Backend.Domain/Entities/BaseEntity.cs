@@ -8,7 +8,7 @@ public abstract class BaseEntity
     /// <summary>
     /// Unique identifier for the entity
     /// </summary>
-    public Guid Id { get; set; }
+    public Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>
     /// When the entity was created (UTC)

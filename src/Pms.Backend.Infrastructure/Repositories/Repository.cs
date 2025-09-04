@@ -54,6 +54,30 @@ public class Repository<T> : IRepository<T> where T : class
     }
 
     /// <summary>
+    /// Gets all entities with navigation properties included
+    /// </summary>
+    /// <param name="predicate">Filter predicate</param>
+    /// <param name="includes">Navigation properties to include</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Collection of matching entities with navigation properties</returns>
+    public async Task<IEnumerable<T>> GetWithIncludesAsync(Expression<Func<T, bool>>? predicate = null, params Expression<Func<T, object>>[] includes)
+    {
+        var query = _dbSet.AsQueryable();
+
+        if (predicate != null)
+        {
+            query = query.Where(predicate);
+        }
+
+        foreach (var include in includes)
+        {
+            query = query.Include(include);
+        }
+
+        return await query.ToListAsync();
+    }
+
+    /// <summary>
     /// Gets entities with pagination
     /// </summary>
     /// <param name="pageNumber">Page number (1-based)</param>

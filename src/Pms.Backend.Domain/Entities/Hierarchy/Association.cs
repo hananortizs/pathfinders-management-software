@@ -39,5 +39,5 @@ public class Association : BaseEntity
     /// <summary>
     /// Gets the code path for this association (Division.Code.Union.Code.Association.Code)
     /// </summary>
-    public string CodePath => $"{Union.CodePath}.{Code}";
+    public string CodePath => $"{Union.CodePath.Trim()}.{Code.Trim()}";
 }

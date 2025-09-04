@@ -1,3 +1,6 @@
+using System.ComponentModel.DataAnnotations;
+using Pms.Backend.Application.DTOs.Common;
+
 namespace Pms.Backend.Application.DTOs.Hierarchy;
 
 /// <summary>
@@ -59,46 +62,29 @@ public class DistrictDto
 /// <summary>
 /// Data Transfer Object for creating a new District
 /// </summary>
-public class CreateDistrictDto
+public class CreateDistrictDto : CreateHierarchyDtoBase
 {
     /// <summary>
-    /// Unique code for the district (≤5 chars, UPPERCASE A-Z0-9)
+    /// Unique code for the district (≤5 chars, letters and numbers - will be converted to uppercase)
     /// </summary>
-    public string Code { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Name of the district
-    /// </summary>
-    public string Name { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Description of the district
-    /// </summary>
-    public string? Description { get; set; }
+    [StringLength(5, MinimumLength = 1, ErrorMessage = "District code must be between 1 and 5 characters")]
+    public new string Code { get; set; } = string.Empty;
 
     /// <summary>
     /// Parent region ID
     /// </summary>
+    [Required(ErrorMessage = "Region ID is required")]
     public Guid RegionId { get; set; }
 }
 
 /// <summary>
 /// Data Transfer Object for updating a District
 /// </summary>
-public class UpdateDistrictDto
+public class UpdateDistrictDto : UpdateHierarchyDtoBase
 {
     /// <summary>
-    /// Unique code for the district (≤5 chars, UPPERCASE A-Z0-9)
+    /// Unique code for the district (≤5 chars, letters and numbers - will be converted to uppercase)
     /// </summary>
-    public string Code { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Name of the district
-    /// </summary>
-    public string Name { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Description of the district
-    /// </summary>
-    public string? Description { get; set; }
+    [StringLength(5, MinimumLength = 1, ErrorMessage = "District code must be between 1 and 5 characters")]
+    public new string Code { get; set; } = string.Empty;
 }

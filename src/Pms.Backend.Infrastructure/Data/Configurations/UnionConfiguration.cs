@@ -38,6 +38,10 @@ public class UnionConfiguration : BaseEntityConfiguration<Union>
             .IsUnique()
             .HasFilter("\"IsDeleted\" = false");
 
+        // Foreign key configuration
+        builder.Property(e => e.DivisionId)
+            .IsRequired();
+
         // Relationships
         builder.HasOne(e => e.Division)
             .WithMany(e => e.Unions)

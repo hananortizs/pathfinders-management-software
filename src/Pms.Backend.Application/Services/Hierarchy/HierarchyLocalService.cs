@@ -40,6 +40,36 @@ public partial class HierarchyService
     }
 
     /// <summary>
+    /// Retrieves a paginated list of all Districts in the system.
+    /// </summary>
+    /// <param name="pageNumber">The page number for pagination (default is 1).</param>
+    /// <param name="pageSize">The number of items per page (default is 10).</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A BaseResponse containing a PaginatedResponse of DistrictDto.</returns>
+    public async Task<BaseResponse<PaginatedResponse<IEnumerable<DistrictDto>>>> GetAllDistrictsAsync(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var (items, totalCount) = await _unitOfWork.Repository<District>().GetPagedAsync(pageNumber, pageSize, null, cancellationToken);
+            var dtos = _mapper.Map<List<DistrictDto>>(items);
+
+            var paginatedResponse = new PaginatedResponse<IEnumerable<DistrictDto>>
+            {
+                Items = dtos,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
+
+            return BaseResponse<PaginatedResponse<IEnumerable<DistrictDto>>>.SuccessResult(paginatedResponse);
+        }
+        catch (Exception ex)
+        {
+            return BaseResponse<PaginatedResponse<IEnumerable<DistrictDto>>>.ErrorResult($"Error retrieving all districts: {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Retrieves a paginated list of Districts belonging to a specific Region.
     /// </summary>
     /// <param name="regionId">The ID of the parent Region.</param>
@@ -56,7 +86,7 @@ public partial class HierarchyService
 
             var paginatedResponse = new PaginatedResponse<IEnumerable<DistrictDto>>
             {
-                Data = dtos,
+                Items = dtos,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalCount = totalCount
@@ -87,14 +117,18 @@ public partial class HierarchyService
                 return BaseResponse<DistrictDto>.ErrorResult("Parent region not found");
             }
 
+            // Normalize the code (trim and convert to uppercase)
+            var normalizedCode = dto.Code.Trim().ToUpperInvariant();
+
             // Check if code already exists within the region
-            var existingDistrict = await _unitOfWork.Repository<District>().ExistsAsync(d => d.Code == dto.Code && d.RegionId == dto.RegionId, cancellationToken);
+            var existingDistrict = await _unitOfWork.Repository<District>().ExistsAsync(d => d.Code == normalizedCode && d.RegionId == dto.RegionId, cancellationToken);
             if (existingDistrict)
             {
                 return BaseResponse<DistrictDto>.ErrorResult("District code already exists in this region");
             }
 
             var district = _mapper.Map<District>(dto);
+            district.Code = normalizedCode;
             district.Id = Guid.NewGuid();
             district.CreatedAtUtc = DateTime.UtcNow;
             district.UpdatedAtUtc = DateTime.UtcNow;
@@ -102,6 +136,7 @@ public partial class HierarchyService
             await _unitOfWork.Repository<District>().AddAsync(district, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            // Map the created district to DTO (without loading parent Region)
             var resultDto = _mapper.Map<DistrictDto>(district);
             return BaseResponse<DistrictDto>.SuccessResult(resultDto, "District created successfully");
         }
@@ -128,14 +163,18 @@ public partial class HierarchyService
                 return BaseResponse<DistrictDto>.ErrorResult("District not found");
             }
 
+            // Normalize the code (trim and convert to uppercase)
+            var normalizedCode = dto.Code.Trim().ToUpperInvariant();
+
             // Check if code already exists within the region (excluding current district)
-            var existingDistrict = await _unitOfWork.Repository<District>().ExistsAsync(d => d.Code == dto.Code && d.RegionId == district.RegionId && d.Id != id, cancellationToken);
+            var existingDistrict = await _unitOfWork.Repository<District>().ExistsAsync(d => d.Code == normalizedCode && d.RegionId == district.RegionId && d.Id != id, cancellationToken);
             if (existingDistrict)
             {
                 return BaseResponse<DistrictDto>.ErrorResult("District code already exists in this region");
             }
 
             _mapper.Map(dto, district);
+            district.Code = normalizedCode;
             district.UpdatedAtUtc = DateTime.UtcNow;
 
             await _unitOfWork.Repository<District>().UpdateAsync(district, cancellationToken);
@@ -227,7 +266,7 @@ public partial class HierarchyService
 
             var paginatedResponse = new PaginatedResponse<IEnumerable<ChurchDto>>
             {
-                Data = dtos,
+                Items = dtos,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalCount = totalCount
@@ -362,6 +401,36 @@ public partial class HierarchyService
     }
 
     /// <summary>
+    /// Retrieves a paginated list of all Clubs in the system.
+    /// </summary>
+    /// <param name="pageNumber">The page number for pagination (default is 1).</param>
+    /// <param name="pageSize">The number of items per page (default is 10).</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A BaseResponse containing a PaginatedResponse of ClubDto.</returns>
+    public async Task<BaseResponse<PaginatedResponse<IEnumerable<ClubDto>>>> GetAllClubsAsync(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var (items, totalCount) = await _unitOfWork.Repository<Club>().GetPagedAsync(pageNumber, pageSize, null, cancellationToken);
+            var dtos = _mapper.Map<List<ClubDto>>(items);
+
+            var paginatedResponse = new PaginatedResponse<IEnumerable<ClubDto>>
+            {
+                Items = dtos,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
+
+            return BaseResponse<PaginatedResponse<IEnumerable<ClubDto>>>.SuccessResult(paginatedResponse);
+        }
+        catch (Exception ex)
+        {
+            return BaseResponse<PaginatedResponse<IEnumerable<ClubDto>>>.ErrorResult($"Error retrieving all clubs: {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Retrieves a paginated list of Clubs belonging to a specific District.
     /// </summary>
     /// <param name="districtId">The ID of the parent District.</param>
@@ -378,7 +447,7 @@ public partial class HierarchyService
 
             var paginatedResponse = new PaginatedResponse<IEnumerable<ClubDto>>
             {
-                Data = dtos,
+                Items = dtos,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalCount = totalCount
@@ -549,6 +618,36 @@ public partial class HierarchyService
     }
 
     /// <summary>
+    /// Retrieves a paginated list of all Units in the system.
+    /// </summary>
+    /// <param name="pageNumber">The page number for pagination (default is 1).</param>
+    /// <param name="pageSize">The number of items per page (default is 10).</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A BaseResponse containing a PaginatedResponse of UnitDto.</returns>
+    public async Task<BaseResponse<PaginatedResponse<IEnumerable<UnitDto>>>> GetAllUnitsAsync(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var (items, totalCount) = await _unitOfWork.Repository<Unit>().GetPagedAsync(pageNumber, pageSize, null, cancellationToken);
+            var dtos = _mapper.Map<List<UnitDto>>(items);
+
+            var paginatedResponse = new PaginatedResponse<IEnumerable<UnitDto>>
+            {
+                Items = dtos,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
+
+            return BaseResponse<PaginatedResponse<IEnumerable<UnitDto>>>.SuccessResult(paginatedResponse);
+        }
+        catch (Exception ex)
+        {
+            return BaseResponse<PaginatedResponse<IEnumerable<UnitDto>>>.ErrorResult($"Error retrieving all units: {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Retrieves a paginated list of Units belonging to a specific Club.
     /// </summary>
     /// <param name="clubId">The ID of the parent Club.</param>
@@ -565,7 +664,7 @@ public partial class HierarchyService
 
             var paginatedResponse = new PaginatedResponse<IEnumerable<UnitDto>>
             {
-                Data = dtos,
+                Items = dtos,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalCount = totalCount

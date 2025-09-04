@@ -356,7 +356,11 @@ public class ExportAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MemberDto>>();
-        return await DbContext.Members.FindAsync(result!.Data.Id)!;
+        result.Should().NotBeNull();
+        result!.Data.Should().NotBeNull();
+        var member = await DbContext.Members.FindAsync(result.Data!.Id);
+        member.Should().NotBeNull();
+        return member!;
     }
 
     private async Task<string> GetAuthTokenAsync()
@@ -371,7 +375,10 @@ public class ExportAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<AuthResultDto>>();
-        return result!.Data.Token;
+        result.Should().NotBeNull();
+        result!.Data.Should().NotBeNull();
+        result.Data!.Token.Should().NotBeNullOrEmpty();
+        return result.Data.Token;
     }
 
     private async Task EnrollMemberInClubAsync(Guid memberId, Guid clubId)

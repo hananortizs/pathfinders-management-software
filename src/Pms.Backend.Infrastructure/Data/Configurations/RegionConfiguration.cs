@@ -18,8 +18,7 @@ public class RegionConfiguration : BaseEntityConfiguration<Region>
         // Properties
         builder.Property(e => e.Code)
             .IsRequired()
-            .HasMaxLength(5)
-            .IsFixedLength();
+            .HasMaxLength(7);
 
         builder.Property(e => e.Name)
             .IsRequired()

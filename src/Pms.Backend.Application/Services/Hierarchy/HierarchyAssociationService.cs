@@ -56,7 +56,7 @@ public partial class HierarchyService
 
             var paginatedResponse = new PaginatedResponse<IEnumerable<AssociationDto>>
             {
-                Data = dtos,
+                Items = dtos,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalCount = totalCount
@@ -228,7 +228,7 @@ public partial class HierarchyService
 
             var paginatedResponse = new PaginatedResponse<IEnumerable<RegionDto>>
             {
-                Data = dtos,
+                Items = dtos,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalCount = totalCount
@@ -259,14 +259,18 @@ public partial class HierarchyService
                 return BaseResponse<RegionDto>.ErrorResult("Parent association not found");
             }
 
+            // Normalize the code (trim and convert to uppercase)
+            var normalizedCode = dto.Code.Trim().ToUpperInvariant();
+
             // Check if code already exists within the association
-            var existingRegion = await _unitOfWork.Repository<Region>().ExistsAsync(r => r.Code == dto.Code && r.AssociationId == dto.AssociationId, cancellationToken);
+            var existingRegion = await _unitOfWork.Repository<Region>().ExistsAsync(r => r.Code == normalizedCode && r.AssociationId == dto.AssociationId, cancellationToken);
             if (existingRegion)
             {
                 return BaseResponse<RegionDto>.ErrorResult("Region code already exists in this association");
             }
 
             var region = _mapper.Map<Region>(dto);
+            region.Code = normalizedCode;
             region.Id = Guid.NewGuid();
             region.CreatedAtUtc = DateTime.UtcNow;
             region.UpdatedAtUtc = DateTime.UtcNow;
@@ -274,6 +278,7 @@ public partial class HierarchyService
             await _unitOfWork.Repository<Region>().AddAsync(region, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            // Map the created region to DTO (without loading parent Association)
             var resultDto = _mapper.Map<RegionDto>(region);
             return BaseResponse<RegionDto>.SuccessResult(resultDto, "Region created successfully");
         }
@@ -300,14 +305,18 @@ public partial class HierarchyService
                 return BaseResponse<RegionDto>.ErrorResult("Region not found");
             }
 
+            // Normalize the code (trim and convert to uppercase)
+            var normalizedCode = dto.Code.Trim().ToUpperInvariant();
+
             // Check if code already exists within the association (excluding current region)
-            var existingRegion = await _unitOfWork.Repository<Region>().ExistsAsync(r => r.Code == dto.Code && r.AssociationId == region.AssociationId && r.Id != id, cancellationToken);
+            var existingRegion = await _unitOfWork.Repository<Region>().ExistsAsync(r => r.Code == normalizedCode && r.AssociationId == region.AssociationId && r.Id != id, cancellationToken);
             if (existingRegion)
             {
                 return BaseResponse<RegionDto>.ErrorResult("Region code already exists in this association");
             }
 
             _mapper.Map(dto, region);
+            region.Code = normalizedCode;
             region.UpdatedAtUtc = DateTime.UtcNow;
 
             await _unitOfWork.Repository<Region>().UpdateAsync(region, cancellationToken);

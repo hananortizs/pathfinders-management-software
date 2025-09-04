@@ -9,7 +9,7 @@ namespace Pms.Backend.Api.Controllers;
 /// Controller for managing memberships and unit allocations
 /// </summary>
 [ApiController]
-[Route("pms/[controller]")]
+[Route("[controller]")]
 public class MembershipController : ControllerBase
 {
     private readonly IMembershipService _membershipService;
@@ -40,7 +40,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.CreateMembershipAsync(memberId, clubId, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -59,7 +59,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.GetMembershipAsync(id, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return NotFound(result);
         }
@@ -78,7 +78,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.GetMembershipsByMemberAsync(memberId, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -103,7 +103,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.GetMembershipsByClubAsync(clubId, pageNumber, pageSize, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -123,7 +123,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.UpdateMembershipAsync(id, dto, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -143,7 +143,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.DeactivateMembershipAsync(id, reason, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -166,7 +166,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.AllocateToUnitAsync(membershipId, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -186,7 +186,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.AllocateToSpecificUnitAsync(membershipId, unitId, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -206,7 +206,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.ReallocateToUnitAsync(membershipId, newUnitId, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -225,7 +225,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.RemoveFromUnitAsync(membershipId, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -249,7 +249,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.GetAgeOnJuneFirstAsync(memberId, year, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -268,7 +268,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.IsEligibleForMembershipAsync(memberId, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -287,7 +287,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.GetMembersNeedingAllocationAsync(clubId, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -310,7 +310,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.GetClubCapacityStatusAsync(clubId, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -329,7 +329,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.IsUnitCapacityAvailableAsync(unitId, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -353,7 +353,7 @@ public class MembershipController : ControllerBase
     {
         var result = await _membershipService.HandleGenderChangeAsync(memberId, newGender, cancellationToken);
 
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return BadRequest(result);
         }

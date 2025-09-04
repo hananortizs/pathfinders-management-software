@@ -1,3 +1,6 @@
+using System.ComponentModel.DataAnnotations;
+using Pms.Backend.Application.DTOs.Common;
+
 namespace Pms.Backend.Application.DTOs.Hierarchy;
 
 /// <summary>
@@ -11,7 +14,7 @@ public class RegionDto
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Unique code for the region (≤5 chars, UPPERCASE A-Z0-9)
+    /// Unique code for the region (≤7 chars, letters and numbers - will be converted to uppercase)
     /// </summary>
     public string Code { get; set; } = string.Empty;
 
@@ -59,46 +62,29 @@ public class RegionDto
 /// <summary>
 /// Data Transfer Object for creating a new Region
 /// </summary>
-public class CreateRegionDto
+public class CreateRegionDto : CreateHierarchyDtoBase
 {
     /// <summary>
-    /// Unique code for the region (≤5 chars, UPPERCASE A-Z0-9)
+    /// Unique code for the region (≤7 chars, letters and numbers - will be converted to uppercase)
     /// </summary>
-    public string Code { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Name of the region
-    /// </summary>
-    public string Name { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Description of the region
-    /// </summary>
-    public string? Description { get; set; }
+    [StringLength(7, MinimumLength = 1, ErrorMessage = "Region code must be between 1 and 7 characters")]
+    public new string Code { get; set; } = string.Empty;
 
     /// <summary>
     /// Parent association ID
     /// </summary>
+    [Required(ErrorMessage = "Association ID is required")]
     public Guid AssociationId { get; set; }
 }
 
 /// <summary>
 /// Data Transfer Object for updating a Region
 /// </summary>
-public class UpdateRegionDto
+public class UpdateRegionDto : UpdateHierarchyDtoBase
 {
     /// <summary>
-    /// Unique code for the region (≤5 chars, UPPERCASE A-Z0-9)
+    /// Unique code for the region (≤7 chars, letters and numbers - will be converted to uppercase)
     /// </summary>
-    public string Code { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Name of the region
-    /// </summary>
-    public string Name { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Description of the region
-    /// </summary>
-    public string? Description { get; set; }
+    [StringLength(7, MinimumLength = 1, ErrorMessage = "Region code must be between 1 and 7 characters")]
+    public new string Code { get; set; } = string.Empty;
 }

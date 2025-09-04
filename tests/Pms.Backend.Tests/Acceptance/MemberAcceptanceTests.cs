@@ -50,8 +50,9 @@ public class MemberAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MemberDto>>();
+        result.Should().NotBeNull();
         result!.Data.Should().NotBeNull();
-        result.Data.FullName.Should().Be("João Silva");
+        result.Data!.FullName.Should().Be("João Silva");
         result.Data.Email.Should().Be("joao.silva@test.com");
 
         // Verificar se o usuário foi criado no banco
@@ -81,10 +82,11 @@ public class MemberAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<AuthResultDto>>();
+        result.Should().NotBeNull();
         result!.Data.Should().NotBeNull();
-        result.Data.Token.Should().NotBeNullOrEmpty();
+        result.Data!.Token.Should().NotBeNullOrEmpty();
         result.Data.Member.Should().NotBeNull();
-        result.Data.Member.Email.Should().Be("joao.silva@test.com");
+        result.Data.Member!.Email.Should().Be("joao.silva@test.com");
     }
 
     [Fact]
@@ -105,8 +107,9 @@ public class MemberAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MemberDto>>();
+        result.Should().NotBeNull();
         result!.Data.Should().NotBeNull();
-        result.Data.FullName.Should().Be("João Silva");
+        result.Data!.FullName.Should().Be("João Silva");
         result.Data.Email.Should().Be("joao.silva@test.com");
     }
 
@@ -136,7 +139,9 @@ public class MemberAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MemberDto>>();
-        result!.Data.FullName.Should().Be("João Silva Santos");
+        result.Should().NotBeNull();
+        result!.Data.Should().NotBeNull();
+        result.Data!.FullName.Should().Be("João Silva Santos");
         result.Data.Phone.Should().Be("11888888888");
         result.Data.ZipCode.Should().Be("01234567");
     }
@@ -274,7 +279,11 @@ public class MemberAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MemberDto>>();
-        return await DbContext.Members.FindAsync(result!.Data.Id)!;
+        result.Should().NotBeNull();
+        result!.Data.Should().NotBeNull();
+        var member = await DbContext.Members.FindAsync(result.Data!.Id);
+        member.Should().NotBeNull();
+        return member!;
     }
 
     private async Task<string> GetAuthTokenAsync()
@@ -289,7 +298,10 @@ public class MemberAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<AuthResultDto>>();
-        return result!.Data.Token;
+        result.Should().NotBeNull();
+        result!.Data.Should().NotBeNull();
+        result.Data!.Token.Should().NotBeNullOrEmpty();
+        return result.Data.Token;
     }
 
     #endregion

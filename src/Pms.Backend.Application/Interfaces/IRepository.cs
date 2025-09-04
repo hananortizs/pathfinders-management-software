@@ -26,6 +26,14 @@ public interface IRepository<T> where T : class
     Task<IEnumerable<T>> GetAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets all entities with navigation properties included
+    /// </summary>
+    /// <param name="predicate">Filter predicate</param>
+    /// <param name="includes">Navigation properties to include</param>
+    /// <returns>Collection of matching entities with navigation properties</returns>
+    Task<IEnumerable<T>> GetWithIncludesAsync(Expression<Func<T, bool>>? predicate = null, params Expression<Func<T, object>>[] includes);
+
+    /// <summary>
     /// Gets entities with pagination
     /// </summary>
     /// <param name="pageNumber">Page number (1-based)</param>

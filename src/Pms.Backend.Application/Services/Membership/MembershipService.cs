@@ -88,7 +88,7 @@ public partial class MembershipService : IMembershipService
 
             // Auto-allocate to unit if possible
             var allocationResult = await AllocateToUnitAsync(membership.Id, cancellationToken);
-            if (allocationResult.Success)
+            if (allocationResult.IsSuccess)
             {
                 membership = await _unitOfWork.Repository<Domain.Entities.Membership>().GetFirstOrDefaultAsync(
                     m => m.Id == membership.Id, cancellationToken);
@@ -178,7 +178,7 @@ public partial class MembershipService : IMembershipService
 
             var paginatedResponse = new PaginatedResponse<IEnumerable<MembershipDto>>
             {
-                Data = dtos,
+                Items = dtos,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalCount = totalCount

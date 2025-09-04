@@ -9,7 +9,7 @@ namespace Pms.Backend.Api.Controllers;
 /// Controller for member management operations
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("[controller]")]
 public partial class MemberController : ControllerBase
 {
     private readonly IMemberService _memberService;
@@ -35,12 +35,6 @@ public partial class MemberController : ControllerBase
     public async Task<IActionResult> GetMember(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _memberService.GetMemberAsync(id, cancellationToken);
-
-                    if (!result.Success)
-        {
-            return NotFound(result);
-        }
-
         return Ok(result);
     }
 
@@ -58,12 +52,6 @@ public partial class MemberController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var result = await _memberService.GetMembersAsync(pageNumber, pageSize, cancellationToken);
-
-                    if (!result.Success)
-        {
-            return BadRequest(result);
-        }
-
         return Ok(result);
     }
 
@@ -83,12 +71,6 @@ public partial class MemberController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var result = await _memberService.GetMembersByClubAsync(clubId, pageNumber, pageSize, cancellationToken);
-
-                    if (!result.Success)
-        {
-            return BadRequest(result);
-        }
-
         return Ok(result);
     }
 
@@ -101,19 +83,8 @@ public partial class MemberController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateMember([FromBody] CreateMemberDto dto, CancellationToken cancellationToken = default)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         var result = await _memberService.CreateMemberAsync(dto, cancellationToken);
-
-                    if (!result.Success)
-        {
-            return BadRequest(result);
-        }
-
-        return CreatedAtAction(nameof(GetMember), new { id = result.Data!.Id }, result);
+        return CreatedAtAction(nameof(GetMember), new { id = result.Data?.Id }, result);
     }
 
     /// <summary>
@@ -126,18 +97,7 @@ public partial class MemberController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateMember(Guid id, [FromBody] UpdateMemberDto dto, CancellationToken cancellationToken = default)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         var result = await _memberService.UpdateMemberAsync(id, dto, cancellationToken);
-
-                    if (!result.Success)
-        {
-            return BadRequest(result);
-        }
-
         return Ok(result);
     }
 
@@ -151,12 +111,6 @@ public partial class MemberController : ControllerBase
     public async Task<IActionResult> DeleteMember(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _memberService.DeleteMemberAsync(id, cancellationToken);
-
-                    if (!result.Success)
-        {
-            return BadRequest(result);
-        }
-
         return Ok(result);
     }
 
@@ -173,18 +127,7 @@ public partial class MemberController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request, CancellationToken cancellationToken = default)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         var result = await _memberService.LoginAsync(request, cancellationToken);
-
-                    if (!result.Success)
-        {
-            return Unauthorized(result);
-        }
-
         return Ok(result);
     }
 
@@ -198,18 +141,7 @@ public partial class MemberController : ControllerBase
     [HttpPost("{memberId}/change-password")]
     public async Task<IActionResult> ChangePassword(Guid memberId, [FromBody] ChangePasswordRequestDto request, CancellationToken cancellationToken = default)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         var result = await _memberService.ChangePasswordAsync(memberId, request, cancellationToken);
-
-                    if (!result.Success)
-        {
-            return BadRequest(result);
-        }
-
         return Ok(result);
     }
 
@@ -222,18 +154,7 @@ public partial class MemberController : ControllerBase
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request, CancellationToken cancellationToken = default)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         var result = await _memberService.ResetPasswordAsync(request, cancellationToken);
-
-                    if (!result.Success)
-        {
-            return BadRequest(result);
-        }
-
         return Ok(result);
     }
 
@@ -246,18 +167,7 @@ public partial class MemberController : ControllerBase
     [HttpPost("reset-password/confirm")]
     public async Task<IActionResult> ResetPasswordConfirm([FromBody] ResetPasswordConfirmDto request, CancellationToken cancellationToken = default)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         var result = await _memberService.ResetPasswordConfirmAsync(request, cancellationToken);
-
-                    if (!result.Success)
-        {
-            return BadRequest(result);
-        }
-
         return Ok(result);
     }
 
@@ -274,18 +184,7 @@ public partial class MemberController : ControllerBase
     [HttpPost("invite")]
     public async Task<IActionResult> InviteMember([FromBody] InviteMemberRequestDto request, CancellationToken cancellationToken = default)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         var result = await _memberService.InviteMemberAsync(request, cancellationToken);
-
-                    if (!result.Success)
-        {
-            return BadRequest(result);
-        }
-
         return Ok(result);
     }
 
@@ -298,18 +197,7 @@ public partial class MemberController : ControllerBase
     [HttpPost("activate")]
     public async Task<IActionResult> ActivateMember([FromBody] ActivateMemberRequestDto request, CancellationToken cancellationToken = default)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         var result = await _memberService.ActivateMemberAsync(request, cancellationToken);
-
-                    if (!result.Success)
-        {
-            return BadRequest(result);
-        }
-
         return Ok(result);
     }
 
@@ -323,12 +211,6 @@ public partial class MemberController : ControllerBase
     public async Task<IActionResult> ResendActivationEmail(Guid memberId, CancellationToken cancellationToken = default)
     {
         var result = await _memberService.ResendActivationEmailAsync(memberId, cancellationToken);
-
-                    if (!result.Success)
-        {
-            return BadRequest(result);
-        }
-
         return Ok(result);
     }
 

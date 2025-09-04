@@ -24,7 +24,7 @@ public interface IHierarchyService
     /// <param name="pageSize">Page size</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Paginated divisions or error response</returns>
-    Task<BaseResponse<PaginatedResponse<IEnumerable<DivisionDto>>>> GetDivisionsAsync(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default);
+    Task<BaseResponse<PaginatedResponse<IEnumerable<DivisionSummaryDto>>>> GetDivisionsAsync(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates a new division
@@ -59,6 +59,15 @@ public interface IHierarchyService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Union data or error response</returns>
     Task<BaseResponse<UnionDto>> GetUnionAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets all unions in the system with pagination
+    /// </summary>
+    /// <param name="pageNumber">Page number (1-based)</param>
+    /// <param name="pageSize">Page size</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Paginated unions or error response</returns>
+    Task<BaseResponse<PaginatedResponse<IEnumerable<UnionDto>>>> GetAllUnionsAsync(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all unions for a specific division with pagination
@@ -193,6 +202,15 @@ public interface IHierarchyService
     Task<BaseResponse<DistrictDto>> GetDistrictAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets all districts in the system with pagination
+    /// </summary>
+    /// <param name="pageNumber">Page number (1-based)</param>
+    /// <param name="pageSize">Page size</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Paginated districts or error response</returns>
+    Task<BaseResponse<PaginatedResponse<IEnumerable<DistrictDto>>>> GetAllDistrictsAsync(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets all districts for a specific region with pagination
     /// </summary>
     /// <param name="regionId">Parent region ID</param>
@@ -280,6 +298,15 @@ public interface IHierarchyService
     Task<BaseResponse<ClubDto>> GetClubAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets all clubs in the system with pagination
+    /// </summary>
+    /// <param name="pageNumber">Page number (1-based)</param>
+    /// <param name="pageSize">Page size</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Paginated clubs or error response</returns>
+    Task<BaseResponse<PaginatedResponse<IEnumerable<ClubDto>>>> GetAllClubsAsync(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets all clubs for a specific district with pagination
     /// </summary>
     /// <param name="districtId">Parent district ID</param>
@@ -322,6 +349,15 @@ public interface IHierarchyService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Unit data or error response</returns>
     Task<BaseResponse<UnitDto>> GetUnitAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets all units in the system with pagination
+    /// </summary>
+    /// <param name="pageNumber">Page number (1-based)</param>
+    /// <param name="pageSize">Page size</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Paginated units or error response</returns>
+    Task<BaseResponse<PaginatedResponse<IEnumerable<UnitDto>>>> GetAllUnitsAsync(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all units for a specific club with pagination

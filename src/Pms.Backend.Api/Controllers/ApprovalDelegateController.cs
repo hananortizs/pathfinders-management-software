@@ -9,7 +9,7 @@ namespace Pms.Backend.Api.Controllers;
 /// Controller for managing approval delegations
 /// </summary>
 [ApiController]
-[Route("pms/[controller]")]
+[Route("[controller]")]
 public class ApprovalDelegateController : ControllerBase
 {
     private readonly IApprovalDelegateService _approvalDelegateService;
@@ -35,10 +35,6 @@ public class ApprovalDelegateController : ControllerBase
     public async Task<IActionResult> CreateDelegation([FromBody] CreateApprovalDelegateDto request, CancellationToken cancellationToken)
     {
         var result = await _approvalDelegateService.CreateDelegationAsync(request, cancellationToken);
-        if (!result.Success)
-        {
-            return BadRequest(result);
-        }
         return CreatedAtAction(nameof(GetDelegationById), new { id = result.Data?.Id }, result);
     }
 
@@ -54,10 +50,6 @@ public class ApprovalDelegateController : ControllerBase
     public async Task<IActionResult> GetDelegationById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _approvalDelegateService.GetDelegationAsync(id, cancellationToken);
-        if (!result.Success)
-        {
-            return NotFound(result);
-        }
         return Ok(result);
     }
 
@@ -133,7 +125,7 @@ public class ApprovalDelegateController : ControllerBase
     public async Task<IActionResult> UpdateDelegation(Guid id, [FromBody] UpdateApprovalDelegateDto request, CancellationToken cancellationToken)
     {
         var result = await _approvalDelegateService.UpdateDelegationAsync(id, request, cancellationToken);
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result);
         }
@@ -152,7 +144,7 @@ public class ApprovalDelegateController : ControllerBase
     public async Task<IActionResult> EndDelegation(Guid id, CancellationToken cancellationToken)
     {
         var result = await _approvalDelegateService.EndDelegationAsync(id, cancellationToken);
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return NotFound(result);
         }
@@ -171,7 +163,7 @@ public class ApprovalDelegateController : ControllerBase
     public async Task<IActionResult> DeleteDelegation(Guid id, CancellationToken cancellationToken)
     {
         var result = await _approvalDelegateService.DeleteDelegationAsync(id, cancellationToken);
-        if (!result.Success)
+        if (!result.IsSuccess)
         {
             return NotFound(result);
         }

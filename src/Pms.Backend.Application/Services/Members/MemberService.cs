@@ -78,7 +78,7 @@ public partial class MemberService : IMemberService
 
             var paginatedResponse = new PaginatedResponse<IEnumerable<MemberDto>>
             {
-                Data = dtos,
+                Items = dtos,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalCount = totalCount
@@ -121,7 +121,7 @@ public partial class MemberService : IMemberService
 
             var paginatedResponse = new PaginatedResponse<IEnumerable<MemberDto>>
             {
-                Data = dtos,
+                Items = dtos,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalCount = totalCount

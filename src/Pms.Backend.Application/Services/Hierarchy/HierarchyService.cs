@@ -8,8 +8,9 @@ using Pms.Backend.Domain.Entities.Hierarchy;
 namespace Pms.Backend.Application.Services.Hierarchy;
 
 /// <summary>
-/// Main service for hierarchy management operations
+/// Main service for hierarchy CRUD operations (Create, Read, Update, Delete)
 /// Handles Division, Union, Association, Region, District, Church, Club, and Unit operations
+/// Optimized for CRUD operations without nested hierarchies for better performance
 /// </summary>
 public partial class HierarchyService : IHierarchyService
 {
@@ -55,32 +56,34 @@ public partial class HierarchyService : IHierarchyService
     }
 
     /// <summary>
-    /// Retrieves a paginated list of Divisions.
+    /// Retrieves a paginated list of Divisions for CRUD operations (without nested hierarchies).
+    /// For rich queries with nested data, use HierarchyQueryService.
     /// </summary>
     /// <param name="pageNumber">The page number for pagination (default is 1).</param>
     /// <param name="pageSize">The number of items per page (default is 10).</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A BaseResponse containing a PaginatedResponse of DivisionDto.</returns>
-    public async Task<BaseResponse<PaginatedResponse<IEnumerable<DivisionDto>>>> GetDivisionsAsync(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default)
+    /// <returns>A BaseResponse containing a PaginatedResponse of DivisionSummaryDto.</returns>
+    public async Task<BaseResponse<PaginatedResponse<IEnumerable<DivisionSummaryDto>>>> GetDivisionsAsync(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default)
     {
         try
         {
+            // Get divisions without related entities for better performance
             var (items, totalCount) = await _unitOfWork.Repository<Division>().GetPagedAsync(pageNumber, pageSize, null, cancellationToken);
-            var dtos = _mapper.Map<IEnumerable<DivisionDto>>(items);
+            var dtos = _mapper.Map<IEnumerable<DivisionSummaryDto>>(items);
 
-            var paginatedResponse = new PaginatedResponse<IEnumerable<DivisionDto>>
+            var paginatedResponse = new PaginatedResponse<IEnumerable<DivisionSummaryDto>>
             {
-                Data = dtos,
+                Items = dtos,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalCount = totalCount
             };
 
-            return BaseResponse<PaginatedResponse<IEnumerable<DivisionDto>>>.SuccessResult(paginatedResponse);
+            return BaseResponse<PaginatedResponse<IEnumerable<DivisionSummaryDto>>>.SuccessResult(paginatedResponse);
         }
         catch (Exception ex)
         {
-            return BaseResponse<PaginatedResponse<IEnumerable<DivisionDto>>>.ErrorResult($"Error retrieving divisions: {ex.Message}");
+            return BaseResponse<PaginatedResponse<IEnumerable<DivisionSummaryDto>>>.ErrorResult($"Error retrieving divisions: {ex.Message}");
         }
     }
 
@@ -219,6 +222,36 @@ public partial class HierarchyService : IHierarchyService
     }
 
     /// <summary>
+    /// Retrieves a paginated list of all Unions in the system.
+    /// </summary>
+    /// <param name="pageNumber">The page number for pagination (default is 1).</param>
+    /// <param name="pageSize">The number of items per page (default is 10).</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A BaseResponse containing a PaginatedResponse of UnionDto.</returns>
+    public async Task<BaseResponse<PaginatedResponse<IEnumerable<UnionDto>>>> GetAllUnionsAsync(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var (items, totalCount) = await _unitOfWork.Repository<Union>().GetPagedAsync(pageNumber, pageSize, null, cancellationToken);
+            var dtos = _mapper.Map<List<UnionDto>>(items);
+
+            var paginatedResponse = new PaginatedResponse<IEnumerable<UnionDto>>
+            {
+                Items = dtos,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
+
+            return BaseResponse<PaginatedResponse<IEnumerable<UnionDto>>>.SuccessResult(paginatedResponse);
+        }
+        catch (Exception ex)
+        {
+            return BaseResponse<PaginatedResponse<IEnumerable<UnionDto>>>.ErrorResult($"Error retrieving all unions: {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Retrieves a paginated list of Unions belonging to a specific Division.
     /// </summary>
     /// <param name="divisionId">The ID of the parent Division.</param>
@@ -235,7 +268,7 @@ public partial class HierarchyService : IHierarchyService
 
             var paginatedResponse = new PaginatedResponse<IEnumerable<UnionDto>>
             {
-                Data = dtos,
+                Items = dtos,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalCount = totalCount

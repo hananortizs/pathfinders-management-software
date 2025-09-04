@@ -9,7 +9,7 @@ namespace Pms.Backend.Api.Controllers;
 /// Controller for managing role assignments
 /// </summary>
 [ApiController]
-[Route("pms/[controller]")]
+[Route("[controller]")]
 public class AssignmentController : ControllerBase
 {
     private readonly IAssignmentService _assignmentService;
@@ -35,10 +35,6 @@ public class AssignmentController : ControllerBase
     public async Task<IActionResult> CreateAssignment([FromBody] CreateAssignmentDto request, CancellationToken cancellationToken)
     {
         var result = await _assignmentService.CreateAssignmentAsync(request, cancellationToken);
-        if (!result.Success)
-        {
-            return BadRequest(result);
-        }
         return CreatedAtAction(nameof(GetAssignmentById), new { id = result.Data?.Id }, result);
     }
 
@@ -54,10 +50,6 @@ public class AssignmentController : ControllerBase
     public async Task<IActionResult> GetAssignmentById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _assignmentService.GetAssignmentAsync(id, cancellationToken);
-        if (!result.Success)
-        {
-            return NotFound(result);
-        }
         return Ok(result);
     }
 
@@ -119,10 +111,6 @@ public class AssignmentController : ControllerBase
     public async Task<IActionResult> UpdateAssignment(Guid id, [FromBody] UpdateAssignmentDto request, CancellationToken cancellationToken)
     {
         var result = await _assignmentService.UpdateAssignmentAsync(id, request, cancellationToken);
-        if (!result.Success)
-        {
-            return result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result);
-        }
         return Ok(result);
     }
 
@@ -139,10 +127,6 @@ public class AssignmentController : ControllerBase
     public async Task<IActionResult> EndAssignment(Guid id, [FromQuery] string? endReason = null, CancellationToken cancellationToken = default)
     {
         var result = await _assignmentService.EndAssignmentAsync(id, endReason, cancellationToken);
-        if (!result.Success)
-        {
-            return NotFound(result);
-        }
         return Ok(result);
     }
 
@@ -158,10 +142,6 @@ public class AssignmentController : ControllerBase
     public async Task<IActionResult> DeleteAssignment(Guid id, CancellationToken cancellationToken)
     {
         var result = await _assignmentService.DeleteAssignmentAsync(id, cancellationToken);
-        if (!result.Success)
-        {
-            return NotFound(result);
-        }
         return Ok(result);
     }
 

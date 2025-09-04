@@ -190,7 +190,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<DivisionDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<UnionDto> CreateUnionAsync(Guid divisionId, string name, string code)
@@ -207,7 +208,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<UnionDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<AssociationDto> CreateAssociationAsync(Guid unionId, string name, string code)
@@ -224,7 +226,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<AssociationDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<RegionDto> CreateRegionAsync(Guid associationId, string name, string code)
@@ -241,7 +244,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<RegionDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<DistrictDto> CreateDistrictAsync(Guid regionId, string name, string code)
@@ -258,7 +262,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<DistrictDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<ChurchDto> CreateChurchAsync(Guid districtId, string name, string code)
@@ -277,7 +282,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<ChurchDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<ClubDto> CreateClubAsync(Guid churchId, string name, string code)
@@ -294,7 +300,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<ClubDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<UnitDto> CreateUnitAsync(Guid clubId, string name, string code, Pms.Backend.Application.DTOs.Hierarchy.UnitGender gender, int ageMin, int ageMax)
@@ -313,7 +320,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<UnitDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<MemberDto> RegisterMemberAsync(string fullName, string email, Guid clubId, DateTime dateOfBirth)
@@ -336,7 +344,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MemberDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<string> LoginMemberAsync(string email, string password)
@@ -351,7 +360,10 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<AuthResultDto>>();
-        return result!.Data.Token;
+        result.Should().NotBeNull();
+        result!.Data.Should().NotBeNull();
+        result.Data!.Token.Should().NotBeNullOrEmpty();
+        return result.Data.Token;
     }
 
     private async Task<MembershipDto> EnrollMemberInClubAsync(Guid memberId, Guid clubId, string token)
@@ -370,7 +382,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MembershipDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<MembershipDto> AssignMemberToUnitAsync(Guid membershipId, Guid unitId, string token)
@@ -387,7 +400,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MembershipDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<List<MemberDto>> GetClubMembersAsync(Guid clubId, string token)
@@ -399,7 +413,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<List<MemberDto>>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<MemberDto> GetMemberProfileAsync(Guid memberId, string token)
@@ -411,7 +426,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MemberDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<string> ExportMembersToCsvAsync(Guid clubId, string token)
@@ -453,7 +469,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MemberDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task DeactivateMembershipAsync(Guid membershipId, string token)
@@ -474,7 +491,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MembershipDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<ClubDto> GetClubAsync(Guid clubId, string token)
@@ -486,7 +504,8 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<ClubDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     #endregion

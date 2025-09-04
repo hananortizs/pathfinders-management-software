@@ -41,7 +41,7 @@ public partial class ApprovalDelegateService : IApprovalDelegateService
         {
             // Validate delegation
             var validationResult = await ValidateDelegationAsync(request, cancellationToken);
-            if (!validationResult.Success)
+            if (!validationResult.IsSuccess)
             {
                 return BaseResponse<ApprovalDelegateDto>.ErrorResult(validationResult.Message ?? "Delegation validation failed");
             }

@@ -61,5 +61,5 @@ public class Club : BaseEntity
     /// <summary>
     /// Gets the code path for this club (Division.Code.Union.Code.Association.Code.Region.Code.District.Code.Club.Code)
     /// </summary>
-    public string CodePath => $"{District.CodePath}.{Code}";
+    public string CodePath => $"{District.CodePath.Trim()}.{Code.Trim()}";
 }

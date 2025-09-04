@@ -29,5 +29,5 @@ public class Division : BaseEntity
     /// <summary>
     /// Gets the code path for this division (same as Code since it's root)
     /// </summary>
-    public string CodePath => Code;
+    public string CodePath => Code.Trim();
 }

@@ -365,7 +365,7 @@ public partial class MembershipService
 
             // Try to reallocate to appropriate unit
             var allocationResult = await AllocateToUnitAsync(membership.Id, cancellationToken);
-            if (allocationResult.Success)
+            if (allocationResult.IsSuccess)
             {
                 // Refresh membership data
                 membership = await _unitOfWork.Repository<Domain.Entities.Membership>()

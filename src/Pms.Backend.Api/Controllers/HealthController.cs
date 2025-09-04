@@ -6,7 +6,7 @@ namespace Pms.Backend.Api.Controllers;
 /// Health check controller for monitoring API status
 /// </summary>
 [ApiController]
-[Route("pms/health")]
+[Route("[controller]")]
 public class HealthController : ControllerBase
 {
     /// <summary>

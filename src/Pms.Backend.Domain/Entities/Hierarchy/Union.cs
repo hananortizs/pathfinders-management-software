@@ -39,5 +39,5 @@ public class Union : BaseEntity
     /// <summary>
     /// Gets the code path for this union (Division.Code.Union.Code)
     /// </summary>
-    public string CodePath => $"{Division.Code}.{Code}";
+    public string CodePath => $"{Division.Code.Trim()}.{Code.Trim()}";
 }

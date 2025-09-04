@@ -1,25 +1,13 @@
+using Pms.Backend.Domain.Common;
+
 namespace Pms.Backend.Domain.Entities.Hierarchy;
 
 /// <summary>
 /// Represents a Region in the organizational hierarchy
 /// Region belongs to an Association
 /// </summary>
-public class Region : BaseEntity
+public class Region : HierarchyEntityBase
 {
-    /// <summary>
-    /// Unique code for the region (≤5 chars, UPPERCASE A-Z0-9)
-    /// </summary>
-    public string Code { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Name of the region
-    /// </summary>
-    public string Name { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Description of the region
-    /// </summary>
-    public string? Description { get; set; }
 
     /// <summary>
     /// Foreign key to the parent association
@@ -39,5 +27,5 @@ public class Region : BaseEntity
     /// <summary>
     /// Gets the code path for this region (Division.Code.Union.Code.Association.Code.Region.Code)
     /// </summary>
-    public string CodePath => $"{Association.CodePath}.{Code}";
+    public override string CodePath => $"{Association.CodePath.Trim()}.{Code.Trim()}";
 }

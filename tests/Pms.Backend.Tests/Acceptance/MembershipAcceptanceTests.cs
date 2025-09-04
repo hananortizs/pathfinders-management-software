@@ -51,8 +51,9 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MembershipDto>>();
+        result.Should().NotBeNull();
         result!.Data.Should().NotBeNull();
-        result.Data.MemberId.Should().Be(member.Id);
+        result.Data!.MemberId.Should().Be(member.Id);
         result.Data.ClubId.Should().Be(club.Id);
         result.Data.IsActive.Should().BeTrue();
 
@@ -100,7 +101,9 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MembershipDto>>();
-        result!.Data.UnitId.Should().Be(unit.Id);
+        result.Should().NotBeNull();
+        result!.Data.Should().NotBeNull();
+        result.Data!.UnitId.Should().Be(unit.Id);
 
         // Verificar no banco de dados
         var updatedMembership = DbContext.Memberships
@@ -132,7 +135,9 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<List<MemberDto>>>();
-        result!.Data.Should().HaveCount(2);
+        result.Should().NotBeNull();
+        result!.Data.Should().NotBeNull();
+        result.Data!.Should().HaveCount(2);
         result.Data.Should().Contain(m => m.Email == "membro1@test.com");
         result.Data.Should().Contain(m => m.Email == "membro2@test.com");
     }
@@ -339,7 +344,11 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MemberDto>>();
-        return await DbContext.Members.FindAsync(result!.Data.Id)!;
+        result.Should().NotBeNull();
+        result!.Data.Should().NotBeNull();
+        var member = await DbContext.Members.FindAsync(result.Data!.Id);
+        member.Should().NotBeNull();
+        return member!;
     }
 
     private async Task<string> GetAuthTokenAsync()
@@ -354,7 +363,10 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<AuthResultDto>>();
-        return result!.Data.Token;
+        result.Should().NotBeNull();
+        result!.Data.Should().NotBeNull();
+        result.Data!.Token.Should().NotBeNullOrEmpty();
+        return result.Data.Token;
     }
 
     private async Task EnrollMemberInClubAsync(Guid memberId, Guid clubId)

@@ -18,8 +18,7 @@ public class DistrictConfiguration : BaseEntityConfiguration<District>
         // Properties
         builder.Property(e => e.Code)
             .IsRequired()
-            .HasMaxLength(5)
-            .IsFixedLength();
+            .HasMaxLength(5);
 
         builder.Property(e => e.Name)
             .IsRequired()

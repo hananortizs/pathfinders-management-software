@@ -21,7 +21,7 @@ public abstract class BaseEntityConfiguration<T> : IEntityTypeConfiguration<T> w
 
         // Properties
         builder.Property(e => e.Id)
-            .ValueGeneratedOnAdd();
+            .IsRequired();
 
         builder.Property(e => e.CreatedAtUtc)
             .IsRequired()

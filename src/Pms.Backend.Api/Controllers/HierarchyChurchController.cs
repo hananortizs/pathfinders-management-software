@@ -9,7 +9,7 @@ namespace Pms.Backend.Api.Controllers;
 /// Controller for Church, Club and Unit hierarchy operations
 /// </summary>
 [ApiController]
-[Route("api/hierarchy")]
+[Route("[controller]")]
 public class HierarchyChurchController : ControllerBase
 {
     private readonly IHierarchyService _hierarchyService;
@@ -37,7 +37,7 @@ public class HierarchyChurchController : ControllerBase
     public async Task<IActionResult> GetChurchById(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.GetChurchAsync(id, cancellationToken);
-        return result.Success ? Ok(result) : NotFound(result);
+        return result.IsSuccess ? Ok(result) : NotFound(result);
     }
 
     /// <summary>
@@ -79,7 +79,7 @@ public class HierarchyChurchController : ControllerBase
     public async Task<IActionResult> CreateChurch([FromBody] CreateChurchDto dto, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.CreateChurchAsync(dto, cancellationToken);
-        return result.Success ? CreatedAtAction(nameof(GetChurchById), new { id = result.Data?.Id }, result) : BadRequest(result);
+        return result.IsSuccess ? CreatedAtAction(nameof(GetChurchById), new { id = result.Data?.Id }, result) : BadRequest(result);
     }
 
     /// <summary>
@@ -96,7 +96,7 @@ public class HierarchyChurchController : ControllerBase
     public async Task<IActionResult> UpdateChurch(Guid id, [FromBody] UpdateChurchDto dto, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.UpdateChurchAsync(id, dto, cancellationToken);
-        return result.Success ? Ok(result) : (result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result));
+        return result.IsSuccess ? Ok(result) : (result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result));
     }
 
     /// <summary>
@@ -112,7 +112,7 @@ public class HierarchyChurchController : ControllerBase
     public async Task<IActionResult> DeleteChurch(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.DeleteChurchAsync(id, cancellationToken);
-        return result.Success ? Ok(result) : (result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result));
+        return result.IsSuccess ? Ok(result) : (result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result));
     }
 
     #endregion
@@ -131,19 +131,22 @@ public class HierarchyChurchController : ControllerBase
     public async Task<IActionResult> GetClubById(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.GetClubAsync(id, cancellationToken);
-        return result.Success ? Ok(result) : NotFound(result);
+        return result.IsSuccess ? Ok(result) : NotFound(result);
     }
 
     /// <summary>
-    /// Gets all clubs
+    /// Gets all clubs in the system
     /// </summary>
+    /// <param name="pageNumber">Page number (default: 1)</param>
+    /// <param name="pageSize">Page size (default: 10)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>List of clubs</returns>
     [HttpGet("clubs")]
-    [ProducesResponseType(typeof(BaseResponse<IEnumerable<ClubDto>>), StatusCodes.Status200OK)]
-    public IActionResult GetAllClubs()
+    [ProducesResponseType(typeof(BaseResponse<PaginatedResponse<IEnumerable<ClubDto>>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllClubs(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default)
     {
-        // Note: This endpoint would need a districtId parameter or a different service method
-        return BadRequest("This endpoint requires a districtId parameter. Use GET /districts/{districtId}/clubs instead.");
+        var result = await _hierarchyService.GetAllClubsAsync(pageNumber, pageSize, cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>
@@ -171,7 +174,7 @@ public class HierarchyChurchController : ControllerBase
     public async Task<IActionResult> CreateClub([FromBody] CreateClubDto dto, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.CreateClubAsync(dto, cancellationToken);
-        return result.Success ? CreatedAtAction(nameof(GetClubById), new { id = result.Data?.Id }, result) : BadRequest(result);
+        return result.IsSuccess ? CreatedAtAction(nameof(GetClubById), new { id = result.Data?.Id }, result) : BadRequest(result);
     }
 
     /// <summary>
@@ -188,7 +191,7 @@ public class HierarchyChurchController : ControllerBase
     public async Task<IActionResult> UpdateClub(Guid id, [FromBody] UpdateClubDto dto, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.UpdateClubAsync(id, dto, cancellationToken);
-        return result.Success ? Ok(result) : (result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result));
+        return result.IsSuccess ? Ok(result) : (result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result));
     }
 
     /// <summary>
@@ -204,7 +207,7 @@ public class HierarchyChurchController : ControllerBase
     public async Task<IActionResult> DeleteClub(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.DeleteClubAsync(id, cancellationToken);
-        return result.Success ? Ok(result) : (result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result));
+        return result.IsSuccess ? Ok(result) : (result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result));
     }
 
     #endregion
@@ -223,19 +226,22 @@ public class HierarchyChurchController : ControllerBase
     public async Task<IActionResult> GetUnitById(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.GetUnitAsync(id, cancellationToken);
-        return result.Success ? Ok(result) : NotFound(result);
+        return result.IsSuccess ? Ok(result) : NotFound(result);
     }
 
     /// <summary>
-    /// Gets all units
+    /// Gets all units in the system
     /// </summary>
+    /// <param name="pageNumber">Page number (default: 1)</param>
+    /// <param name="pageSize">Page size (default: 10)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>List of units</returns>
     [HttpGet("units")]
-    [ProducesResponseType(typeof(BaseResponse<IEnumerable<UnitDto>>), StatusCodes.Status200OK)]
-    public IActionResult GetAllUnits()
+    [ProducesResponseType(typeof(BaseResponse<PaginatedResponse<IEnumerable<UnitDto>>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAllUnits(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default)
     {
-        // Note: This endpoint would need a clubId parameter or a different service method
-        return BadRequest("This endpoint requires a clubId parameter. Use GET /clubs/{clubId}/units instead.");
+        var result = await _hierarchyService.GetAllUnitsAsync(pageNumber, pageSize, cancellationToken);
+        return Ok(result);
     }
 
     /// <summary>
@@ -264,7 +270,7 @@ public class HierarchyChurchController : ControllerBase
     public async Task<IActionResult> CreateUnit([FromBody] CreateUnitDto dto, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.CreateUnitAsync(dto, cancellationToken);
-        return result.Success ? CreatedAtAction(nameof(GetUnitById), new { id = result.Data?.Id }, result) : BadRequest(result);
+        return result.IsSuccess ? CreatedAtAction(nameof(GetUnitById), new { id = result.Data?.Id }, result) : BadRequest(result);
     }
 
     /// <summary>
@@ -281,7 +287,7 @@ public class HierarchyChurchController : ControllerBase
     public async Task<IActionResult> UpdateUnit(Guid id, [FromBody] UpdateUnitDto dto, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.UpdateUnitAsync(id, dto, cancellationToken);
-        return result.Success ? Ok(result) : (result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result));
+        return result.IsSuccess ? Ok(result) : (result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result));
     }
 
     /// <summary>
@@ -297,7 +303,7 @@ public class HierarchyChurchController : ControllerBase
     public async Task<IActionResult> DeleteUnit(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.DeleteUnitAsync(id, cancellationToken);
-        return result.Success ? Ok(result) : (result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result));
+        return result.IsSuccess ? Ok(result) : (result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result));
     }
 
     #endregion

@@ -104,7 +104,9 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var updatedDivision = await response.Content.ReadFromJsonAsync<BaseResponse<DivisionDto>>();
-        updatedDivision!.Data.Name.Should().Be("Divisão Atualizada");
+        updatedDivision.Should().NotBeNull();
+        updatedDivision!.Data.Should().NotBeNull();
+        updatedDivision.Data!.Name.Should().Be("Divisão Atualizada");
         updatedDivision.Data.Code.Should().Be("DIV-UPD");
     }
 
@@ -139,7 +141,8 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<DivisionDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<UnionDto> CreateUnionAsync(Guid divisionId)
@@ -156,7 +159,8 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<UnionDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<AssociationDto> CreateAssociationAsync(Guid unionId)
@@ -173,7 +177,8 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<AssociationDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<RegionDto> CreateRegionAsync(Guid associationId)
@@ -190,7 +195,8 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<RegionDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<DistrictDto> CreateDistrictAsync(Guid regionId)
@@ -207,7 +213,8 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<DistrictDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<ChurchDto> CreateChurchAsync(Guid districtId)
@@ -226,7 +233,8 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<ChurchDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<ClubDto> CreateClubAsync(Guid churchId)
@@ -243,7 +251,8 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<ClubDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     private async Task<UnitDto> CreateUnitAsync(Guid clubId)
@@ -262,7 +271,8 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<UnitDto>>();
-        return result!.Data;
+        result.Should().NotBeNull();
+        return result!.Data!;
     }
 
     #endregion

@@ -6,10 +6,12 @@ using Pms.Backend.Application.Interfaces;
 namespace Pms.Backend.Api.Controllers;
 
 /// <summary>
-/// Controller for Division hierarchy operations and general hierarchy management
+/// Controller for Division hierarchy CRUD operations (Create, Read, Update, Delete)
+/// Optimized for CRUD operations without nested hierarchies for better performance
+/// For rich queries with nested data, use HierarchyQueryController
 /// </summary>
 [ApiController]
-[Route("api/hierarchy")]
+[Route("[controller]")]
 public class HierarchyController : ControllerBase
 {
     private readonly IHierarchyService _hierarchyService;
@@ -37,18 +39,19 @@ public class HierarchyController : ControllerBase
     public async Task<IActionResult> GetDivisionById(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.GetDivisionAsync(id, cancellationToken);
-        return result.Success ? Ok(result) : NotFound(result);
+        return Ok(result);
     }
 
     /// <summary>
-    /// Gets all divisions
+    /// Gets all divisions for CRUD operations (without nested hierarchies)
+    /// For rich queries with unions, use /hierarchy-query/divisions
     /// </summary>
     /// <param name="pageNumber">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 10)</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of divisions</returns>
+    /// <returns>List of divisions without nested hierarchies</returns>
     [HttpGet("divisions")]
-    [ProducesResponseType(typeof(BaseResponse<PaginatedResponse<IEnumerable<DivisionDto>>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BaseResponse<PaginatedResponse<IEnumerable<DivisionSummaryDto>>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllDivisions(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.GetDivisionsAsync(pageNumber, pageSize, cancellationToken);
@@ -67,7 +70,7 @@ public class HierarchyController : ControllerBase
     public async Task<IActionResult> CreateDivision([FromBody] CreateDivisionDto dto, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.CreateDivisionAsync(dto, cancellationToken);
-        return result.Success ? CreatedAtAction(nameof(GetDivisionById), new { id = result.Data?.Id }, result) : BadRequest(result);
+        return CreatedAtAction(nameof(GetDivisionById), new { id = result.Data?.Id }, result);
     }
 
     /// <summary>
@@ -84,7 +87,7 @@ public class HierarchyController : ControllerBase
     public async Task<IActionResult> UpdateDivision(Guid id, [FromBody] UpdateDivisionDto dto, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.UpdateDivisionAsync(id, dto, cancellationToken);
-        return result.Success ? Ok(result) : (result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result));
+        return Ok(result);
     }
 
     /// <summary>
@@ -100,7 +103,7 @@ public class HierarchyController : ControllerBase
     public async Task<IActionResult> DeleteDivision(Guid id, CancellationToken cancellationToken = default)
     {
         var result = await _hierarchyService.DeleteDivisionAsync(id, cancellationToken);
-        return result.Success ? Ok(result) : (result.Message?.Contains("not found") == true ? NotFound(result) : BadRequest(result));
+        return Ok(result);
     }
 
     #endregion

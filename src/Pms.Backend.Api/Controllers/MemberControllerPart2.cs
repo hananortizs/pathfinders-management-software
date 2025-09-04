@@ -22,7 +22,7 @@ public partial class MemberController : ControllerBase
     {
         var result = await _memberService.ActivateMemberAccountAsync(id, cancellationToken);
 
-                    if (!result.Success)
+                    if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -47,7 +47,7 @@ public partial class MemberController : ControllerBase
 
         var result = await _memberService.DeactivateMemberAccountAsync(id, reason, cancellationToken);
 
-                    if (!result.Success)
+                    if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -72,7 +72,7 @@ public partial class MemberController : ControllerBase
 
         var result = await _memberService.LockMemberAccountAsync(id, reason, cancellationToken);
 
-                    if (!result.Success)
+                    if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -91,7 +91,7 @@ public partial class MemberController : ControllerBase
     {
         var result = await _memberService.UnlockMemberAccountAsync(id, cancellationToken);
 
-                    if (!result.Success)
+                    if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -125,7 +125,7 @@ public partial class MemberController : ControllerBase
 
         var result = await _memberService.SearchMembersAsync(searchTerm, pageNumber, pageSize, cancellationToken);
 
-                    if (!result.Success)
+                    if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -153,7 +153,7 @@ public partial class MemberController : ControllerBase
 
         var result = await _memberService.IsEmailAvailableAsync(email, excludeMemberId, cancellationToken);
 
-                    if (!result.Success)
+                    if (!result.IsSuccess)
         {
             return BadRequest(result);
         }
@@ -181,7 +181,7 @@ public partial class MemberController : ControllerBase
 
         var result = await _memberService.IsCpfAvailableAsync(cpf, excludeMemberId, cancellationToken);
 
-                    if (!result.Success)
+                    if (!result.IsSuccess)
         {
             return BadRequest(result);
         }

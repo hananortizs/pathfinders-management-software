@@ -42,7 +42,7 @@ public partial class AssignmentService : IAssignmentService
         {
             // Validate assignment
             var validationResult = await ValidateAssignmentAsync(request.MemberId, request.RoleId, request.ScopeType, request.ScopeId, cancellationToken);
-            if (!validationResult.Success)
+            if (!validationResult.IsSuccess)
             {
                 return BaseResponse<AssignmentDto>.ErrorResult(validationResult.Message ?? "Assignment validation failed");
             }
