@@ -57,25 +57,7 @@ public class MemberDto
     /// </summary>
     public string? Rg { get; set; }
 
-    /// <summary>
-    /// Member's address
-    /// </summary>
-    public string? Address { get; set; }
-
-    /// <summary>
-    /// Member's city
-    /// </summary>
-    public string? City { get; set; }
-
-    /// <summary>
-    /// Member's state
-    /// </summary>
-    public string? State { get; set; }
-
-    /// <summary>
-    /// Member's ZIP code
-    /// </summary>
-    public string? ZipCode { get; set; }
+    // Address fields removed - now using centralized Address entity
 
     /// <summary>
     /// Member's emergency contact name
@@ -213,25 +195,7 @@ public class CreateMemberDto
     /// </summary>
     public string? Rg { get; set; }
 
-    /// <summary>
-    /// Member's address
-    /// </summary>
-    public string? Address { get; set; }
-
-    /// <summary>
-    /// Member's city
-    /// </summary>
-    public string? City { get; set; }
-
-    /// <summary>
-    /// Member's state
-    /// </summary>
-    public string? State { get; set; }
-
-    /// <summary>
-    /// Member's ZIP code
-    /// </summary>
-    public string? ZipCode { get; set; }
+    // Address fields removed - now using centralized Address entity
 
     /// <summary>
     /// Member's emergency contact name
@@ -339,25 +303,7 @@ public class UpdateMemberDto
     /// </summary>
     public string? Rg { get; set; }
 
-    /// <summary>
-    /// Member's address
-    /// </summary>
-    public string? Address { get; set; }
-
-    /// <summary>
-    /// Member's city
-    /// </summary>
-    public string? City { get; set; }
-
-    /// <summary>
-    /// Member's state
-    /// </summary>
-    public string? State { get; set; }
-
-    /// <summary>
-    /// Member's ZIP code
-    /// </summary>
-    public string? ZipCode { get; set; }
+    // Address fields removed - now using centralized Address entity
 
     /// <summary>
     /// Member's emergency contact name

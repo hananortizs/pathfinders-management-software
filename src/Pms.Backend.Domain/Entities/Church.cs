@@ -1,8 +1,10 @@
+using Pms.Backend.Domain.Entities.Hierarchy;
+
 namespace Pms.Backend.Domain.Entities;
 
 /// <summary>
 /// Represents a Church in the system
-/// Each Club must be linked to exactly one Church
+/// Each Church belongs to a District and can have at most one Club
 /// </summary>
 public class Church : BaseEntity
 {
@@ -11,25 +13,7 @@ public class Church : BaseEntity
     /// </summary>
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Address of the church
-    /// </summary>
-    public string Address { get; set; } = string.Empty;
-
-    /// <summary>
-    /// City where the church is located
-    /// </summary>
-    public string City { get; set; } = string.Empty;
-
-    /// <summary>
-    /// State where the church is located
-    /// </summary>
-    public string State { get; set; } = string.Empty;
-
-    /// <summary>
-    /// ZIP code (CEP) of the church - must be unique globally
-    /// </summary>
-    public string Cep { get; set; } = string.Empty;
+    // Address fields removed - now using centralized Address entity
 
     /// <summary>
     /// Phone number of the church
@@ -42,7 +26,17 @@ public class Church : BaseEntity
     public string? Email { get; set; }
 
     /// <summary>
-    /// Navigation property to the club linked to this church
+    /// Foreign key to the parent district
+    /// </summary>
+    public Guid DistrictId { get; set; }
+
+    /// <summary>
+    /// Navigation property to parent district
+    /// </summary>
+    public District District { get; set; } = null!;
+
+    /// <summary>
+    /// Navigation property to the club linked to this church (1:1 relationship)
     /// </summary>
     public Club? Club { get; set; }
 }

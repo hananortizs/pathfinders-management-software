@@ -20,25 +20,32 @@ public class ChurchDto
     /// </summary>
     public string? Cep { get; set; }
 
-    /// <summary>
-    /// Address
-    /// </summary>
-    public string? Address { get; set; }
-
-    /// <summary>
-    /// City
-    /// </summary>
-    public string? City { get; set; }
-
-    /// <summary>
-    /// State
-    /// </summary>
-    public string? State { get; set; }
+    // Address fields removed - now using centralized Address entity
 
     /// <summary>
     /// Country
     /// </summary>
     public string? Country { get; set; }
+
+    /// <summary>
+    /// Phone number
+    /// </summary>
+    public string? Phone { get; set; }
+
+    /// <summary>
+    /// Email
+    /// </summary>
+    public string? Email { get; set; }
+
+    /// <summary>
+    /// Parent district ID
+    /// </summary>
+    public Guid DistrictId { get; set; }
+
+    /// <summary>
+    /// Parent district
+    /// </summary>
+    public DistrictDto? District { get; set; }
 
     /// <summary>
     /// Creation date
@@ -51,9 +58,9 @@ public class ChurchDto
     public DateTime UpdatedAtUtc { get; set; }
 
     /// <summary>
-    /// Associated clubs
+    /// Associated club (1:1 relationship)
     /// </summary>
-    public ICollection<ClubDto> Clubs { get; set; } = new List<ClubDto>();
+    public ClubDto? Club { get; set; }
 }
 
 /// <summary>
@@ -71,25 +78,27 @@ public class CreateChurchDto
     /// </summary>
     public string? Cep { get; set; }
 
-    /// <summary>
-    /// Address
-    /// </summary>
-    public string? Address { get; set; }
-
-    /// <summary>
-    /// City
-    /// </summary>
-    public string? City { get; set; }
-
-    /// <summary>
-    /// State
-    /// </summary>
-    public string? State { get; set; }
+    // Address fields removed - now using centralized Address entity
 
     /// <summary>
     /// Country
     /// </summary>
     public string? Country { get; set; }
+
+    /// <summary>
+    /// Phone number
+    /// </summary>
+    public string? Phone { get; set; }
+
+    /// <summary>
+    /// Email
+    /// </summary>
+    public string? Email { get; set; }
+
+    /// <summary>
+    /// Parent district ID
+    /// </summary>
+    public Guid DistrictId { get; set; }
 }
 
 /// <summary>
@@ -107,23 +116,20 @@ public class UpdateChurchDto
     /// </summary>
     public string? Cep { get; set; }
 
-    /// <summary>
-    /// Address
-    /// </summary>
-    public string? Address { get; set; }
-
-    /// <summary>
-    /// City
-    /// </summary>
-    public string? City { get; set; }
-
-    /// <summary>
-    /// State
-    /// </summary>
-    public string? State { get; set; }
+    // Address fields removed - now using centralized Address entity
 
     /// <summary>
     /// Country
     /// </summary>
     public string? Country { get; set; }
+
+    /// <summary>
+    /// Phone number
+    /// </summary>
+    public string? Phone { get; set; }
+
+    /// <summary>
+    /// Email
+    /// </summary>
+    public string? Email { get; set; }
 }

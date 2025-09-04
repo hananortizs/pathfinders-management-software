@@ -77,10 +77,7 @@ public class MemberMappingProfile : Profile
         CreateMap<InviteMemberRequestDto, CreateMemberDto>()
             .ForMember(dest => dest.Cpf, opt => opt.Ignore())
             .ForMember(dest => dest.Rg, opt => opt.Ignore())
-            .ForMember(dest => dest.Address, opt => opt.Ignore())
-            .ForMember(dest => dest.City, opt => opt.Ignore())
-            .ForMember(dest => dest.State, opt => opt.Ignore())
-            .ForMember(dest => dest.ZipCode, opt => opt.Ignore())
+            // Address fields removed - now using centralized Address entity
             .ForMember(dest => dest.EmergencyContactName, opt => opt.Ignore())
             .ForMember(dest => dest.EmergencyContactPhone, opt => opt.Ignore())
             .ForMember(dest => dest.EmergencyContactRelationship, opt => opt.Ignore())

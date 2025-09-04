@@ -20,22 +20,7 @@ public class ChurchConfiguration : BaseEntityConfiguration<Church>
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(e => e.Address)
-            .IsRequired()
-            .HasMaxLength(500);
-
-        builder.Property(e => e.City)
-            .IsRequired()
-            .HasMaxLength(100);
-
-        builder.Property(e => e.State)
-            .IsRequired()
-            .HasMaxLength(50);
-
-        builder.Property(e => e.Cep)
-            .IsRequired()
-            .HasMaxLength(10)
-            .IsFixedLength();
+        // Address fields removed - now using centralized Address entity
 
         builder.Property(e => e.Phone)
             .HasMaxLength(20);
@@ -44,12 +29,16 @@ public class ChurchConfiguration : BaseEntityConfiguration<Church>
             .HasMaxLength(255);
 
         // Indexes
-        // CEP must be unique globally
-        builder.HasIndex(e => e.Cep)
-            .IsUnique()
-            .HasFilter("\"IsDeleted\" = false");
+        // CEP uniqueness now handled in Address entity
 
         // Relationships
+        // Church belongs to a District
+        builder.HasOne(e => e.District)
+            .WithMany(e => e.Churches)
+            .HasForeignKey(e => e.DistrictId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Church can have one Club (1:1 relationship)
         builder.HasOne(e => e.Club)
             .WithOne(e => e.Church)
             .HasForeignKey<Club>(e => e.ChurchId)

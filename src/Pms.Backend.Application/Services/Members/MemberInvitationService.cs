@@ -164,10 +164,7 @@ public partial class MemberService : IMemberService
                 }
 
                 member.Rg = request.MemberInfo.Rg ?? string.Empty;
-                member.Address = request.MemberInfo.Address ?? string.Empty;
-                member.City = request.MemberInfo.City ?? string.Empty;
-                member.State = request.MemberInfo.State ?? string.Empty;
-                member.ZipCode = request.MemberInfo.ZipCode ?? string.Empty;
+                // Address fields removed - now using centralized Address entity
                 member.EmergencyContactName = request.MemberInfo.EmergencyContactName ?? string.Empty;
                 member.EmergencyContactPhone = request.MemberInfo.EmergencyContactPhone ?? string.Empty;
                 member.EmergencyContactRelationship = request.MemberInfo.EmergencyContactRelationship ?? string.Empty;

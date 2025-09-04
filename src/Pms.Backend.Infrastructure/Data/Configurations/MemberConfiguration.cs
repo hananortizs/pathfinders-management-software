@@ -38,22 +38,7 @@ public class MemberConfiguration : BaseEntityConfiguration<Member>
         builder.Property(e => e.DateOfBirth)
             .IsRequired();
 
-        builder.Property(e => e.Address)
-            .IsRequired()
-            .HasMaxLength(500);
-
-        builder.Property(e => e.City)
-            .IsRequired()
-            .HasMaxLength(100);
-
-        builder.Property(e => e.State)
-            .IsRequired()
-            .HasMaxLength(50);
-
-        builder.Property(e => e.ZipCode)
-            .IsRequired()
-            .HasMaxLength(10)
-            .IsFixedLength();
+        // Address fields removed - now using centralized Address entity
 
         builder.Property(e => e.Baptized)
             .IsRequired()

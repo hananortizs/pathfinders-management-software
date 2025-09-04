@@ -57,6 +57,11 @@ public class DistrictDto
     /// Child clubs
     /// </summary>
     public ICollection<ClubDto> Clubs { get; set; } = new List<ClubDto>();
+
+    /// <summary>
+    /// Child churches
+    /// </summary>
+    public ICollection<ChurchDto> Churches { get; set; } = new List<ChurchDto>();
 }
 
 /// <summary>

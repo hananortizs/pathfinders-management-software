@@ -290,6 +290,15 @@ public partial class HierarchyService
     {
         try
         {
+            // Verify parent district exists
+            var district = await _unitOfWork.Repository<District>().GetByIdAsync(dto.DistrictId, cancellationToken);
+            if (district == null)
+            {
+                return BaseResponse<ChurchDto>.ErrorResult("Parent district not found");
+            }
+
+            // CEP uniqueness now handled in Address entity
+
             var church = _mapper.Map<Church>(dto);
             church.Id = Guid.NewGuid();
             church.CreatedAtUtc = DateTime.UtcNow;

@@ -223,7 +223,7 @@ public class CompleteMemberInfoDto
     /// <summary>
     /// Member's address
     /// </summary>
-    public string? Address { get; set; }
+    // Address field removed - now using centralized Address entity
 
     /// <summary>
     /// Member's city

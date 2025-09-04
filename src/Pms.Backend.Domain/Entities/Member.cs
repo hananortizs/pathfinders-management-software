@@ -41,25 +41,7 @@ public class Member : BaseEntity
     /// </summary>
     public DateTime DateOfBirth { get; set; }
 
-    /// <summary>
-    /// Address of the member
-    /// </summary>
-    public string Address { get; set; } = string.Empty;
-
-    /// <summary>
-    /// City where the member lives
-    /// </summary>
-    public string City { get; set; } = string.Empty;
-
-    /// <summary>
-    /// State where the member lives
-    /// </summary>
-    public string State { get; set; } = string.Empty;
-
-    /// <summary>
-    /// ZIP code (CEP) of the member
-    /// </summary>
-    public string ZipCode { get; set; } = string.Empty;
+    // Address fields removed - now using centralized Address entity
 
     /// <summary>
     /// Member's CPF (Brazilian tax ID)
