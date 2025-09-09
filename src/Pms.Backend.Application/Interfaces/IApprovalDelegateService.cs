@@ -1,105 +1,104 @@
-using Pms.Backend.Application.DTOs;
 using Pms.Backend.Application.DTOs.Assignments;
 using Pms.Backend.Domain.Entities;
 
 namespace Pms.Backend.Application.Interfaces;
 
 /// <summary>
-/// Interface for approval delegation operations
-/// Handles delegation of approval authority when original approvers are unavailable
+/// Interface para operações de delegação de aprovação
+/// Gerencia a delegação de autoridade de aprovação quando os aprovadores originais não estão disponíveis
 /// </summary>
 public interface IApprovalDelegateService
 {
     /// <summary>
-    /// Creates a new approval delegation
+    /// Cria uma nova delegação de aprovação
     /// </summary>
-    /// <param name="request">The delegation creation request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>The created delegation</returns>
-    Task<BaseResponse<ApprovalDelegateDto>> CreateDelegationAsync(CreateApprovalDelegateDto request, CancellationToken cancellationToken = default);
+    /// <param name="request">Solicitação de criação da delegação</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>A delegação criada</returns>
+    Task<ApprovalDelegateDto> CreateDelegationAsync(CreateApprovalDelegateDto request, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets a delegation by ID
+    /// Obtém uma delegação por ID
     /// </summary>
-    /// <param name="id">The delegation ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>The delegation</returns>
-    Task<BaseResponse<ApprovalDelegateDto>> GetDelegationAsync(Guid id, CancellationToken cancellationToken = default);
+    /// <param name="id">ID da delegação</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>A delegação</returns>
+    Task<ApprovalDelegateDto> GetDelegationAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets all delegations for a specific scope
+    /// Obtém todas as delegações para um escopo específico
     /// </summary>
-    /// <param name="scopeType">The scope type</param>
-    /// <param name="scopeId">The scope ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of delegations</returns>
-    Task<BaseResponse<IEnumerable<ApprovalDelegateDto>>> GetDelegationsByScopeAsync(ScopeType scopeType, Guid scopeId, CancellationToken cancellationToken = default);
+    /// <param name="scopeType">Tipo do escopo</param>
+    /// <param name="scopeId">ID do escopo</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Lista de delegações</returns>
+    Task<IEnumerable<ApprovalDelegateDto>> GetDelegationsByScopeAsync(ScopeType scopeType, Guid scopeId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets all active delegations for a specific scope
+    /// Obtém todas as delegações ativas para um escopo específico
     /// </summary>
-    /// <param name="scopeType">The scope type</param>
-    /// <param name="scopeId">The scope ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of active delegations</returns>
-    Task<BaseResponse<IEnumerable<ApprovalDelegateDto>>> GetActiveDelegationsByScopeAsync(ScopeType scopeType, Guid scopeId, CancellationToken cancellationToken = default);
+    /// <param name="scopeType">Tipo do escopo</param>
+    /// <param name="scopeId">ID do escopo</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Lista de delegações ativas</returns>
+    Task<IEnumerable<ApprovalDelegateDto>> GetActiveDelegationsByScopeAsync(ScopeType scopeType, Guid scopeId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets all delegations where a member is the delegate
+    /// Obtém todas as delegações onde um membro é o delegado
     /// </summary>
-    /// <param name="memberId">The member ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of delegations</returns>
-    Task<BaseResponse<IEnumerable<ApprovalDelegateDto>>> GetDelegationsByDelegateAsync(Guid memberId, CancellationToken cancellationToken = default);
+    /// <param name="memberId">ID do membro</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Lista de delegações</returns>
+    Task<IEnumerable<ApprovalDelegateDto>> GetDelegationsByDelegateAsync(Guid memberId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets all delegations where a member is the delegator
+    /// Obtém todas as delegações onde um membro é o delegante
     /// </summary>
-    /// <param name="memberId">The member ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of delegations</returns>
-    Task<BaseResponse<IEnumerable<ApprovalDelegateDto>>> GetDelegationsByDelegatorAsync(Guid memberId, CancellationToken cancellationToken = default);
+    /// <param name="memberId">ID do membro</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Lista de delegações</returns>
+    Task<IEnumerable<ApprovalDelegateDto>> GetDelegationsByDelegatorAsync(Guid memberId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Updates a delegation
+    /// Atualiza uma delegação
     /// </summary>
-    /// <param name="id">The delegation ID</param>
-    /// <param name="request">The update request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>The updated delegation</returns>
-    Task<BaseResponse<ApprovalDelegateDto>> UpdateDelegationAsync(Guid id, UpdateApprovalDelegateDto request, CancellationToken cancellationToken = default);
+    /// <param name="id">ID da delegação</param>
+    /// <param name="request">Solicitação de atualização</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>A delegação atualizada</returns>
+    Task<ApprovalDelegateDto> UpdateDelegationAsync(Guid id, UpdateApprovalDelegateDto request, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Ends a delegation
+    /// Finaliza uma delegação
     /// </summary>
-    /// <param name="id">The delegation ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Success result</returns>
-    Task<BaseResponse<bool>> EndDelegationAsync(Guid id, CancellationToken cancellationToken = default);
+    /// <param name="id">ID da delegação</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Resultado do sucesso</returns>
+    Task<bool> EndDelegationAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Deletes a delegation
+    /// Exclui uma delegação
     /// </summary>
-    /// <param name="id">The delegation ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Success result</returns>
-    Task<BaseResponse<bool>> DeleteDelegationAsync(Guid id, CancellationToken cancellationToken = default);
+    /// <param name="id">ID da delegação</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Resultado do sucesso</returns>
+    Task<bool> DeleteDelegationAsync(Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Validates if a delegation can be created
+    /// Valida se uma delegação pode ser criada
     /// </summary>
-    /// <param name="request">The delegation request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Validation result</returns>
-    Task<BaseResponse<bool>> ValidateDelegationAsync(CreateApprovalDelegateDto request, CancellationToken cancellationToken = default);
+    /// <param name="request">Solicitação da delegação</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Resultado da validação</returns>
+    Task<bool> ValidateDelegationAsync(CreateApprovalDelegateDto request, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets the effective approver for a role in a specific scope
+    /// Obtém o aprovador efetivo para uma função em um escopo específico
     /// </summary>
-    /// <param name="role">The role name</param>
-    /// <param name="scopeType">The scope type</param>
-    /// <param name="scopeId">The scope ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>The effective assignment</returns>
-    Task<BaseResponse<AssignmentDto?>> GetEffectiveApproverAsync(string role, ScopeType scopeType, Guid scopeId, CancellationToken cancellationToken = default);
+    /// <param name="role">Nome da função</param>
+    /// <param name="scopeType">Tipo do escopo</param>
+    /// <param name="scopeId">ID do escopo</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>A atribuição efetiva</returns>
+    Task<AssignmentDto> GetEffectiveApproverAsync(string role, ScopeType scopeType, Guid scopeId, CancellationToken cancellationToken = default);
 }

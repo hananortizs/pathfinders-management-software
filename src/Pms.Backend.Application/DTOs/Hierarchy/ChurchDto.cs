@@ -1,14 +1,16 @@
+using Pms.Backend.Application.DTOs.Common;
+
 namespace Pms.Backend.Application.DTOs.Hierarchy;
 
 /// <summary>
 /// Data Transfer Object for Church entity
 /// </summary>
-public class ChurchDto
+public class ChurchDto : AddressableEntityDtoBase
 {
     /// <summary>
-    /// Church ID
+    /// Entity type for address relationships
     /// </summary>
-    public Guid Id { get; set; }
+    public override string EntityType => "Church";
 
     /// <summary>
     /// Name of the church
@@ -27,25 +29,14 @@ public class ChurchDto
     /// </summary>
     public string? Country { get; set; }
 
-    /// <summary>
-    /// Phone number
-    /// </summary>
-    public string? Phone { get; set; }
-
-    /// <summary>
-    /// Email
-    /// </summary>
-    public string? Email { get; set; }
+    // Phone and Email fields removed - now using centralized Contact entity
 
     /// <summary>
     /// Parent district ID
     /// </summary>
     public Guid DistrictId { get; set; }
 
-    /// <summary>
-    /// Parent district
-    /// </summary>
-    public DistrictDto? District { get; set; }
+    // Parent district removed - avoid circular references and performance issues
 
     /// <summary>
     /// Creation date
@@ -57,10 +48,7 @@ public class ChurchDto
     /// </summary>
     public DateTime UpdatedAtUtc { get; set; }
 
-    /// <summary>
-    /// Associated club (1:1 relationship)
-    /// </summary>
-    public ClubDto? Club { get; set; }
+    // Associated club removed - avoid circular references and performance issues
 }
 
 /// <summary>
@@ -85,15 +73,7 @@ public class CreateChurchDto
     /// </summary>
     public string? Country { get; set; }
 
-    /// <summary>
-    /// Phone number
-    /// </summary>
-    public string? Phone { get; set; }
-
-    /// <summary>
-    /// Email
-    /// </summary>
-    public string? Email { get; set; }
+    // Phone and Email fields removed - now using centralized Contact entity
 
     /// <summary>
     /// Parent district ID
@@ -123,13 +103,5 @@ public class UpdateChurchDto
     /// </summary>
     public string? Country { get; set; }
 
-    /// <summary>
-    /// Phone number
-    /// </summary>
-    public string? Phone { get; set; }
-
-    /// <summary>
-    /// Email
-    /// </summary>
-    public string? Email { get; set; }
+    // Phone and Email fields removed - now using centralized Contact entity
 }

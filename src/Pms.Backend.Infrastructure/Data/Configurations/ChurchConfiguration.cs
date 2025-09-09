@@ -21,12 +21,7 @@ public class ChurchConfiguration : BaseEntityConfiguration<Church>
             .HasMaxLength(200);
 
         // Address fields removed - now using centralized Address entity
-
-        builder.Property(e => e.Phone)
-            .HasMaxLength(20);
-
-        builder.Property(e => e.Email)
-            .HasMaxLength(255);
+        // Phone and Email fields removed - now using centralized Contact entity
 
         // Indexes
         // CEP uniqueness now handled in Address entity

@@ -33,7 +33,8 @@ public class TaskItemConfiguration : BaseEntityConfiguration<TaskItem>
         builder.Property(e => e.Priority)
             .IsRequired()
             .HasConversion<string>()
-            .HasDefaultValue(TaskPriority.Normal);
+            .HasDefaultValue(TaskPriority.Normal)
+            .HasSentinel(TaskPriority.Low);
 
         builder.Property(e => e.DueDate);
 

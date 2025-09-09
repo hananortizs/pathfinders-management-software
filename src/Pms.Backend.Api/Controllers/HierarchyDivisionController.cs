@@ -12,7 +12,7 @@ namespace Pms.Backend.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("[controller]")]
-public class HierarchyController : ControllerBase
+public class HierarchyDivisionController : ControllerBase
 {
     private readonly IHierarchyService _hierarchyService;
 
@@ -20,7 +20,7 @@ public class HierarchyController : ControllerBase
     /// Initializes a new instance of the HierarchyController
     /// </summary>
     /// <param name="hierarchyService">The hierarchy service</param>
-    public HierarchyController(IHierarchyService hierarchyService)
+    public HierarchyDivisionController(IHierarchyService hierarchyService)
     {
         _hierarchyService = hierarchyService;
     }

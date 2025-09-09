@@ -81,7 +81,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         var member1 = await RegisterMemberAsync("João Silva", "joao.silva@test.com", club.Id, new DateTime(2005, 6, 15));
         member1.Should().NotBeNull();
         member1.FullName.Should().Be("João Silva");
-        member1.Email.Should().Be("joao.silva@test.com");
+        member1.PrimaryEmail.Should().Be("joao.silva@test.com");
 
         // 2.2 Registrar segundo membro
         var member2 = await RegisterMemberAsync("Maria Santos", "maria.santos@test.com", club.Id, new DateTime(2006, 3, 20));
@@ -125,14 +125,14 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         // 4.1 Verificar membros do clube
         var clubMembers = await GetClubMembersAsync(club.Id, token1);
         clubMembers.Should().HaveCount(2);
-        clubMembers.Should().Contain(m => m.Email == "joao.silva@test.com");
-        clubMembers.Should().Contain(m => m.Email == "maria.santos@test.com");
+        clubMembers.Should().Contain(m => m.PrimaryEmail == "joao.silva@test.com");
+        clubMembers.Should().Contain(m => m.PrimaryEmail == "maria.santos@test.com");
 
         // 4.2 Verificar perfil do membro
         var memberProfile = await GetMemberProfileAsync(member1.Id, token1);
         memberProfile.Should().NotBeNull();
         memberProfile.FullName.Should().Be("João Silva");
-        memberProfile.Email.Should().Be("joao.silva@test.com");
+        memberProfile.PrimaryEmail.Should().Be("joao.silva@test.com");
 
         // ===== FASE 5: EXPORTAÇÃO DE DADOS =====
 
@@ -154,7 +154,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         var updatedProfile = await UpdateMemberProfileAsync(member1.Id, "João Silva Santos", "11888888888", token1);
         updatedProfile.Should().NotBeNull();
         updatedProfile.FullName.Should().Be("João Silva Santos");
-        updatedProfile.Phone.Should().Be("11888888888");
+        updatedProfile.PrimaryPhone.Should().Be("11888888888");
 
         // 6.2 Desativar membership
         await DeactivateMembershipAsync(membership2.Id, token2);
@@ -167,7 +167,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         // Verificar se apenas um membro ativo permanece
         var activeMembers = await GetClubMembersAsync(club.Id, token1);
         activeMembers.Should().HaveCount(1);
-        activeMembers.First().Email.Should().Be("joao.silva@test.com");
+        activeMembers.First().PrimaryEmail.Should().Be("joao.silva@test.com");
 
         // Verificar se a hierarquia está intacta
         var retrievedClub = await GetClubAsync(club.Id, token1);
@@ -186,7 +186,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
             Description = $"Descrição da {name}"
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/divisions", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy/divisions", createDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<DivisionDto>>();
@@ -204,7 +204,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
             DivisionId = divisionId
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/unions", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy/unions", createDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<UnionDto>>();
@@ -222,7 +222,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
             UnionId = unionId
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/associations", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy/associations", createDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<AssociationDto>>();
@@ -240,7 +240,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
             AssociationId = associationId
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/regions", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy/regions", createDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<RegionDto>>();
@@ -258,7 +258,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
             RegionId = regionId
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/districts", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy/districts", createDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<DistrictDto>>();
@@ -272,13 +272,11 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         {
             Name = name,
             Cep = "01234567",
-            Address = "Rua Teste, 123",
-            City = "São Paulo",
-            State = "SP",
-            Country = "Brasil"
+            Country = "Brasil",
+            DistrictId = districtId
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/churches", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy/churches", createDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<ChurchDto>>();
@@ -296,7 +294,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
             ChurchId = churchId
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/clubs", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy/clubs", createDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<ClubDto>>();
@@ -316,7 +314,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
             AgeMax = ageMax
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/units", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy/units", createDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<UnitDto>>();
@@ -340,7 +338,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
             ConfirmPassword = "Senha123!"
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/members/register", registerDto);
+        var response = await Client.PostAsJsonAsync("/members/register", registerDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MemberDto>>();
@@ -356,7 +354,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
             Password = password
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/members/login", loginDto);
+        var response = await Client.PostAsJsonAsync("/members/login", loginDto);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<AuthResultDto>>();
@@ -378,7 +376,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
             StartDate = DateTime.UtcNow
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/membership", enrollmentDto);
+        var response = await Client.PostAsJsonAsync("/membership", enrollmentDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MembershipDto>>();
@@ -396,7 +394,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
             UnitId = unitId
         };
 
-        var response = await Client.PutAsJsonAsync($"/pms/membership/{membershipId}", assignmentDto);
+        var response = await Client.PutAsJsonAsync($"/membership/{membershipId}", assignmentDto);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MembershipDto>>();
@@ -409,7 +407,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         Client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var response = await Client.GetAsync($"/pms/membership/club/{clubId}/members");
+        var response = await Client.GetAsync($"/membership/club/{clubId}/members");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<List<MemberDto>>>();
@@ -422,7 +420,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         Client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var response = await Client.GetAsync($"/pms/members/{memberId}");
+        var response = await Client.GetAsync($"/members/{memberId}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MemberDto>>();
@@ -435,7 +433,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         Client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var response = await Client.GetAsync($"/pms/reports/export/members/{clubId}");
+        var response = await Client.GetAsync($"/reports/export/members/{clubId}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         return await response.Content.ReadAsStringAsync();
@@ -446,7 +444,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         Client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var response = await Client.GetAsync($"/pms/reports/export/timeline/{memberId}");
+        var response = await Client.GetAsync($"/reports/export/timeline/{memberId}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         return await response.Content.ReadAsStringAsync();
@@ -462,10 +460,10 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         {
             FirstName = nameParts[0],
             LastName = string.Join(" ", nameParts.Skip(1)),
-            Phone = phone
+            // Phone is now handled through Contact entity
         };
 
-        var response = await Client.PutAsJsonAsync($"/pms/members/{memberId}", updateDto);
+        var response = await Client.PutAsJsonAsync($"/members/{memberId}", updateDto);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MemberDto>>();
@@ -478,7 +476,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         Client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var response = await Client.DeleteAsync($"/pms/membership/{membershipId}");
+        var response = await Client.DeleteAsync($"/membership/{membershipId}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
@@ -487,7 +485,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         Client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var response = await Client.GetAsync($"/pms/membership/{membershipId}");
+        var response = await Client.GetAsync($"/membership/{membershipId}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MembershipDto>>();
@@ -500,7 +498,7 @@ public class Mvp0CompleteFlowAcceptanceTests : BaseIntegrationTest
         Client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var response = await Client.GetAsync($"/pms/hierarchy/clubs/{clubId}");
+        var response = await Client.GetAsync($"/hierarchy/clubs/{clubId}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<ClubDto>>();

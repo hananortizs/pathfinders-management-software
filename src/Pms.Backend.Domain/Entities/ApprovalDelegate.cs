@@ -57,6 +57,16 @@ public class ApprovalDelegate : BaseEntity
     public string? Reason { get; set; }
 
     /// <summary>
+    /// Additional notes for the delegation
+    /// </summary>
+    public string? Notes { get; set; }
+
+    /// <summary>
+    /// When the delegation was ended
+    /// </summary>
+    public DateTime? EndedAtUtc { get; set; }
+
+    /// <summary>
     /// Indicates if the delegation is currently active
     /// </summary>
     public bool IsActive => DateTime.UtcNow >= StartDate && DateTime.UtcNow <= EndDate;

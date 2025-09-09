@@ -1,4 +1,5 @@
 using Pms.Backend.Domain.Entities;
+using Pms.Backend.Domain.Helpers;
 
 namespace Pms.Backend.Domain.Entities;
 
@@ -74,6 +75,16 @@ public class Address : BaseEntity
     public string EntityType { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets the CEP formatted for display (with dash)
+    /// </summary>
+    public string? CepFormatted => CepHelper.FormatCepForDisplay(Cep);
+
+    /// <summary>
+    /// Gets the CEP normalized for database (digits only)
+    /// </summary>
+    public string? CepNormalized => CepHelper.NormalizeCep(Cep);
+
+    /// <summary>
     /// Gets the full formatted address
     /// </summary>
     public string FullAddress
@@ -100,8 +111,8 @@ public class Address : BaseEntity
             if (!string.IsNullOrEmpty(State))
                 parts.Add(State);
                 
-            if (!string.IsNullOrEmpty(Cep))
-                parts.Add($"CEP: {Cep}");
+            if (!string.IsNullOrEmpty(CepFormatted))
+                parts.Add($"CEP: {CepFormatted}");
                 
             if (!string.IsNullOrEmpty(Country) && Country != "Brasil")
                 parts.Add(Country);

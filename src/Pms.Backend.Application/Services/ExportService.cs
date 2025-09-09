@@ -53,9 +53,9 @@ public class ExportService : IExportService
             return new MemberExportDto
             {
                 Id = m.Id,
-                Name = m.FullName,
-                Email = m.Email,
-                Phone = m.Phone,
+                Name = m.DisplayName,
+                Email = m.PrimaryEmail ?? "",
+                Phone = m.PrimaryPhone ?? "",
                 BirthDate = m.DateOfBirth,
                 Gender = m.Gender.ToString(),
                 Status = m.Status.ToString(),
@@ -98,8 +98,8 @@ public class ExportService : IExportService
         var exportData = timelineEntries.Select(te => new TimelineExportDto
         {
             Id = te.Id,
-            MemberName = te.Member.FullName,
-            MemberEmail = te.Member.Email,
+            MemberName = te.Member.DisplayName,
+            MemberEmail = te.Member.PrimaryEmail ?? "",
             Type = te.Type.ToString(),
             Title = te.Title,
             Description = te.Description,
@@ -150,8 +150,8 @@ public class ExportService : IExportService
             return new ParticipationExportDto
             {
                 Id = mep.Id,
-                MemberName = mep.Member.FullName,
-                MemberEmail = mep.Member.Email,
+                MemberName = mep.Member.DisplayName,
+                MemberEmail = mep.Member.PrimaryEmail ?? "",
                 MemberBirthDate = mep.Member.DateOfBirth,
                 MemberGender = mep.Member.Gender.ToString(),
                 EventName = mep.Event.Name,

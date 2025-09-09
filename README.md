@@ -1,248 +1,142 @@
-# Pathfinder Management Software - Backend API
+# Pathfinder Management System (PMS)
 
-Sistema de gerenciamento para clubes de desbravadores, desenvolvido em ASP.NET Core .NET 8 com PostgreSQL e Docker.
+Sistema de gerenciamento para clubes de desbravadores, desenvolvido com ASP.NET Core e PostgreSQL.
 
-[![.NET](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/download)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-blue.svg)](https://docs.docker.com/compose/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
-## 🚀 Execução Rápida
+## 🚀 Início Rápido
 
 ### Pré-requisitos
-- .NET 8 SDK
+
+- .NET 8.0 SDK
 - Docker Desktop
-- Git
+- PostgreSQL (via Docker)
 
-### 1. Clone o repositório
+### Executando o Projeto
+
+1. **Clone o repositório**
+
 ```bash
-git clone git@github.com:hananortizs/pathfinders-management-software.git
-cd pathfinders-management-software
+git clone <repository-url>
+cd PathfinderManagementProject
 ```
 
-### 2. Execute com Docker Compose
-```bash
-# Iniciar PostgreSQL
-docker-compose up postgres -d
+2. **Execute o banco de dados**
 
-# Executar a API
-dotnet run --project src/Pms.Backend.Api
+```bash
+docker-compose up -d
 ```
 
-### 3. Acesse a API
+3. **Execute a aplicação**
+
+```bash
+cd src/Pms.Backend.Api
+dotnet run
+```
+
+4. **Acesse a API**
+
+- **API**: http://localhost:5000
 - **Swagger UI**: http://localhost:5000/swagger
-- **API Base URL**: http://localhost:5000/pms
-- **Health Check**: http://localhost:5000/health
-
-## 🛠️ Desenvolvimento Local
-
-### 1. Configure o banco de dados
-```bash
-# Inicie apenas o PostgreSQL
-docker-compose up postgres -d
-
-# Verificar se está rodando
-docker ps
-```
-
-### 2. Restaure as dependências
-```bash
-dotnet restore
-```
-
-### 3. Execute a aplicação
-```bash
-# Desenvolvimento (porta 5000)
-dotnet run --project src/Pms.Backend.Api
-
-# Ou usando Docker (porta 5001)
-docker-compose up
-```
-
-### 4. Execute os testes
-```bash
-# Todos os testes
-dotnet test
-
-# Testes de aceite
-dotnet test tests/Pms.Backend.Tests
-```
-
-### 5. Configuração de Portas
-- **Desenvolvimento**: http://localhost:5000
-- **Docker**: http://localhost:5001
-- **PostgreSQL**: localhost:5432
-
-## 📁 Estrutura do Projeto
-
-```
-src/
-├── Pms.Backend.Domain/          # Entidades de domínio
-├── Pms.Backend.Application/     # Casos de uso e DTOs
-├── Pms.Backend.Infrastructure/  # EF Core, repositórios, seeds
-└── Pms.Backend.Api/            # Controllers, autenticação, Swagger
-
-tests/
-└── Pms.Backend.Tests/          # Testes unitários e de integração
-```
-
-## 🏗️ Arquitetura
-
-- **Clean Architecture** com separação clara de responsabilidades
-- **Domain-Driven Design** com entidades ricas
-- **CQRS** com MediatR para casos de uso
-- **Repository Pattern** para acesso a dados
-- **Unit of Work** para transações
-
-## 🔧 Configuração
-
-### Variáveis de Ambiente
-- `ASPNETCORE_ENVIRONMENT`: Development/Production
-- `ConnectionStrings__DefaultConnection`: String de conexão PostgreSQL
-- `Jwt__SecretKey`: Chave secreta para JWT
-- `Jwt__ExpirationMinutes`: Tempo de expiração do token
-
-### Configurações do Banco
-- **Host**: localhost
-- **Port**: 5432
-- **Database**: pms_backend_dev (dev) / pms_backend (prod)
-- **Username**: pms_user
-- **Password**: pms_password
-
-## 📊 MVP-0 - Funcionalidades Implementadas
-
-### ✅ Hierarquia Organizacional
-- **Divisão** → **União** → **Associação** → **Região** → **Distrito** → **Clube** → **Unidade** → **Membro**
-- Códigos únicos e CodePath automático
-- Relacionamento Clube ↔ Igreja (1:1)
-- Controllers organizados por entidade
-
-### ✅ Membros e Autenticação
-- Cadastro de membros (≥10 anos)
-- Sistema de convite/ativação
-- JWT com RBAC + escopo organizacional
-- Política de senhas e lockout
-- Timeline de atividades do membro
-
-### ✅ Clubes e Unidades
-- Unidades por gênero e faixa etária
-- Regra 1º/06 para idade de referência
-- Alocação automática de membros
-- Capacidade de unidades
-
-### ✅ Cargos e Eventos
-- Sistema de cargos sem acúmulo
-- Delegado de aprovação
-- Eventos oficiais com elegibilidade
-- Participação em eventos
-
-### ✅ Exportações CSV
-- **Membros**: Dados completos com filiação atual
-- **Timeline**: Histórico de atividades
-- **Participações**: Eventos e status
-- Formato UTF-8 com separador ";"
-
-### ✅ Testes de Aceite
-- Testes de integração completos
-- Validação de fluxos end-to-end
-- Cobertura de cenários críticos
-
-## 🧪 Testes
-
-### Executar todos os testes
-```bash
-dotnet test
-```
-
-### Executar com cobertura
-```bash
-dotnet test --collect:"XPlat Code Coverage"
-```
-
-### Executar testes específicos
-```bash
-dotnet test --filter "Category=Unit"
-dotnet test --filter "Category=Integration"
-```
-
-## 📝 Logs
-
-Os logs são gerados em:
-- **Console**: Durante desenvolvimento
-- **Arquivo**: `logs/pms-backend-YYYY-MM-DD.log`
-- **Nível**: Information (Development: Debug)
-
-## 🔒 Segurança
-
-- **JWT** com claims de papel e escopo
-- **Rate Limiting** global (100 req/min)
-- **CORS** configurado para frontend
-- **Validação** com FluentValidation
-- **Auditoria** com Timeline
-
-## 🚀 Deploy
-
-### Docker
-```bash
-# Build da imagem
-docker build -t pms-backend .
-
-# Executar container
-docker run -p 5001:80 pms-backend
-
-# Ou usar docker-compose
-docker-compose up
-```
-
-### Produção
-1. Configure variáveis de ambiente
-2. Execute migrations: `dotnet ef database update`
-3. Configure reverse proxy (nginx)
-4. Configure SSL/TLS
-5. Configure connection string para produção
 
 ## 📚 Documentação
 
-- **Swagger**: http://localhost:5000/swagger
-- **OpenAPI**: http://localhost:5000/swagger/v1/swagger.json
-- **Health Check**: http://localhost:5000/health
+### 📖 Guias do Usuário
+
+- [README Completo](docs/user-guides/README.md) - Documentação completa do projeto
+- [Progresso do Desenvolvimento](docs/user-guides/PROGRESS.md) - Status atual do desenvolvimento
+- [Critérios de Aceitação](docs/user-guides/ACCEPTANCE.md) - Requisitos e critérios de aceitação
+
+### 🔧 Documentação Técnica
+
+- [Padronização de CEP](docs/technical/CEP_STANDARDIZATION.md) - Padrões para CEPs brasileiros
+- [Arquitetura do Sistema](docs/architecture/) - Documentação arquitetural (em desenvolvimento)
+
+### 🌐 Documentação da API
+
+- [Integração Frontend](docs/api/FRONTEND_INTEGRATION_EXAMPLE.md) - Guia para integração com frontend
+- [Swagger UI](http://localhost:5000/swagger) - Documentação interativa da API
+
+## 🏗️ Arquitetura
+
+### Estrutura do Projeto
+
+```
+src/
+├── Pms.Backend.Api/          # Camada de API (Controllers, Middleware)
+├── Pms.Backend.Application/  # Camada de Aplicação (Services, DTOs, Interfaces)
+├── Pms.Backend.Domain/       # Camada de Domínio (Entities, Enums, Helpers)
+└── Pms.Backend.Infrastructure/ # Camada de Infraestrutura (Data, Repositories)
+```
+
+### Tecnologias Utilizadas
+
+- **Backend**: ASP.NET Core 8.0
+- **Banco de Dados**: PostgreSQL
+- **ORM**: Entity Framework Core
+- **Mapeamento**: AutoMapper
+- **Validação**: Data Annotations + Custom Validators
+- **Containerização**: Docker
+
+## 🚀 Funcionalidades
+
+### ✅ Implementadas
+
+- Sistema de hierarquia (Região, Associação, Distrito, União, Divisão, Igreja, Clube, Unidade)
+- Gerenciamento de membros
+- Sistema de endereços centralizado
+- Autenticação e autorização
+- Validação robusta de dados
+- Padronização de CEPs brasileiros
+
+### 🔄 Em Desenvolvimento
+
+- Sistema de investiduras
+- Relatórios e exportação
+- Sistema de tarefas e eventos
+
+## 🛠️ Desenvolvimento
+
+### Comandos Úteis
+
+```bash
+# Executar migrações
+dotnet ef database update
+
+# Criar nova migração
+dotnet ef migrations add NomeDaMigracao
+
+# Executar testes
+dotnet test
+
+# Build do projeto
+dotnet build
+```
+
+### Padrões de Código
+
+- **Nomenclatura**: PascalCase para classes, camelCase para variáveis
+- **Documentação**: XML Documentation para métodos públicos
+- **Validação**: Data Annotations + Custom Validators
+- **Mapeamento**: AutoMapper profiles
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ## 🤝 Contribuição
 
 1. Fork o projeto
-2. Crie uma branch: `git checkout -b feature/nova-funcionalidade`
-3. Commit: `git commit -m 'Add: nova funcionalidade'`
-4. Push: `git push origin feature/nova-funcionalidade`
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
 5. Abra um Pull Request
 
-## 📄 Licença
+## 📞 Suporte
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para detalhes.
+Para suporte, entre em contato através de:
 
-## 🆘 Suporte
-
-Para suporte, abra uma issue no repositório ou entre em contato com a equipe de desenvolvimento.
-
-## 🎯 Status do Projeto
-
-- **MVP-0**: ✅ **Concluído**
-- **Banco de Dados**: ✅ PostgreSQL configurado
-- **Docker**: ✅ Containerização completa
-- **Testes**: ✅ Testes de aceite implementados
-- **API**: ✅ Endpoints funcionais
-- **Documentação**: ✅ Swagger configurado
-
-## 📋 Próximos Passos
-
-- [ ] Frontend React/Next.js
-- [ ] Autenticação JWT completa
-- [ ] Dashboard administrativo
-- [ ] Relatórios avançados
-- [ ] Notificações por email
-- [ ] App mobile
+- **Email**: [seu-email@exemplo.com]
+- **Issues**: [GitHub Issues](https://github.com/seu-usuario/pathfinder-management/issues)
 
 ---
 
-**Status**: ✅ MVP-0 Concluído
-**Última atualização**: 2025-01-02
-**Versão**: 1.0.0
+**Desenvolvido com ❤️ para a comunidade de desbravadores**

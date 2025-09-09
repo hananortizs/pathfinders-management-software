@@ -220,25 +220,9 @@ public class CompleteMemberInfoDto
     /// </summary>
     public string? Rg { get; set; }
 
-    /// <summary>
-    /// Member's address
-    /// </summary>
-    // Address field removed - now using centralized Address entity
+    // Address fields removed - now using centralized Address entity
 
-    /// <summary>
-    /// Member's city
-    /// </summary>
-    public string? City { get; set; }
-
-    /// <summary>
-    /// Member's state
-    /// </summary>
-    public string? State { get; set; }
-
-    /// <summary>
-    /// Member's ZIP code
-    /// </summary>
-    public string? ZipCode { get; set; }
+    // Address fields removed - now using centralized Address entity
 
     /// <summary>
     /// Member's emergency contact name

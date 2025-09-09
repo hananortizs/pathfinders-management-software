@@ -1,14 +1,16 @@
+using Pms.Backend.Application.DTOs.Common;
+
 namespace Pms.Backend.Application.DTOs.Hierarchy;
 
 /// <summary>
 /// Data Transfer Object for Association entity
 /// </summary>
-public class AssociationDto
+public class AssociationDto : AddressableEntityDtoBase
 {
     /// <summary>
-    /// Association ID
+    /// Entity type for address relationships
     /// </summary>
-    public Guid Id { get; set; }
+    public override string EntityType => "Association";
 
     /// <summary>
     /// Unique code for the association (≤5 chars, UPPERCASE A-Z0-9)
@@ -30,10 +32,7 @@ public class AssociationDto
     /// </summary>
     public Guid UnionId { get; set; }
 
-    /// <summary>
-    /// Parent union
-    /// </summary>
-    public UnionDto? Union { get; set; }
+    // Parent union removed - avoid circular references and performance issues
 
     /// <summary>
     /// Code path (Division.Code.Union.Code.Association.Code)

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Pms.Backend.Application.DTOs;
 using Pms.Backend.Application.DTOs.Address;
 using Pms.Backend.Application.Interfaces;
+using Pms.Backend.Domain.Enums;
 
 namespace Pms.Backend.Api.Controllers;
 
@@ -23,6 +24,53 @@ public class AddressController : ControllerBase
     {
         _addressService = addressService;
     }
+
+    #region Entity Type Operations
+
+    /// <summary>
+    /// Gets all valid entity types that can have addresses
+    /// </summary>
+    /// <returns>List of valid entity types</returns>
+    [HttpGet("entity-types")]
+    [ProducesResponseType(typeof(BaseResponse<IEnumerable<object>>), StatusCodes.Status200OK)]
+    public IActionResult GetValidEntityTypes()
+    {
+        var entityTypes = EntityTypeHelper.ValidEntityTypes
+            .Select(et => new
+            {
+                Value = et,
+                DisplayName = EntityTypeHelper.GetDisplayName(et),
+                Description = GetEntityTypeDescription(et)
+            })
+            .ToList();
+
+        var response = BaseResponse<IEnumerable<object>>.SuccessResult(entityTypes);
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Gets entity type description
+    /// </summary>
+    /// <param name="entityType">Entity type name</param>
+    /// <returns>Description of the entity type</returns>
+    private static string GetEntityTypeDescription(string entityType)
+    {
+        return entityType switch
+        {
+            "Member" => "Membro do clube de desbravadores",
+            "Church" => "Igreja local",
+            "Club" => "Clube de desbravadores",
+            "Unit" => "Unidade dentro de um clube",
+            "District" => "Distrito da igreja",
+            "Association" => "Associação da igreja",
+            "Union" => "União da igreja",
+            "Division" => "Divisão da igreja",
+            "Region" => "Região da igreja",
+            _ => "Tipo de entidade do sistema"
+        };
+    }
+
+    #endregion
 
     #region Address Operations
 

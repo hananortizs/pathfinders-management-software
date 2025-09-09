@@ -1,3 +1,7 @@
+using System.Text.Json.Serialization;
+using Pms.Backend.Domain.Enums;
+using Pms.Backend.Domain.Helpers;
+
 namespace Pms.Backend.Domain.Entities;
 
 /// <summary>
@@ -12,24 +16,29 @@ public class Member : BaseEntity
     public string FirstName { get; set; } = string.Empty;
 
     /// <summary>
+    /// Middle names of the member (optional) - can contain multiple middle names
+    /// </summary>
+    public string? MiddleNames { get; set; }
+
+    /// <summary>
     /// Last name of the member
     /// </summary>
     public string LastName { get; set; } = string.Empty;
 
     /// <summary>
+    /// Social name of the member (preferred name for identification)
+    /// </summary>
+    public string? SocialName { get; set; }
+
+    /// <summary>
     /// Full name of the member (computed property)
     /// </summary>
-    public string FullName => $"{FirstName} {LastName}".Trim();
+    public string FullName => NameHelper.CombineFullName(FirstName, MiddleNames, LastName);
 
     /// <summary>
-    /// Email address of the member (must be unique globally)
+    /// Display name of the member (prefers social name if available, otherwise full name)
     /// </summary>
-    public string Email { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Phone number of the member
-    /// </summary>
-    public string? Phone { get; set; }
+    public string DisplayName => !string.IsNullOrWhiteSpace(SocialName) ? SocialName : FullName;
 
     /// <summary>
     /// Gender of the member
@@ -82,6 +91,51 @@ public class Member : BaseEntity
     /// Member's medications
     /// </summary>
     public string? Medications { get; set; }
+
+    /// <summary>
+    /// Gets the emergency contact phone formatted for display
+    /// </summary>
+    public string? EmergencyContactPhoneFormatted => PhoneHelper.FormatPhoneForDisplay(EmergencyContactPhone);
+
+    /// <summary>
+    /// Gets the CPF formatted for display
+    /// </summary>
+    public string? CpfFormatted => CpfHelper.FormatCpfForDisplay(Cpf);
+
+    /// <summary>
+    /// Gets the RG formatted for display
+    /// </summary>
+    public string? RgFormatted => RgHelper.FormatRgForDisplay(Rg);
+
+    /// <summary>
+    /// Gets the first name normalized for display
+    /// </summary>
+    public string? FirstNameFormatted => NameHelper.NormalizeName(FirstName);
+
+    /// <summary>
+    /// Gets the middle names normalized for display
+    /// </summary>
+    public string? MiddleNamesFormatted => NameHelper.NormalizeName(MiddleNames);
+
+    /// <summary>
+    /// Gets the last name normalized for display
+    /// </summary>
+    public string? LastNameFormatted => NameHelper.NormalizeName(LastName);
+
+    /// <summary>
+    /// Gets the social name normalized for display
+    /// </summary>
+    public string? SocialNameFormatted => NameHelper.NormalizeName(SocialName);
+
+    /// <summary>
+    /// Gets the full name normalized for display
+    /// </summary>
+    public string? FullNameFormatted => NameHelper.NormalizeName(FullName);
+
+    /// <summary>
+    /// Gets the display name normalized for display
+    /// </summary>
+    public string? DisplayNameFormatted => NameHelper.NormalizeName(DisplayName);
 
     /// <summary>
     /// Member's baptism date
@@ -194,6 +248,78 @@ public class Member : BaseEntity
     public ICollection<InvestitureWitness> InvestitureWitnesses { get; set; } = new List<InvestitureWitness>();
 
     /// <summary>
+    /// Navigation property to contacts
+    /// </summary>
+    public ICollection<Contact> Contacts { get; set; } = new List<Contact>();
+
+    /// <summary>
+    /// Navigation property to baptism records
+    /// </summary>
+    public ICollection<BaptismRecord> BaptismRecords { get; set; } = new List<BaptismRecord>();
+
+    /// <summary>
+    /// Navigation property to discipline records
+    /// </summary>
+    public ICollection<DisciplineRecord> DisciplineRecords { get; set; } = new List<DisciplineRecord>();
+
+    /// <summary>
+    /// Medical record for this member (1:1 relationship)
+    /// </summary>
+    public virtual MedicalRecord? MedicalRecord { get; set; }
+
+    // Propriedades computadas para batismo e disciplina
+
+    /// <summary>
+    /// Verifica se o membro foi batizado (possui registros de batismo)
+    /// </summary>
+    [JsonIgnore]
+    public bool BaptizedComputed =>
+        BaptismRecords.Any(b => !b.IsDeleted);
+
+    /// <summary>
+    /// Data do último batismo
+    /// </summary>
+    [JsonIgnore]
+    public DateTime? LastBaptismAtComputed =>
+        BaptismRecords.Where(b => !b.IsDeleted)
+                      .OrderByDescending(b => b.Date)
+                      .FirstOrDefault()?.Date;
+
+    /// <summary>
+    /// Data da última remoção da igreja
+    /// </summary>
+    [JsonIgnore]
+    public DateTime? LastRemovalAtComputed =>
+        DisciplineRecords.Where(d => !d.IsDeleted && d.Type == DisciplineType.Removal)
+                         .OrderByDescending(d => d.StartDate)
+                         .FirstOrDefault()?.StartDate;
+
+    /// <summary>
+    /// Verifica se o membro possui censura ativa em uma data específica
+    /// </summary>
+    /// <param name="date">Data para verificação</param>
+    /// <returns>True se possui censura ativa, false caso contrário</returns>
+    public bool HasActiveCensureComputed(DateTime date) =>
+        DisciplineRecords.Any(d => !d.IsDeleted &&
+                                  d.Type == DisciplineType.Censure &&
+                                  d.IsActiveAt(date));
+
+    /// <summary>
+    /// Verifica se o membro possui censura ativa atualmente
+    /// </summary>
+    [JsonIgnore]
+    public bool HasCurrentActiveCensure => HasActiveCensureComputed(DateTime.UtcNow);
+
+    /// <summary>
+    /// Verifica se o batismo do membro é válido (batizado e sem remoção posterior)
+    /// </summary>
+    [JsonIgnore]
+    public bool BaptismValidComputed =>
+        BaptizedComputed &&
+        (LastRemovalAtComputed == null ||
+         (LastBaptismAtComputed.HasValue && LastBaptismAtComputed > LastRemovalAtComputed));
+
+    /// <summary>
     /// Gets the current age of the member
     /// </summary>
     public int CurrentAge => DateTime.UtcNow.Year - DateOfBirth.Year - (DateTime.UtcNow.DayOfYear < DateOfBirth.DayOfYear ? 1 : 0);
@@ -214,6 +340,52 @@ public class Member : BaseEntity
     /// Checks if the member is eligible to be registered (≥10 years old)
     /// </summary>
     public bool IsEligibleForRegistration => CurrentAge >= 10;
+
+    /// <summary>
+    /// Gets the primary email address from contacts
+    /// </summary>
+    [JsonIgnore]
+    public string? PrimaryEmail => Contacts
+        .Where(c => !c.IsDeleted && c.Type == ContactType.Email && c.IsPrimary)
+        .OrderBy(c => c.CreatedAtUtc)
+        .FirstOrDefault()?.Value;
+
+    /// <summary>
+    /// Gets the primary phone number from contacts
+    /// </summary>
+    [JsonIgnore]
+    public string? PrimaryPhone => Contacts
+        .Where(c => !c.IsDeleted && (c.Type == ContactType.Mobile || c.Type == ContactType.Landline) && c.IsPrimary)
+        .OrderBy(c => c.CreatedAtUtc)
+        .FirstOrDefault()?.Value;
+
+    /// <summary>
+    /// Gets all email addresses from contacts
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<string> EmailAddresses => Contacts
+        .Where(c => !c.IsDeleted && c.Type == ContactType.Email)
+        .Select(c => c.Value);
+
+    /// <summary>
+    /// Gets all phone numbers from contacts
+    /// </summary>
+    [JsonIgnore]
+    public IEnumerable<string> PhoneNumbers => Contacts
+        .Where(c => !c.IsDeleted && (c.Type == ContactType.Mobile || c.Type == ContactType.Landline))
+        .Select(c => c.Value);
+
+    /// <summary>
+    /// Gets the primary email formatted for display
+    /// </summary>
+    [JsonIgnore]
+    public string? PrimaryEmailFormatted => EmailHelper.NormalizeEmail(PrimaryEmail);
+
+    /// <summary>
+    /// Gets the primary phone formatted for display
+    /// </summary>
+    [JsonIgnore]
+    public string? PrimaryPhoneFormatted => PhoneHelper.FormatPhoneForDisplay(PrimaryPhone);
 }
 
 /// <summary>

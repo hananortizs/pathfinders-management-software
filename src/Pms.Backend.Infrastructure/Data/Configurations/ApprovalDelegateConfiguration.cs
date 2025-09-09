@@ -36,6 +36,11 @@ public class ApprovalDelegateConfiguration : BaseEntityConfiguration<ApprovalDel
         builder.Property(e => e.Reason)
             .HasMaxLength(500);
 
+        builder.Property(e => e.Notes)
+            .HasMaxLength(1000);
+
+        builder.Property(e => e.EndedAtUtc);
+
         // Indexes
         // Index for scope queries
         builder.HasIndex(e => new { e.ScopeType, e.ScopeId });

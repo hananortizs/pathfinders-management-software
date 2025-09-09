@@ -24,7 +24,6 @@ public class HierarchyMappingProfile : Profile
 
         // Union mappings
         CreateMap<Union, UnionDto>()
-            .ForMember(dest => dest.Division, opt => opt.MapFrom(src => src.Division))
             .ForMember(dest => dest.Associations, opt => opt.MapFrom(src => src.Associations));
         CreateMap<Union, UnionSummaryDto>();
         CreateMap<CreateUnionDto, Union>();
@@ -32,7 +31,6 @@ public class HierarchyMappingProfile : Profile
 
         // Association mappings
         CreateMap<Association, AssociationDto>()
-            .ForMember(dest => dest.Union, opt => opt.MapFrom(src => src.Union))
             .ForMember(dest => dest.Regions, opt => opt.MapFrom(src => src.Regions));
         CreateMap<Association, AssociationSummaryDto>();
         CreateMap<CreateAssociationDto, Association>();
@@ -45,7 +43,7 @@ public class HierarchyMappingProfile : Profile
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
             .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
             .ForMember(dest => dest.AssociationId, opt => opt.MapFrom(src => src.AssociationId))
-            .ForMember(dest => dest.Association, opt => opt.MapFrom(src => (AssociationDto?)null)) // Don't load parent Association
+            // Parent Association removed - avoid circular references
             .ForMember(dest => dest.CodePath, opt => opt.MapFrom(src => src.CodePath))
             .ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(src => src.CreatedAtUtc))
             .ForMember(dest => dest.UpdatedAtUtc, opt => opt.MapFrom(src => src.UpdatedAtUtc))
@@ -61,7 +59,7 @@ public class HierarchyMappingProfile : Profile
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
             .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.Description))
             .ForMember(dest => dest.RegionId, opt => opt.MapFrom(src => src.RegionId))
-            .ForMember(dest => dest.Region, opt => opt.MapFrom(src => (RegionDto?)null)) // Don't load parent Region
+            // Parent Region removed - avoid circular references
             .ForMember(dest => dest.CodePath, opt => opt.MapFrom(src => src.CodePath))
             .ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(src => src.CreatedAtUtc))
             .ForMember(dest => dest.UpdatedAtUtc, opt => opt.MapFrom(src => src.UpdatedAtUtc))
@@ -77,8 +75,6 @@ public class HierarchyMappingProfile : Profile
 
         // Club mappings
         CreateMap<Club, ClubDto>()
-            .ForMember(dest => dest.District, opt => opt.MapFrom(src => src.District))
-            .ForMember(dest => dest.Church, opt => opt.MapFrom(src => src.Church))
             .ForMember(dest => dest.Units, opt => opt.MapFrom(src => src.Units));
         CreateMap<Club, ClubSummaryDto>();
         CreateMap<CreateClubDto, Club>();
@@ -86,7 +82,6 @@ public class HierarchyMappingProfile : Profile
 
         // Unit mappings
         CreateMap<Unit, UnitDto>()
-            .ForMember(dest => dest.Club, opt => opt.MapFrom(src => src.Club))
             .ForMember(dest => dest.CurrentMemberCount, opt => opt.MapFrom(src => src.CurrentMemberCount))
             .ForMember(dest => dest.HasAvailableCapacity, opt => opt.MapFrom(src => src.HasAvailableCapacity));
         CreateMap<Unit, UnitSummaryDto>();

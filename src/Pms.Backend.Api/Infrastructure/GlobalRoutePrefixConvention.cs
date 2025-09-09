@@ -42,6 +42,11 @@ public class GlobalRoutePrefixConvention : IApplicationModelConvention
                         selector.AttributeRouteModel
                     );
                 }
+                else
+                {
+                    // Create a new route model with the prefix
+                    selector.AttributeRouteModel = new AttributeRouteModel(new RouteAttribute($"{_routePrefix}/[controller]"));
+                }
             }
         }
     }
@@ -55,6 +60,8 @@ public class GlobalRoutePrefixConvention : IApplicationModelConvention
     {
         return controller.Selectors.Any(selector => 
             selector.AttributeRouteModel?.Template?.StartsWith("pms") == true ||
-            selector.AttributeRouteModel?.Template?.StartsWith("api") == true);
+            selector.AttributeRouteModel?.Template?.StartsWith("api") == true ||
+            selector.AttributeRouteModel?.Template?.StartsWith("pms-loc") == true ||
+            selector.AttributeRouteModel?.Template?.StartsWith("pms-prod") == true);
     }
 }

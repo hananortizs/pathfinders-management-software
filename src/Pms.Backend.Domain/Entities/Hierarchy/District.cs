@@ -30,6 +30,21 @@ public class District : HierarchyEntityBase
     public ICollection<Church> Churches { get; set; } = new List<Church>();
 
     /// <summary>
+    /// Navigation property to contacts
+    /// </summary>
+    public ICollection<Contact> Contacts { get; set; } = new List<Contact>();
+
+    /// <summary>
+    /// Foreign key to the pastor (optional)
+    /// </summary>
+    public Guid? PastorId { get; set; }
+
+    /// <summary>
+    /// Navigation property to pastor
+    /// </summary>
+    public Pastor? Pastor { get; set; }
+
+    /// <summary>
     /// Gets the code path for this district (Division.Code.Union.Code.Association.Code.Region.Code.District.Code)
     /// </summary>
     public override string CodePath => $"{Region.CodePath.Trim()}.{Code.Trim()}";

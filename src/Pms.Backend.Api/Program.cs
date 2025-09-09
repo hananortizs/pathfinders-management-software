@@ -8,6 +8,8 @@ using Pms.Backend.Api.Filters;
 using Serilog;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 namespace Pms.Backend.Api;
 
@@ -33,6 +35,10 @@ builder.Host.UseSerilog();
 
 // Configure API settings
 builder.Services.Configure<ApiSettings>(builder.Configuration.GetSection("ApiSettings"));
+
+// Add FluentValidation
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
 
 // Add services to the container
 builder.Services.AddControllers(options =>
@@ -73,13 +79,26 @@ builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IMemberService, Pm
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IMembershipService, Pms.Backend.Application.Services.Membership.MembershipService>();
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IAssignmentService, Pms.Backend.Application.Services.Assignments.AssignmentService>();
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IApprovalDelegateService, Pms.Backend.Application.Services.Assignments.ApprovalDelegateService>();
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IRoleCatalogService, Pms.Backend.Application.Services.Assignments.RoleCatalogService>();
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IExportService, Pms.Backend.Application.Services.ExportService>();
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IAddressService, Pms.Backend.Application.Services.Address.AddressService>();
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IAddressValidationService, Pms.Backend.Infrastructure.Services.AddressValidationService>();
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IContactValidationService, Pms.Backend.Infrastructure.Services.ContactValidationService>();
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IContactService, Pms.Backend.Infrastructure.Services.ContactService>();
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IAllocationService, Pms.Backend.Application.Services.Membership.AllocationService>();
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.ILoggingService, Pms.Backend.Infrastructure.Services.LoggingService>();
+
+// Registrar validadores FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<Pms.Backend.Application.Validators.ApprovalDelegate.CreateApprovalDelegateDtoValidator>();
 
 // Add AutoMapper
 builder.Services.AddAutoMapper(typeof(Pms.Backend.Application.Mappings.HierarchyMappingProfile));
 builder.Services.AddAutoMapper(typeof(Pms.Backend.Application.Mappings.MemberMappingProfile));
 builder.Services.AddAutoMapper(typeof(Pms.Backend.Application.Mappings.MembershipMappingProfile));
+builder.Services.AddAutoMapper(typeof(Pms.Backend.Application.Mappings.AddressMappingProfile));
 builder.Services.AddAutoMapper(typeof(Pms.Backend.Application.Mappings.AssignmentMappingProfile));
+builder.Services.AddAutoMapper(typeof(Pms.Backend.Application.Mappings.ContactMappingProfile));
+builder.Services.AddAutoMapper(typeof(Pms.Backend.Application.Mappings.AllocationMappingProfile));
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -110,6 +129,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Add exception handling middleware (should be early in pipeline)
+app.UseExceptionHandling();
 
 app.UseCors("DefaultPolicy");
 

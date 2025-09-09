@@ -106,33 +106,3 @@ public class UpdateAssignmentDto
     public bool IsActive { get; set; }
 }
 
-/// <summary>
-/// DTO for RoleCatalog entity
-/// </summary>
-public class RoleCatalogDto : BaseEntity
-{
-    /// <summary>
-    /// Role name
-    /// </summary>
-    public string Name { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Role description
-    /// </summary>
-    public string Description { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Hierarchy level where this role can be assigned
-    /// </summary>
-    public string HierarchyLevel { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Indicates if this role requires spiritual requirements (Batismo + Lenço)
-    /// </summary>
-    public bool RequiresSpiritualRequirements { get; set; }
-
-    /// <summary>
-    /// Indicates if this role is active
-    /// </summary>
-    public bool IsActive { get; set; }
-}

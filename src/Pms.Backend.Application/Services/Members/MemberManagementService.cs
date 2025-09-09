@@ -3,6 +3,7 @@ using Pms.Backend.Application.DTOs;
 using Pms.Backend.Application.DTOs.Members;
 using Pms.Backend.Application.Interfaces;
 using Pms.Backend.Domain.Entities;
+using Pms.Backend.Domain.Enums;
 
 namespace Pms.Backend.Application.Services.Members;
 
@@ -246,8 +247,12 @@ public partial class MemberService : IMemberService
                 pageSize,
                 m => m.FirstName.ToLower().Contains(searchTermLower) ||
                      m.LastName.ToLower().Contains(searchTermLower) ||
-                     m.Email.ToLower().Contains(searchTermLower) ||
-                     (m.FirstName + " " + m.LastName).ToLower().Contains(searchTermLower),
+                     m.MiddleNames != null && m.MiddleNames.ToLower().Contains(searchTermLower) ||
+                     m.SocialName != null && m.SocialName.ToLower().Contains(searchTermLower) ||
+                     m.DisplayName.ToLower().Contains(searchTermLower) ||
+                     m.Contacts.Any(c => c.Type == ContactType.Email &&
+                                        c.Value.ToLower().Contains(searchTermLower) &&
+                                        !c.IsDeleted),
                 cancellationToken);
 
             var dtos = _mapper.Map<IEnumerable<MemberDto>>(items);
@@ -284,8 +289,13 @@ public partial class MemberService : IMemberService
                 return BaseResponse<bool>.ErrorResult("Email cannot be empty");
             }
 
-            var exists = await _unitOfWork.Repository<Member>().ExistsAsync(
-                m => m.Email.ToLower() == email.ToLower() && (excludeMemberId == null || m.Id != excludeMemberId),
+            // Check if email exists in contacts
+            var exists = await _unitOfWork.Repository<Contact>().ExistsAsync(
+                c => c.Type == ContactType.Email &&
+                     c.Value.ToLower() == email.ToLower() &&
+                     c.EntityType == "Member" &&
+                     !c.IsDeleted &&
+                     (excludeMemberId == null || c.EntityId != excludeMemberId),
                 cancellationToken);
 
             return BaseResponse<bool>.SuccessResult(!exists);

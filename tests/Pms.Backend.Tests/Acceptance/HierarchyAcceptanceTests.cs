@@ -12,6 +12,8 @@ using System.Text.Json;
 using Xunit;
 using Pms.Backend.Api;
 using Pms.Backend.Tests.Integration;
+using Xunit.Abstractions;
+using Microsoft.EntityFrameworkCore;
 
 namespace Pms.Backend.Tests.Acceptance;
 
@@ -21,8 +23,11 @@ namespace Pms.Backend.Tests.Acceptance;
 /// </summary>
 public class HierarchyAcceptanceTests : BaseIntegrationTest
 {
-    public HierarchyAcceptanceTests(WebApplicationFactory<Program> factory) : base(factory)
+    private readonly ITestOutputHelper _output;
+
+    public HierarchyAcceptanceTests(WebApplicationFactory<Program> factory, ITestOutputHelper output) : base(factory)
     {
+        _output = output;
     }
 
     [Fact]
@@ -67,9 +72,9 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
         var association = await CreateAssociationAsync(union.Id);
 
         // Act - Buscar dados por nível
-        var divisionsResponse = await Client.GetAsync("/pms/hierarchy/divisions");
-        var unionsResponse = await Client.GetAsync($"/pms/hierarchy/divisions/{division.Id}/unions");
-        var associationsResponse = await Client.GetAsync($"/pms/hierarchy/unions/{union.Id}/associations");
+        var divisionsResponse = await Client.GetAsync("/hierarchy/divisions");
+        var unionsResponse = await Client.GetAsync($"/hierarchy-union/by-division/{division.Id}");
+        var associationsResponse = await Client.GetAsync($"/hierarchy-association/by-union/{union.Id}");
 
         // Assert - Verificar se os dados foram retornados corretamente
         divisionsResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -98,7 +103,7 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
         };
 
         // Act - Atualizar a divisão
-        var response = await Client.PutAsJsonAsync($"/pms/hierarchy/divisions/{division.Id}", updateDto);
+        var response = await Client.PutAsJsonAsync($"/hierarchy/divisions/{division.Id}", updateDto);
 
         // Assert - Verificar se a atualização foi bem-sucedida
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -117,12 +122,12 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
         var division = await CreateDivisionAsync();
 
         // Act - Deletar a divisão
-        var response = await Client.DeleteAsync($"/pms/hierarchy/divisions/{division.Id}");
+        var response = await Client.DeleteAsync($"/hierarchy/divisions/{division.Id}");
 
         // Assert - Verificar se a divisão foi removida
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var getResponse = await Client.GetAsync($"/pms/hierarchy/divisions/{division.Id}");
+        var getResponse = await Client.GetAsync($"/hierarchy/divisions/{division.Id}");
         getResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -137,7 +142,7 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
             Description = "Divisão para testes"
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/divisions", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy/divisions", createDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<DivisionDto>>();
@@ -155,7 +160,13 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
             DivisionId = divisionId
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/unions", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy-union", createDto);
+
+        // Debug - Let's see what the actual response is
+        var responseContent = await response.Content.ReadAsStringAsync();
+        _output.WriteLine($"Status Code: {response.StatusCode}");
+        _output.WriteLine($"Response Content: {responseContent}");
+
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<UnionDto>>();
@@ -173,7 +184,7 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
             UnionId = unionId
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/associations", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy-association", createDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<AssociationDto>>();
@@ -191,7 +202,7 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
             AssociationId = associationId
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/regions", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy-region", createDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<RegionDto>>();
@@ -209,7 +220,7 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
             RegionId = regionId
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/districts", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy-district", createDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<DistrictDto>>();
@@ -223,13 +234,11 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
         {
             Name = "Igreja Teste",
             Cep = "01234567",
-            Address = "Rua Teste, 123",
-            City = "São Paulo",
-            State = "SP",
-            Country = "Brasil"
+            Country = "Brasil",
+            DistrictId = districtId
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/churches", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy-church", createDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<ChurchDto>>();
@@ -247,7 +256,7 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
             ChurchId = churchId
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/clubs", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy-club", createDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<ClubDto>>();
@@ -267,7 +276,7 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
             AgeMax = 15
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/hierarchy/units", createDto);
+        var response = await Client.PostAsJsonAsync("/hierarchy-unit", createDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<UnitDto>>();
@@ -276,4 +285,70 @@ public class HierarchyAcceptanceTests : BaseIntegrationTest
     }
 
     #endregion
+
+    [Fact]
+    public async Task CreateDivision_ShouldWork()
+    {
+        // Arrange
+        var createDto = new CreateDivisionDto
+        {
+            Name = "Divisão Teste",
+            Code = "DIV-TEST",
+            Description = "Divisão para testes"
+        };
+
+        // Act
+        var response = await Client.PostAsJsonAsync("/hierarchy/divisions", createDto);
+
+        // Debug - Let's see what the actual response is
+        var responseContent = await response.Content.ReadAsStringAsync();
+        _output.WriteLine($"Status Code: {response.StatusCode}");
+        _output.WriteLine($"Response Content: {responseContent}");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
+    public async Task CreateDivisionAndUnion_ShouldWork()
+    {
+        // Arrange - Create division first
+        var divisionDto = new CreateDivisionDto
+        {
+            Name = "Divisão Teste",
+            Code = "DIV-TEST",
+            Description = "Divisão para testes"
+        };
+
+        var divisionResponse = await Client.PostAsJsonAsync("/hierarchy/divisions", divisionDto);
+        divisionResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var divisionResult = await divisionResponse.Content.ReadFromJsonAsync<BaseResponse<DivisionDto>>();
+        divisionResult.Should().NotBeNull();
+        var division = divisionResult!.Data!;
+
+        // Debug - Check if division exists in database
+        var divisionExists = await DbContext.Divisions.AnyAsync(d => d.Id == division.Id);
+        _output.WriteLine($"Division exists in database: {divisionExists}");
+        _output.WriteLine($"Division ID: {division.Id}");
+
+        // Act - Create union with the division ID
+        var unionDto = new CreateUnionDto
+        {
+            Name = "União Teste",
+            Code = "UNI-TEST",
+            Description = "União para testes",
+            DivisionId = division.Id
+        };
+
+        var unionResponse = await Client.PostAsJsonAsync("/hierarchy-union", unionDto);
+
+        // Debug - Let's see what the actual response is
+        var unionResponseContent = await unionResponse.Content.ReadAsStringAsync();
+        _output.WriteLine($"Union Status Code: {unionResponse.StatusCode}");
+        _output.WriteLine($"Union Response Content: {unionResponseContent}");
+
+        // Assert
+        unionResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
 }

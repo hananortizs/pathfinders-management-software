@@ -26,6 +26,11 @@ public class Assignment : BaseEntity
     public RoleCatalog RoleCatalog { get; set; } = null!;
 
     /// <summary>
+    /// Role name for quick access (denormalized from RoleCatalog)
+    /// </summary>
+    public string Role { get; set; } = string.Empty;
+
+    /// <summary>
     /// Type of scope where the role is assigned
     /// </summary>
     public ScopeType ScopeType { get; set; }

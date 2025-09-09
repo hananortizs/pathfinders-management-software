@@ -61,7 +61,7 @@ public partial class MemberService : IMemberService
             {
                 Id = Guid.NewGuid(),
                 MemberId = member.Id,
-                Email = member.Email,
+                Email = member.PrimaryEmail ?? "",
                 PasswordHash = string.Empty, // Will be set during activation
                 IsActive = false,
                 IsEmailVerified = false,
@@ -90,7 +90,7 @@ public partial class MemberService : IMemberService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // TODO: Implement email sending service
-            // await _emailService.SendMemberInvitationEmailAsync(member.Email, activationToken, member.FullName);
+            // await _emailService.SendMemberInvitationEmailAsync(member.PrimaryEmail, activationToken, member.DisplayName);
 
             return BaseResponse<bool>.SuccessResult(true, "Member invitation sent successfully");
         }
@@ -262,7 +262,7 @@ public partial class MemberService : IMemberService
             var activationToken = GenerateSecureToken();
 
             // TODO: Implement email sending service
-            // await _emailService.SendMemberInvitationEmailAsync(member.Email, activationToken, member.FullName);
+            // await _emailService.SendMemberInvitationEmailAsync(member.PrimaryEmail, activationToken, member.DisplayName);
 
             return BaseResponse<bool>.SuccessResult(true, "Activation email sent successfully");
         }

@@ -45,7 +45,7 @@ public class ExportAcceptanceTests : BaseIntegrationTest
         await EnrollMemberInClubAsync(member2.Id, club.Id);
 
         // Act - Exportar membros para CSV
-        var response = await Client.GetAsync($"/pms/reports/export/members/{club.Id}");
+        var response = await Client.GetAsync($"/reports/export/members/{club.Id}");
 
         // Assert - Verificar se o CSV foi gerado
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -94,7 +94,7 @@ public class ExportAcceptanceTests : BaseIntegrationTest
         await DbContext.SaveChangesAsync();
 
         // Act - Exportar timeline para CSV
-        var response = await Client.GetAsync($"/pms/reports/export/timeline/{member.Id}");
+        var response = await Client.GetAsync($"/reports/export/timeline/{member.Id}");
 
         // Assert - Verificar se o CSV foi gerado
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -149,7 +149,7 @@ public class ExportAcceptanceTests : BaseIntegrationTest
         await DbContext.SaveChangesAsync();
 
         // Act - Exportar participações para CSV
-        var response = await Client.GetAsync($"/pms/reports/export/participations/{member.Id}");
+        var response = await Client.GetAsync($"/reports/export/participations/{member.Id}");
 
         // Assert - Verificar se o CSV foi gerado
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -186,7 +186,7 @@ public class ExportAcceptanceTests : BaseIntegrationTest
         await DbContext.SaveChangesAsync();
 
         // Act - Exportar apenas membros ativos
-        var response = await Client.GetAsync($"/pms/reports/export/members/{club.Id}?activeOnly=true");
+        var response = await Client.GetAsync($"/reports/export/members/{club.Id}?activeOnly=true");
 
         // Assert - Verificar se apenas membros ativos foram exportados
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -207,7 +207,7 @@ public class ExportAcceptanceTests : BaseIntegrationTest
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         // Act - Exportar membros de clube vazio
-        var response = await Client.GetAsync($"/pms/reports/export/members/{club.Id}");
+        var response = await Client.GetAsync($"/reports/export/members/{club.Id}");
 
         // Assert - Verificar se CSV vazio foi retornado (apenas cabeçalho)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -228,7 +228,7 @@ public class ExportAcceptanceTests : BaseIntegrationTest
         // Atualizar nome com caracteres especiais
         member.FirstName = "João";
         member.LastName = "Silva \"Santos\"";
-        member.Phone = "+55 (11) 99999-9999";
+        // Phone is now handled through Contact entity
         await DbContext.SaveChangesAsync();
 
         var token = await GetAuthTokenAsync();
@@ -238,7 +238,7 @@ public class ExportAcceptanceTests : BaseIntegrationTest
         await EnrollMemberInClubAsync(member.Id, club.Id);
 
         // Act - Exportar membro com caracteres especiais
-        var response = await Client.GetAsync($"/pms/reports/export/members/{club.Id}");
+        var response = await Client.GetAsync($"/reports/export/members/{club.Id}");
 
         // Assert - Verificar se caracteres especiais foram tratados corretamente
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -307,10 +307,6 @@ public class ExportAcceptanceTests : BaseIntegrationTest
         {
             Id = Guid.NewGuid(),
             Name = "Igreja Teste",
-            Address = "Rua Teste, 123",
-            City = "São Paulo",
-            State = "SP",
-            Cep = "01234567",
             CreatedAtUtc = DateTime.UtcNow
         };
 
@@ -352,7 +348,7 @@ public class ExportAcceptanceTests : BaseIntegrationTest
             ConfirmPassword = "Senha123!"
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/members/register", registerDto);
+        var response = await Client.PostAsJsonAsync("/members/register", registerDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MemberDto>>();
@@ -371,7 +367,7 @@ public class ExportAcceptanceTests : BaseIntegrationTest
             Password = "Senha123!"
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/members/login", loginDto);
+        var response = await Client.PostAsJsonAsync("/members/login", loginDto);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<AuthResultDto>>();
@@ -390,7 +386,7 @@ public class ExportAcceptanceTests : BaseIntegrationTest
             StartDate = DateTime.UtcNow
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/membership", enrollmentDto);
+        var response = await Client.PostAsJsonAsync("/membership", enrollmentDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 

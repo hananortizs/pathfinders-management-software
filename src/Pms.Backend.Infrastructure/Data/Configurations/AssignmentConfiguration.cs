@@ -31,6 +31,10 @@ public class AssignmentConfiguration : BaseEntityConfiguration<Assignment>
         builder.Property(e => e.EndReason)
             .HasMaxLength(500);
 
+        builder.Property(e => e.Role)
+            .IsRequired()
+            .HasMaxLength(100);
+
         // Indexes
         // Index for member queries
         builder.HasIndex(e => e.MemberId);

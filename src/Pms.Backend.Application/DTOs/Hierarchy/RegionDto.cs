@@ -6,12 +6,12 @@ namespace Pms.Backend.Application.DTOs.Hierarchy;
 /// <summary>
 /// Data Transfer Object for Region entity
 /// </summary>
-public class RegionDto
+public class RegionDto : AddressableEntityDtoBase
 {
     /// <summary>
-    /// Region ID
+    /// Entity type for address relationships
     /// </summary>
-    public Guid Id { get; set; }
+    public override string EntityType => "Region";
 
     /// <summary>
     /// Unique code for the region (≤7 chars, letters and numbers - will be converted to uppercase)
@@ -33,10 +33,7 @@ public class RegionDto
     /// </summary>
     public Guid AssociationId { get; set; }
 
-    /// <summary>
-    /// Parent association
-    /// </summary>
-    public AssociationDto? Association { get; set; }
+    // Parent association removed - avoid circular references and performance issues
 
     /// <summary>
     /// Code path (Division.Code.Union.Code.Association.Code.Region.Code)

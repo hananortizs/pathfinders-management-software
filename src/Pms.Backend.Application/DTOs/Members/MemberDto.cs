@@ -1,16 +1,18 @@
 using Pms.Backend.Domain.Entities;
+using Pms.Backend.Application.DTOs.Common;
+using Pms.Backend.Application.Validators;
 
 namespace Pms.Backend.Application.DTOs.Members;
 
 /// <summary>
 /// Data Transfer Object for Member entity
 /// </summary>
-public class MemberDto
+public class MemberDto : AddressableEntityDtoBase
 {
     /// <summary>
-    /// Unique identifier of the member
+    /// Entity type for address relationships
     /// </summary>
-    public Guid Id { get; set; }
+    public override string EntityType => "Member";
 
     /// <summary>
     /// Member's first name
@@ -18,24 +20,29 @@ public class MemberDto
     public string FirstName { get; set; } = string.Empty;
 
     /// <summary>
+    /// Member's middle names (optional) - can contain multiple middle names
+    /// </summary>
+    public string? MiddleNames { get; set; }
+
+    /// <summary>
     /// Member's last name
     /// </summary>
     public string LastName { get; set; } = string.Empty;
 
     /// <summary>
+    /// Member's social name (preferred name for identification)
+    /// </summary>
+    public string? SocialName { get; set; }
+
+    /// <summary>
     /// Member's full name (computed property)
     /// </summary>
-    public string FullName => $"{FirstName} {LastName}".Trim();
+    public string FullName => $"{FirstName} {MiddleNames} {LastName}".Trim().Replace("  ", " ");
 
     /// <summary>
-    /// Member's email address
+    /// Member's display name (prefers social name if available, otherwise full name)
     /// </summary>
-    public string Email { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Member's phone number
-    /// </summary>
-    public string? Phone { get; set; }
+    public string DisplayName => !string.IsNullOrWhiteSpace(SocialName) ? SocialName : FullName;
 
     /// <summary>
     /// Member's date of birth
@@ -148,6 +155,16 @@ public class MemberDto
     /// Member's deactivation reason
     /// </summary>
     public string? DeactivationReason { get; set; }
+
+    /// <summary>
+    /// Member's primary email address (computed from contacts)
+    /// </summary>
+    public string? PrimaryEmail { get; set; }
+
+    /// <summary>
+    /// Member's primary phone number (computed from contacts)
+    /// </summary>
+    public string? PrimaryPhone { get; set; }
 }
 
 /// <summary>
@@ -161,19 +178,19 @@ public class CreateMemberDto
     public string FirstName { get; set; } = string.Empty;
 
     /// <summary>
+    /// Member's middle names (optional) - can contain multiple middle names
+    /// </summary>
+    public string? MiddleNames { get; set; }
+
+    /// <summary>
     /// Member's last name
     /// </summary>
     public string LastName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Member's email address
+    /// Member's social name (preferred name for identification)
     /// </summary>
-    public string Email { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Member's phone number
-    /// </summary>
-    public string? Phone { get; set; }
+    public string? SocialName { get; set; }
 
     /// <summary>
     /// Member's date of birth
@@ -269,19 +286,19 @@ public class UpdateMemberDto
     public string FirstName { get; set; } = string.Empty;
 
     /// <summary>
+    /// Member's middle names (optional) - can contain multiple middle names
+    /// </summary>
+    public string? MiddleNames { get; set; }
+
+    /// <summary>
     /// Member's last name
     /// </summary>
     public string LastName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Member's email address
+    /// Member's social name (preferred name for identification)
     /// </summary>
-    public string Email { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Member's phone number
-    /// </summary>
-    public string? Phone { get; set; }
+    public string? SocialName { get; set; }
 
     /// <summary>
     /// Member's date of birth

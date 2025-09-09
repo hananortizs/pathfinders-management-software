@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Pms.Backend.Application.Validators;
 
 namespace Pms.Backend.Application.DTOs.Address;
 
@@ -78,6 +79,16 @@ public class AddressDto
     public string EntityType { get; set; } = string.Empty;
 
     /// <summary>
+    /// CEP formatted for display (with dash)
+    /// </summary>
+    public string? CepFormatted { get; set; }
+
+    /// <summary>
+    /// CEP normalized for database (digits only)
+    /// </summary>
+    public string? CepNormalized { get; set; }
+
+    /// <summary>
     /// Full formatted address
     /// </summary>
     public string FullAddress { get; set; } = string.Empty;
@@ -146,7 +157,7 @@ public class CreateAddressDto
     /// <summary>
     /// ZIP code (CEP) - Brazilian postal code
     /// </summary>
-    [RegularExpression(@"^\d{5}-?\d{3}$", ErrorMessage = "CEP must be in format 12345-678 or 12345678")]
+    [ValidCep(ErrorMessage = "CEP deve estar no formato 12345-678 ou 12345678")]
     public string? Cep { get; set; }
 
     /// <summary>
@@ -176,6 +187,7 @@ public class CreateAddressDto
     /// </summary>
     [Required(ErrorMessage = "EntityType is required")]
     [StringLength(50, ErrorMessage = "EntityType cannot exceed 50 characters")]
+    [ValidEntityType(ErrorMessage = "Invalid EntityType. Valid types are: Member, Church, Club, Unit, District, Association, Union, Division, Region")]
     public string EntityType { get; set; } = string.Empty;
 }
 
@@ -232,7 +244,7 @@ public class UpdateAddressDto
     /// <summary>
     /// ZIP code (CEP) - Brazilian postal code
     /// </summary>
-    [RegularExpression(@"^\d{5}-?\d{3}$", ErrorMessage = "CEP must be in format 12345-678 or 12345678")]
+    [ValidCep(ErrorMessage = "CEP deve estar no formato 12345-678 ou 12345678")]
     public string? Cep { get; set; }
 
     /// <summary>

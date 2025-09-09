@@ -6,6 +6,7 @@ using Pms.Backend.Application.DTOs.Auth;
 using Pms.Backend.Application.DTOs.Members;
 using Pms.Backend.Application.Interfaces;
 using Pms.Backend.Domain.Entities;
+using Pms.Backend.Domain.Enums;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -145,12 +146,8 @@ public partial class MemberService : IMemberService
     {
         try
         {
-            // Validate email availability
-            var emailAvailable = await IsEmailAvailableAsync(dto.Email, null, cancellationToken);
-            if (!emailAvailable.Data)
-            {
-                return BaseResponse<MemberDto>.ErrorResult("Email already exists");
-            }
+            // Note: Email validation is now handled in CreateMemberWithContactsAsync
+            // This method is kept for backward compatibility but should not be used for new implementations
 
             // Validate CPF if provided
             if (!string.IsNullOrEmpty(dto.Cpf))
@@ -188,6 +185,91 @@ public partial class MemberService : IMemberService
     }
 
     /// <summary>
+    /// Creates a new Member with contact information.
+    /// </summary>
+    /// <param name="dto">The CreateMemberWithContactsDto containing the member and contact data.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A BaseResponse containing the created MemberDto or an error.</returns>
+    public async Task<BaseResponse<MemberDto>> CreateMemberWithContactsAsync(CreateMemberWithContactsDto dto, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Validate name fields
+            var nameValidation = ValidateMemberName(dto.FirstName, dto.MiddleNames, dto.LastName);
+            if (!nameValidation.IsSuccess)
+            {
+                return BaseResponse<MemberDto>.ErrorResult(nameValidation.Message ?? "Erro de validação de nome");
+            }
+
+            // Validate CPF if provided
+            if (!string.IsNullOrEmpty(dto.Cpf))
+            {
+                var cpfAvailable = await IsCpfAvailableAsync(dto.Cpf, null, cancellationToken);
+                if (!cpfAvailable.Data)
+                {
+                    return BaseResponse<MemberDto>.ErrorResult("CPF already exists");
+                }
+            }
+
+            // Validate age (minimum 10 years old)
+            var age = CalculateAge(dto.DateOfBirth);
+            if (age < 10)
+            {
+                return BaseResponse<MemberDto>.ErrorResult("Member must be at least 10 years old");
+            }
+
+            // Validate contacts
+            var contactValidation = ValidateMemberContacts(dto.Contacts);
+            if (!contactValidation.IsSuccess)
+            {
+                return BaseResponse<MemberDto>.ErrorResult(contactValidation.Message ?? "Erro de validação de contatos");
+            }
+
+            // Check for duplicate emails in contacts
+            var emailContacts = dto.Contacts.Where(c => c.Type == ContactType.Email).ToList();
+            foreach (var emailContact in emailContacts)
+            {
+                var emailAvailable = await IsEmailAvailableAsync(emailContact.Value, null, cancellationToken);
+                if (!emailAvailable.Data)
+                {
+                    return BaseResponse<MemberDto>.ErrorResult($"Email {emailContact.Value} already exists");
+                }
+            }
+
+            // Create member
+            var member = _mapper.Map<Member>(dto);
+            member.Id = Guid.NewGuid();
+            member.Status = MemberStatus.Pending;
+            member.CreatedAtUtc = DateTime.UtcNow;
+            member.UpdatedAtUtc = DateTime.UtcNow;
+
+            await _unitOfWork.Repository<Member>().AddAsync(member, cancellationToken);
+
+            // Create contacts
+            foreach (var contactDto in dto.Contacts)
+            {
+                var contact = _mapper.Map<Contact>(contactDto);
+                contact.Id = Guid.NewGuid();
+                contact.EntityId = member.Id;
+                contact.EntityType = "Member";
+                contact.CreatedAtUtc = DateTime.UtcNow;
+                contact.UpdatedAtUtc = DateTime.UtcNow;
+
+                await _unitOfWork.Repository<Contact>().AddAsync(contact, cancellationToken);
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            var resultDto = _mapper.Map<MemberDto>(member);
+            return BaseResponse<MemberDto>.SuccessResult(resultDto, "Member created successfully with contacts");
+        }
+        catch (Exception ex)
+        {
+            return BaseResponse<MemberDto>.ErrorResult($"Error creating member: {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Updates an existing Member.
     /// </summary>
     /// <param name="id">The unique identifier of the Member to update.</param>
@@ -204,12 +286,8 @@ public partial class MemberService : IMemberService
                 return BaseResponse<MemberDto>.ErrorResult("Member not found");
             }
 
-            // Validate email availability (excluding current member)
-            var emailAvailable = await IsEmailAvailableAsync(dto.Email, id, cancellationToken);
-            if (!emailAvailable.Data)
-            {
-                return BaseResponse<MemberDto>.ErrorResult("Email already exists");
-            }
+            // Note: Email validation is now handled through contacts
+            // This method is kept for backward compatibility but should not be used for new implementations
 
             // Validate CPF if provided (excluding current member)
             if (!string.IsNullOrEmpty(dto.Cpf))
@@ -318,8 +396,8 @@ public partial class MemberService : IMemberService
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, member.Id.ToString()),
-            new(ClaimTypes.Email, member.Email),
-            new(ClaimTypes.Name, member.FullName),
+            new(ClaimTypes.Email, member.PrimaryEmail ?? ""),
+            new(ClaimTypes.Name, member.DisplayName),
             new("sub", member.Id.ToString())
         };
 
@@ -375,6 +453,85 @@ public partial class MemberService : IMemberService
         var bytes = new byte[length];
         rng.GetBytes(bytes);
         return Convert.ToBase64String(bytes);
+    }
+
+    /// <summary>
+    /// Validates member name fields
+    /// </summary>
+    /// <param name="firstName">First name</param>
+    /// <param name="middleNames">Middle names</param>
+    /// <param name="lastName">Last name</param>
+    /// <returns>Validation result</returns>
+    private static BaseResponse<bool> ValidateMemberName(string firstName, string? middleNames, string lastName)
+    {
+        var error = Domain.Helpers.NameHelper.GetFullNameValidationError(firstName, middleNames, lastName);
+        if (error != null)
+        {
+            return BaseResponse<bool>.ErrorResult(error);
+        }
+
+        return BaseResponse<bool>.SuccessResult(true);
+    }
+
+    /// <summary>
+    /// Validates member contacts
+    /// </summary>
+    /// <param name="contacts">List of contacts</param>
+    /// <returns>Validation result</returns>
+    private static BaseResponse<bool> ValidateMemberContacts(List<MemberContactDto> contacts)
+    {
+        if (contacts == null || !contacts.Any())
+        {
+            return BaseResponse<bool>.ErrorResult("Pelo menos um contato é obrigatório");
+        }
+
+        // Check for at least one email contact
+        var hasEmail = contacts.Any(c => c.Type == ContactType.Email);
+        if (!hasEmail)
+        {
+            return BaseResponse<bool>.ErrorResult("Pelo menos um contato de email é obrigatório");
+        }
+
+        // Check for duplicate contact types
+        var duplicateTypes = contacts.GroupBy(c => c.Type)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key.ToString())
+            .ToList();
+
+        if (duplicateTypes.Any())
+        {
+            return BaseResponse<bool>.ErrorResult($"Tipos de contato duplicados encontrados: {string.Join(", ", duplicateTypes)}");
+        }
+
+        // Validate each contact
+        foreach (var contact in contacts)
+        {
+            if (string.IsNullOrWhiteSpace(contact.Value))
+            {
+                return BaseResponse<bool>.ErrorResult($"Valor do contato {contact.Type} não pode estar vazio");
+            }
+
+            // Basic email validation
+            if (contact.Type == ContactType.Email)
+            {
+                if (!contact.Value.Contains("@") || contact.Value.Length < 5)
+                {
+                    return BaseResponse<bool>.ErrorResult("Email inválido");
+                }
+            }
+
+            // Basic phone validation
+            if (contact.Type == ContactType.Mobile || contact.Type == ContactType.Landline)
+            {
+                var phoneDigits = new string(contact.Value.Where(char.IsDigit).ToArray());
+                if (phoneDigits.Length < 10)
+                {
+                    return BaseResponse<bool>.ErrorResult("Telefone deve ter pelo menos 10 dígitos");
+                }
+            }
+        }
+
+        return BaseResponse<bool>.SuccessResult(true);
     }
 
     #endregion

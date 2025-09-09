@@ -47,5 +47,11 @@ public class DistrictConfiguration : BaseEntityConfiguration<District>
             .WithOne(e => e.District)
             .HasForeignKey(e => e.DistrictId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Pastor relationship (optional)
+        builder.HasOne(e => e.Pastor)
+            .WithMany(p => p.Districts)
+            .HasForeignKey(e => e.PastorId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

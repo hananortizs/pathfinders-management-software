@@ -58,7 +58,7 @@ public class InvestitureWitnessConfiguration : BaseEntityConfiguration<Investitu
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(e => e.Member)
-            .WithMany()
+            .WithMany(m => m.InvestitureWitnesses)
             .HasForeignKey(e => e.MemberId)
             .OnDelete(DeleteBehavior.Restrict);
 

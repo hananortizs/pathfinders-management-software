@@ -1,486 +1,480 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using Pms.Backend.Application.DTOs;
 using Pms.Backend.Application.DTOs.Assignments;
+using Pms.Backend.Application.Helpers;
 using Pms.Backend.Application.Interfaces;
 using Pms.Backend.Domain.Entities;
+using Pms.Backend.Domain.Exceptions;
 
 namespace Pms.Backend.Application.Services.Assignments;
 
 /// <summary>
-/// Service for managing approval delegations
-/// Handles delegation of approval authority when original approvers are unavailable
+/// Serviço para gerenciar delegações de aprovação
+/// Gerencia a delegação de autoridade de aprovação quando os aprovadores originais não estão disponíveis
 /// </summary>
-public partial class ApprovalDelegateService : IApprovalDelegateService
+public class ApprovalDelegateService : IApprovalDelegateService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
     /// <summary>
-    /// Initializes a new instance of the ApprovalDelegateService
+    /// Inicializa uma nova instância do ApprovalDelegateService
     /// </summary>
-    /// <param name="unitOfWork">The unit of work</param>
-    /// <param name="mapper">The AutoMapper instance</param>
+    /// <param name="unitOfWork">Unidade de trabalho</param>
+    /// <param name="mapper">Instância do AutoMapper</param>
     public ApprovalDelegateService(IUnitOfWork unitOfWork, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
-    #region Delegation CRUD Operations
+    #region Operações CRUD de Delegação
 
     /// <summary>
-    /// Creates a new approval delegation
+    /// Cria uma nova delegação de aprovação
     /// </summary>
-    /// <param name="request">The delegation creation request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>The created delegation</returns>
-    public async Task<BaseResponse<ApprovalDelegateDto>> CreateDelegationAsync(CreateApprovalDelegateDto request, CancellationToken cancellationToken = default)
+    /// <param name="request">Solicitação de criação da delegação</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>A delegação criada</returns>
+    public async Task<ApprovalDelegateDto> CreateDelegationAsync(CreateApprovalDelegateDto request, CancellationToken cancellationToken = default)
     {
-        try
+        // Validar delegação
+        await ValidateDelegationAsync(request, cancellationToken);
+
+        // Verificar delegações sobrepostas
+        var overlappingDelegation = await _unitOfWork.Repository<ApprovalDelegate>().GetFirstOrDefaultAsync(
+            d => d.Role == request.Role &&
+                 d.ScopeType == request.ScopeType &&
+                 d.ScopeId == request.ScopeId &&
+                 d.DelegatedFromAssignmentId == request.DelegatedFromAssignmentId &&
+                 d.IsActive &&
+                 ((d.StartDate <= request.StartDate && d.EndDate >= request.StartDate) ||
+                  (d.StartDate <= request.EndDate && d.EndDate >= request.EndDate) ||
+                  (d.StartDate >= request.StartDate && d.EndDate <= request.EndDate)),
+            cancellationToken);
+
+        if (overlappingDelegation != null)
         {
-            // Validate delegation
-            var validationResult = await ValidateDelegationAsync(request, cancellationToken);
-            if (!validationResult.IsSuccess)
-            {
-                return BaseResponse<ApprovalDelegateDto>.ErrorResult(validationResult.Message ?? "Delegation validation failed");
-            }
-
-            // Check for overlapping delegations
-            var overlappingDelegation = await _unitOfWork.Repository<ApprovalDelegate>().GetFirstOrDefaultAsync(
-                d => d.Role == request.Role &&
-                     d.ScopeType == request.ScopeType &&
-                     d.ScopeId == request.ScopeId &&
-                     d.DelegatedFromAssignmentId == request.DelegatedFromAssignmentId &&
-                     d.IsActive &&
-                     ((d.StartDate <= request.StartDate && d.EndDate >= request.StartDate) ||
-                      (d.StartDate <= request.EndDate && d.EndDate >= request.EndDate) ||
-                      (d.StartDate >= request.StartDate && d.EndDate <= request.EndDate)),
-                cancellationToken);
-
-            if (overlappingDelegation != null)
-            {
-                return BaseResponse<ApprovalDelegateDto>.ErrorResult("There is already an active delegation for this role and scope in the specified date range");
-            }
-
-            // Create delegation
-            var delegation = _mapper.Map<ApprovalDelegate>(request);
-            delegation.Id = Guid.NewGuid();
-            delegation.CreatedAtUtc = DateTime.UtcNow;
-            delegation.UpdatedAtUtc = DateTime.UtcNow;
-
-            await _unitOfWork.Repository<ApprovalDelegate>().AddAsync(delegation, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            // Get the created delegation with navigation properties
-            var createdDelegation = await _unitOfWork.Repository<ApprovalDelegate>()
-                .GetQueryable(d => d.Id == delegation.Id)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.Member)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.RoleCatalog)
-                .Include(d => d.DelegatedFromAssignment)
-                    .ThenInclude(a => a.Member)
-                .Include(d => d.DelegatedFromAssignment)
-                    .ThenInclude(a => a.RoleCatalog)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            var result = _mapper.Map<ApprovalDelegateDto>(createdDelegation);
-            return BaseResponse<ApprovalDelegateDto>.SuccessResult(result);
+            ExceptionHelper.ThrowBusinessRuleException(
+                "DELEGATION_OVERLAP",
+                "Já existe uma delegação ativa para esta função e escopo no período especificado",
+                new Dictionary<string, object>
+                {
+                    ["Role"] = request.Role,
+                    ["ScopeType"] = request.ScopeType,
+                    ["ScopeId"] = request.ScopeId,
+                    ["OverlappingDelegationId"] = overlappingDelegation.Id
+                });
         }
-        catch (Exception ex)
-        {
-            return BaseResponse<ApprovalDelegateDto>.ErrorResult($"Error creating delegation: {ex.Message}");
-        }
+
+        // Criar delegação
+        var delegation = _mapper.Map<ApprovalDelegate>(request);
+        delegation.Id = Guid.NewGuid();
+        delegation.CreatedAtUtc = DateTime.UtcNow;
+        delegation.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _unitOfWork.Repository<ApprovalDelegate>().AddAsync(delegation, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Obter a delegação criada com propriedades de navegação
+        var createdDelegation = await _unitOfWork.Repository<ApprovalDelegate>()
+            .GetQueryable(d => d.Id == delegation.Id)
+            .Include(d => d.DelegatedToAssignment)
+                .ThenInclude(a => a.Member)
+            .Include(d => d.DelegatedToAssignment)
+                .ThenInclude(a => a.RoleCatalog)
+            .Include(d => d.DelegatedFromAssignment)
+                .ThenInclude(a => a.Member)
+            .Include(d => d.DelegatedFromAssignment)
+                .ThenInclude(a => a.RoleCatalog)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return _mapper.Map<ApprovalDelegateDto>(createdDelegation);
     }
 
     /// <summary>
-    /// Gets a delegation by ID
+    /// Obtém uma delegação por ID
     /// </summary>
-    /// <param name="id">The delegation ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>The delegation</returns>
-    public async Task<BaseResponse<ApprovalDelegateDto>> GetDelegationAsync(Guid id, CancellationToken cancellationToken = default)
+    /// <param name="id">ID da delegação</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>A delegação</returns>
+    public async Task<ApprovalDelegateDto> GetDelegationAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var delegation = await _unitOfWork.Repository<ApprovalDelegate>()
-                .GetQueryable(d => d.Id == id)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.Member)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.RoleCatalog)
-                .Include(d => d.DelegatedFromAssignment)
-                    .ThenInclude(a => a.Member)
-                .Include(d => d.DelegatedFromAssignment)
-                    .ThenInclude(a => a.RoleCatalog)
-                .FirstOrDefaultAsync(cancellationToken);
+        var delegation = await _unitOfWork.Repository<ApprovalDelegate>()
+            .GetQueryable(d => d.Id == id)
+            .Include(d => d.DelegatedToAssignment)
+                .ThenInclude(a => a.Member)
+            .Include(d => d.DelegatedToAssignment)
+                .ThenInclude(a => a.RoleCatalog)
+            .Include(d => d.DelegatedFromAssignment)
+                .ThenInclude(a => a.Member)
+            .Include(d => d.DelegatedFromAssignment)
+                .ThenInclude(a => a.RoleCatalog)
+            .FirstOrDefaultAsync(cancellationToken);
 
-            if (delegation == null)
-            {
-                return BaseResponse<ApprovalDelegateDto>.ErrorResult("Delegation not found");
-            }
-
-            var result = _mapper.Map<ApprovalDelegateDto>(delegation);
-            return BaseResponse<ApprovalDelegateDto>.SuccessResult(result);
-        }
-        catch (Exception ex)
+        if (delegation == null)
         {
-            return BaseResponse<ApprovalDelegateDto>.ErrorResult($"Error retrieving delegation: {ex.Message}");
+            ExceptionHelper.ThrowNotFoundException<ApprovalDelegate>(id, "Delegação não encontrada");
         }
+
+        return _mapper.Map<ApprovalDelegateDto>(delegation);
     }
 
     /// <summary>
-    /// Gets all delegations for a specific scope
+    /// Obtém todas as delegações para um escopo específico
     /// </summary>
-    /// <param name="scopeType">The scope type</param>
-    /// <param name="scopeId">The scope ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of delegations</returns>
-    public async Task<BaseResponse<IEnumerable<ApprovalDelegateDto>>> GetDelegationsByScopeAsync(ScopeType scopeType, Guid scopeId, CancellationToken cancellationToken = default)
+    /// <param name="scopeType">Tipo do escopo</param>
+    /// <param name="scopeId">ID do escopo</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Lista de delegações</returns>
+    public async Task<IEnumerable<ApprovalDelegateDto>> GetDelegationsByScopeAsync(ScopeType scopeType, Guid scopeId, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var delegations = await _unitOfWork.Repository<ApprovalDelegate>()
-                .GetQueryable(d => d.ScopeType == scopeType && d.ScopeId == scopeId)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.Member)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.RoleCatalog)
-                .Include(d => d.DelegatedFromAssignment)
-                    .ThenInclude(a => a.Member)
-                .Include(d => d.DelegatedFromAssignment)
-                    .ThenInclude(a => a.RoleCatalog)
-                .OrderByDescending(d => d.StartDate)
-                .ToListAsync(cancellationToken);
+        var delegations = await _unitOfWork.Repository<ApprovalDelegate>()
+            .GetQueryable(d => d.ScopeType == scopeType && d.ScopeId == scopeId)
+            .Include(d => d.DelegatedToAssignment)
+                .ThenInclude(a => a.Member)
+            .Include(d => d.DelegatedToAssignment)
+                .ThenInclude(a => a.RoleCatalog)
+            .Include(d => d.DelegatedFromAssignment)
+                .ThenInclude(a => a.Member)
+            .Include(d => d.DelegatedFromAssignment)
+                .ThenInclude(a => a.RoleCatalog)
+            .OrderBy(d => d.StartDate)
+            .ToListAsync(cancellationToken);
 
-            var result = _mapper.Map<IEnumerable<ApprovalDelegateDto>>(delegations);
-            return BaseResponse<IEnumerable<ApprovalDelegateDto>>.SuccessResult(result);
-        }
-        catch (Exception ex)
-        {
-            return BaseResponse<IEnumerable<ApprovalDelegateDto>>.ErrorResult($"Error retrieving delegations: {ex.Message}");
-        }
+        return _mapper.Map<IEnumerable<ApprovalDelegateDto>>(delegations);
     }
 
     /// <summary>
-    /// Gets all active delegations for a specific scope
+    /// Obtém todas as delegações ativas para um escopo específico
     /// </summary>
-    /// <param name="scopeType">The scope type</param>
-    /// <param name="scopeId">The scope ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of active delegations</returns>
-    public async Task<BaseResponse<IEnumerable<ApprovalDelegateDto>>> GetActiveDelegationsByScopeAsync(ScopeType scopeType, Guid scopeId, CancellationToken cancellationToken = default)
+    /// <param name="scopeType">Tipo do escopo</param>
+    /// <param name="scopeId">ID do escopo</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Lista de delegações ativas</returns>
+    public async Task<IEnumerable<ApprovalDelegateDto>> GetActiveDelegationsByScopeAsync(ScopeType scopeType, Guid scopeId, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var now = DateTime.UtcNow;
-            var delegations = await _unitOfWork.Repository<ApprovalDelegate>()
-                .GetQueryable(d => d.ScopeType == scopeType && 
-                                     d.ScopeId == scopeId && 
-                                     d.StartDate <= now && 
-                                     d.EndDate >= now)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.Member)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.RoleCatalog)
-                .Include(d => d.DelegatedFromAssignment)
-                    .ThenInclude(a => a.Member)
-                .Include(d => d.DelegatedFromAssignment)
-                    .ThenInclude(a => a.RoleCatalog)
-                .OrderByDescending(d => d.StartDate)
-                .ToListAsync(cancellationToken);
+        var now = DateTime.UtcNow;
+        var delegations = await _unitOfWork.Repository<ApprovalDelegate>()
+            .GetQueryable(d => d.ScopeType == scopeType &&
+                              d.ScopeId == scopeId &&
+                              d.IsActive &&
+                              d.StartDate <= now &&
+                              d.EndDate >= now)
+            .Include(d => d.DelegatedToAssignment)
+                .ThenInclude(a => a.Member)
+            .Include(d => d.DelegatedToAssignment)
+                .ThenInclude(a => a.RoleCatalog)
+            .Include(d => d.DelegatedFromAssignment)
+                .ThenInclude(a => a.Member)
+            .Include(d => d.DelegatedFromAssignment)
+                .ThenInclude(a => a.RoleCatalog)
+            .OrderBy(d => d.StartDate)
+            .ToListAsync(cancellationToken);
 
-            var result = _mapper.Map<IEnumerable<ApprovalDelegateDto>>(delegations);
-            return BaseResponse<IEnumerable<ApprovalDelegateDto>>.SuccessResult(result);
-        }
-        catch (Exception ex)
-        {
-            return BaseResponse<IEnumerable<ApprovalDelegateDto>>.ErrorResult($"Error retrieving active delegations: {ex.Message}");
-        }
+        return _mapper.Map<IEnumerable<ApprovalDelegateDto>>(delegations);
     }
 
     /// <summary>
-    /// Gets all delegations where a member is the delegate
+    /// Obtém todas as delegações onde um membro é o delegado
     /// </summary>
-    /// <param name="memberId">The member ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of delegations</returns>
-    public async Task<BaseResponse<IEnumerable<ApprovalDelegateDto>>> GetDelegationsByDelegateAsync(Guid memberId, CancellationToken cancellationToken = default)
+    /// <param name="memberId">ID do membro</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Lista de delegações</returns>
+    public async Task<IEnumerable<ApprovalDelegateDto>> GetDelegationsByDelegateAsync(Guid memberId, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var delegations = await _unitOfWork.Repository<ApprovalDelegate>()
-                .GetQueryable(d => d.DelegatedToAssignment.MemberId == memberId)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.Member)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.RoleCatalog)
-                .Include(d => d.DelegatedFromAssignment)
-                    .ThenInclude(a => a.Member)
-                .Include(d => d.DelegatedFromAssignment)
-                    .ThenInclude(a => a.RoleCatalog)
-                .OrderByDescending(d => d.StartDate)
-                .ToListAsync(cancellationToken);
+        var delegations = await _unitOfWork.Repository<ApprovalDelegate>()
+            .GetQueryable(d => d.DelegatedToAssignment.MemberId == memberId)
+            .Include(d => d.DelegatedToAssignment)
+                .ThenInclude(a => a.Member)
+            .Include(d => d.DelegatedToAssignment)
+                .ThenInclude(a => a.RoleCatalog)
+            .Include(d => d.DelegatedFromAssignment)
+                .ThenInclude(a => a.Member)
+            .Include(d => d.DelegatedFromAssignment)
+                .ThenInclude(a => a.RoleCatalog)
+            .OrderBy(d => d.StartDate)
+            .ToListAsync(cancellationToken);
 
-            var result = _mapper.Map<IEnumerable<ApprovalDelegateDto>>(delegations);
-            return BaseResponse<IEnumerable<ApprovalDelegateDto>>.SuccessResult(result);
-        }
-        catch (Exception ex)
-        {
-            return BaseResponse<IEnumerable<ApprovalDelegateDto>>.ErrorResult($"Error retrieving delegations: {ex.Message}");
-        }
+        return _mapper.Map<IEnumerable<ApprovalDelegateDto>>(delegations);
     }
 
     /// <summary>
-    /// Gets all delegations where a member is the delegator
+    /// Obtém todas as delegações onde um membro é o delegante
     /// </summary>
-    /// <param name="memberId">The member ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of delegations</returns>
-    public async Task<BaseResponse<IEnumerable<ApprovalDelegateDto>>> GetDelegationsByDelegatorAsync(Guid memberId, CancellationToken cancellationToken = default)
+    /// <param name="memberId">ID do membro</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Lista de delegações</returns>
+    public async Task<IEnumerable<ApprovalDelegateDto>> GetDelegationsByDelegatorAsync(Guid memberId, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var delegations = await _unitOfWork.Repository<ApprovalDelegate>()
-                .GetQueryable(d => d.DelegatedFromAssignment.MemberId == memberId)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.Member)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.RoleCatalog)
-                .Include(d => d.DelegatedFromAssignment)
-                    .ThenInclude(a => a.Member)
-                .Include(d => d.DelegatedFromAssignment)
-                    .ThenInclude(a => a.RoleCatalog)
-                .OrderByDescending(d => d.StartDate)
-                .ToListAsync(cancellationToken);
+        var delegations = await _unitOfWork.Repository<ApprovalDelegate>()
+            .GetQueryable(d => d.DelegatedFromAssignment.MemberId == memberId)
+            .Include(d => d.DelegatedToAssignment)
+                .ThenInclude(a => a.Member)
+            .Include(d => d.DelegatedToAssignment)
+                .ThenInclude(a => a.RoleCatalog)
+            .Include(d => d.DelegatedFromAssignment)
+                .ThenInclude(a => a.Member)
+            .Include(d => d.DelegatedFromAssignment)
+                .ThenInclude(a => a.RoleCatalog)
+            .OrderBy(d => d.StartDate)
+            .ToListAsync(cancellationToken);
 
-            var result = _mapper.Map<IEnumerable<ApprovalDelegateDto>>(delegations);
-            return BaseResponse<IEnumerable<ApprovalDelegateDto>>.SuccessResult(result);
-        }
-        catch (Exception ex)
-        {
-            return BaseResponse<IEnumerable<ApprovalDelegateDto>>.ErrorResult($"Error retrieving delegations: {ex.Message}");
-        }
+        return _mapper.Map<IEnumerable<ApprovalDelegateDto>>(delegations);
     }
 
     /// <summary>
-    /// Updates a delegation
+    /// Atualiza uma delegação
     /// </summary>
-    /// <param name="id">The delegation ID</param>
-    /// <param name="request">The update request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>The updated delegation</returns>
-    public async Task<BaseResponse<ApprovalDelegateDto>> UpdateDelegationAsync(Guid id, UpdateApprovalDelegateDto request, CancellationToken cancellationToken = default)
+    /// <param name="id">ID da delegação</param>
+    /// <param name="request">Solicitação de atualização</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>A delegação atualizada</returns>
+    public async Task<ApprovalDelegateDto> UpdateDelegationAsync(Guid id, UpdateApprovalDelegateDto request, CancellationToken cancellationToken = default)
     {
-        try
+        var delegation = await _unitOfWork.Repository<ApprovalDelegate>()
+            .GetFirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+
+        if (delegation == null)
         {
-            var delegation = await _unitOfWork.Repository<ApprovalDelegate>().GetFirstOrDefaultAsync(d => d.Id == id, cancellationToken);
-            if (delegation == null)
-            {
-                return BaseResponse<ApprovalDelegateDto>.ErrorResult("Delegation not found");
-            }
-
-            _mapper.Map(request, delegation);
-            delegation.UpdatedAtUtc = DateTime.UtcNow;
-
-            await _unitOfWork.Repository<ApprovalDelegate>().UpdateAsync(delegation, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            // Get the updated delegation with navigation properties
-            var updatedDelegation = await _unitOfWork.Repository<ApprovalDelegate>()
-                .GetQueryable(d => d.Id == id)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.Member)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.RoleCatalog)
-                .Include(d => d.DelegatedFromAssignment)
-                    .ThenInclude(a => a.Member)
-                .Include(d => d.DelegatedFromAssignment)
-                    .ThenInclude(a => a.RoleCatalog)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            var result = _mapper.Map<ApprovalDelegateDto>(updatedDelegation);
-            return BaseResponse<ApprovalDelegateDto>.SuccessResult(result);
+            ExceptionHelper.ThrowNotFoundException<ApprovalDelegate>(id, "Delegação não encontrada");
         }
-        catch (Exception ex)
+
+        // Verificar se a delegação pode ser atualizada
+        if (delegation?.IsActive == true && delegation.EndDate < DateTime.UtcNow)
         {
-            return BaseResponse<ApprovalDelegateDto>.ErrorResult($"Error updating delegation: {ex.Message}");
+            ExceptionHelper.ThrowBusinessRuleException(
+                "DELEGATION_EXPIRED",
+                "Não é possível atualizar uma delegação expirada",
+                new Dictionary<string, object>
+                {
+                    ["DelegationId"] = id,
+                    ["EndDate"] = delegation.EndDate
+                });
         }
+
+        // Atualizar propriedades
+        _mapper.Map(request, delegation);
+        delegation!.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _unitOfWork.Repository<ApprovalDelegate>().UpdateAsync(delegation, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Obter a delegação atualizada com propriedades de navegação
+        var updatedDelegation = await _unitOfWork.Repository<ApprovalDelegate>()
+            .GetQueryable(d => d.Id == id)
+            .Include(d => d.DelegatedToAssignment)
+                .ThenInclude(a => a.Member)
+            .Include(d => d.DelegatedToAssignment)
+                .ThenInclude(a => a.RoleCatalog)
+            .Include(d => d.DelegatedFromAssignment)
+                .ThenInclude(a => a.Member)
+            .Include(d => d.DelegatedFromAssignment)
+                .ThenInclude(a => a.RoleCatalog)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return _mapper.Map<ApprovalDelegateDto>(updatedDelegation);
     }
 
     /// <summary>
-    /// Ends a delegation
+    /// Finaliza uma delegação
     /// </summary>
-    /// <param name="id">The delegation ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Success result</returns>
-    public async Task<BaseResponse<bool>> EndDelegationAsync(Guid id, CancellationToken cancellationToken = default)
+    /// <param name="id">ID da delegação</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Resultado do sucesso</returns>
+    public async Task<bool> EndDelegationAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        try
+        var delegation = await _unitOfWork.Repository<ApprovalDelegate>()
+            .GetFirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+
+        if (delegation == null)
         {
-            var delegation = await _unitOfWork.Repository<ApprovalDelegate>().GetFirstOrDefaultAsync(d => d.Id == id, cancellationToken);
-            if (delegation == null)
-            {
-                return BaseResponse<bool>.ErrorResult("Delegation not found");
-            }
-
-            delegation.EndDate = DateTime.UtcNow;
-            delegation.UpdatedAtUtc = DateTime.UtcNow;
-
-            await _unitOfWork.Repository<ApprovalDelegate>().UpdateAsync(delegation, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return BaseResponse<bool>.SuccessResult(true);
+            ExceptionHelper.ThrowNotFoundException<ApprovalDelegate>(id, "Delegação não encontrada");
         }
-        catch (Exception ex)
+
+        if (delegation?.IsActive != true)
         {
-            return BaseResponse<bool>.ErrorResult($"Error ending delegation: {ex.Message}");
+            ExceptionHelper.ThrowBusinessRuleException(
+                "DELEGATION_ALREADY_INACTIVE",
+                "A delegação já está inativa",
+                new Dictionary<string, object>
+                {
+                    ["DelegationId"] = id,
+                    ["IsActive"] = delegation!.IsActive
+                });
         }
+
+        delegation!.EndedAtUtc = DateTime.UtcNow;
+        delegation!.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _unitOfWork.Repository<ApprovalDelegate>().UpdateAsync(delegation, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return true;
     }
 
     /// <summary>
-    /// Deletes a delegation
+    /// Exclui uma delegação
     /// </summary>
-    /// <param name="id">The delegation ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Success result</returns>
-    public async Task<BaseResponse<bool>> DeleteDelegationAsync(Guid id, CancellationToken cancellationToken = default)
+    /// <param name="id">ID da delegação</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Resultado do sucesso</returns>
+    public async Task<bool> DeleteDelegationAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var delegation = await _unitOfWork.Repository<ApprovalDelegate>().GetFirstOrDefaultAsync(d => d.Id == id, cancellationToken);
-            if (delegation == null)
-            {
-                return BaseResponse<bool>.ErrorResult("Delegation not found");
-            }
+        var delegation = await _unitOfWork.Repository<ApprovalDelegate>()
+            .GetFirstOrDefaultAsync(d => d.Id == id, cancellationToken);
 
-            await _unitOfWork.Repository<ApprovalDelegate>().DeleteAsync(id, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return BaseResponse<bool>.SuccessResult(true);
-        }
-        catch (Exception ex)
+        if (delegation == null)
         {
-            return BaseResponse<bool>.ErrorResult($"Error deleting delegation: {ex.Message}");
+            ExceptionHelper.ThrowNotFoundException<ApprovalDelegate>(id, "Delegação não encontrada");
         }
+
+        // Verificar se a delegação pode ser excluída
+        if (delegation?.IsActive == true && delegation.StartDate <= DateTime.UtcNow)
+        {
+            ExceptionHelper.ThrowBusinessRuleException(
+                "DELEGATION_ACTIVE",
+                "Não é possível excluir uma delegação ativa",
+                new Dictionary<string, object>
+                {
+                    ["DelegationId"] = id,
+                    ["IsActive"] = delegation.IsActive,
+                    ["StartDate"] = delegation.StartDate
+                });
+        }
+
+        // Soft delete
+        delegation!.IsDeleted = true;
+        delegation!.DeletedAtUtc = DateTime.UtcNow;
+        delegation!.UpdatedAtUtc = DateTime.UtcNow;
+
+        await _unitOfWork.Repository<ApprovalDelegate>().UpdateAsync(delegation, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return true;
     }
 
     #endregion
 
-    #region Validation and Effective Approver Operations
+    #region Validação e Aprovação Efetiva
 
     /// <summary>
-    /// Validates if a delegation can be created
+    /// Valida se uma delegação pode ser criada
     /// </summary>
-    /// <param name="request">The delegation request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Validation result</returns>
-    public async Task<BaseResponse<bool>> ValidateDelegationAsync(CreateApprovalDelegateDto request, CancellationToken cancellationToken = default)
+    /// <param name="request">Solicitação da delegação</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Resultado da validação</returns>
+    public async Task<bool> ValidateDelegationAsync(CreateApprovalDelegateDto request, CancellationToken cancellationToken = default)
     {
-        try
+        // Verificar se o delegante existe e tem a função
+        var delegatorAssignment = await _unitOfWork.Repository<Assignment>()
+            .GetFirstOrDefaultAsync(a => a.Id == request.DelegatedFromAssignmentId, cancellationToken);
+
+        if (delegatorAssignment == null)
         {
-            // Validate date range
-            if (request.EndDate <= request.StartDate)
-            {
-                return BaseResponse<bool>.ErrorResult("End date must be after start date");
-            }
-
-            // Validate assignments exist and are active
-            var delegatedToAssignment = await _unitOfWork.Repository<Assignment>()
-                .GetFirstOrDefaultAsync(a => a.Id == request.DelegatedToAssignmentId && a.IsActive, cancellationToken);
-            if (delegatedToAssignment == null)
-            {
-                return BaseResponse<bool>.ErrorResult("Delegated to assignment not found or inactive");
-            }
-
-            var delegatedFromAssignment = await _unitOfWork.Repository<Assignment>()
-                .GetFirstOrDefaultAsync(a => a.Id == request.DelegatedFromAssignmentId && a.IsActive, cancellationToken);
-            if (delegatedFromAssignment == null)
-            {
-                return BaseResponse<bool>.ErrorResult("Delegated from assignment not found or inactive");
-            }
-
-            // Validate scope consistency
-            if (delegatedToAssignment.ScopeType != request.ScopeType || delegatedToAssignment.ScopeId != request.ScopeId)
-            {
-                return BaseResponse<bool>.ErrorResult("Delegated to assignment scope does not match delegation scope");
-            }
-
-            if (delegatedFromAssignment.ScopeType != request.ScopeType || delegatedFromAssignment.ScopeId != request.ScopeId)
-            {
-                return BaseResponse<bool>.ErrorResult("Delegated from assignment scope does not match delegation scope");
-            }
-
-            // Validate role consistency
-            if (delegatedFromAssignment.RoleCatalog.Name != request.Role)
-            {
-                return BaseResponse<bool>.ErrorResult("Delegated from assignment role does not match delegation role");
-            }
-
-            return BaseResponse<bool>.SuccessResult(true);
+            ExceptionHelper.ThrowNotFoundException<Assignment>(request.DelegatedFromAssignmentId, "Atribuição do delegante não encontrada");
         }
-        catch (Exception ex)
+
+        // Verificar se o delegado existe e pode receber a delegação
+        var delegateAssignment = await _unitOfWork.Repository<Assignment>()
+            .GetFirstOrDefaultAsync(a => a.Id == request.DelegatedToAssignmentId, cancellationToken);
+
+        if (delegateAssignment == null)
         {
-            return BaseResponse<bool>.ErrorResult($"Error validating delegation: {ex.Message}");
+            ExceptionHelper.ThrowNotFoundException<Assignment>(request.DelegatedToAssignmentId, "Atribuição do delegado não encontrada");
         }
+
+        // Verificar se o delegado não é o mesmo que o delegante
+        if (request.DelegatedFromAssignmentId == request.DelegatedToAssignmentId)
+        {
+            ExceptionHelper.ThrowValidationException("DelegatedToAssignmentId", "O delegado não pode ser o mesmo que o delegante");
+        }
+
+        // Verificar se o delegante tem a função no escopo
+        if (delegatorAssignment?.Role != request.Role ||
+            delegatorAssignment?.ScopeType != request.ScopeType ||
+            delegatorAssignment?.ScopeId != request.ScopeId)
+        {
+            ExceptionHelper.ThrowBusinessRuleException(
+                "INVALID_DELEGATOR_ROLE",
+                "O delegante não possui a função especificada no escopo",
+                new Dictionary<string, object>
+                {
+                    ["DelegatorRole"] = delegatorAssignment!.Role,
+                    ["RequestedRole"] = request.Role,
+                    ["DelegatorScopeType"] = delegatorAssignment!.ScopeType,
+                    ["RequestedScopeType"] = request.ScopeType
+                });
+        }
+
+        // Verificar se o delegado está ativo
+        if (delegateAssignment?.IsActive != true)
+        {
+            ExceptionHelper.ThrowBusinessRuleException(
+                "DELEGATE_INACTIVE",
+                "O delegado deve estar ativo para receber a delegação",
+                new Dictionary<string, object>
+                {
+                    ["DelegateAssignmentId"] = request.DelegatedToAssignmentId,
+                    ["IsActive"] = delegateAssignment!.IsActive
+                });
+        }
+
+        return true;
     }
 
     /// <summary>
-    /// Gets the effective approver for a role in a specific scope
+    /// Obtém o aprovador efetivo para uma função em um escopo específico
     /// </summary>
-    /// <param name="role">The role name</param>
-    /// <param name="scopeType">The scope type</param>
-    /// <param name="scopeId">The scope ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>The effective assignment</returns>
-    public async Task<BaseResponse<AssignmentDto?>> GetEffectiveApproverAsync(string role, ScopeType scopeType, Guid scopeId, CancellationToken cancellationToken = default)
+    /// <param name="role">Nome da função</param>
+    /// <param name="scopeType">Tipo do escopo</param>
+    /// <param name="scopeId">ID do escopo</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>A atribuição efetiva</returns>
+    public async Task<AssignmentDto> GetEffectiveApproverAsync(string role, ScopeType scopeType, Guid scopeId, CancellationToken cancellationToken = default)
     {
-        try
+        var now = DateTime.UtcNow;
+
+        // Primeiro, verificar se há uma delegação ativa
+        var activeDelegation = await _unitOfWork.Repository<ApprovalDelegate>()
+            .GetFirstOrDefaultAsync(d => d.Role == role &&
+                                        d.ScopeType == scopeType &&
+                                        d.ScopeId == scopeId &&
+                                        d.IsActive &&
+                                        d.StartDate <= now &&
+                                        d.EndDate >= now,
+                                    cancellationToken);
+
+        if (activeDelegation != null)
         {
-            var now = DateTime.UtcNow;
-
-            // First, try to find an active delegation
-            var activeDelegation = await _unitOfWork.Repository<ApprovalDelegate>()
-                .GetQueryable(d => d.Role == role &&
-                                     d.ScopeType == scopeType &&
-                                     d.ScopeId == scopeId &&
-                                     d.StartDate <= now &&
-                                     d.EndDate >= now)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.Member)
-                .Include(d => d.DelegatedToAssignment)
-                    .ThenInclude(a => a.RoleCatalog)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (activeDelegation != null)
-            {
-                var result = _mapper.Map<AssignmentDto>(activeDelegation.DelegatedToAssignment);
-                return BaseResponse<AssignmentDto?>.SuccessResult(result);
-            }
-
-            // If no delegation, find the original assignment
-            var originalAssignment = await _unitOfWork.Repository<Assignment>()
-                .GetQueryable(a => a.RoleCatalog.Name == role &&
-                                     a.ScopeType == scopeType &&
-                                     a.ScopeId == scopeId &&
-                                     a.IsActive)
+            // Retornar o delegado
+            var delegateAssignment = await _unitOfWork.Repository<Assignment>()
+                .GetQueryable(a => a.Id == activeDelegation.DelegatedToAssignmentId)
                 .Include(a => a.Member)
                 .Include(a => a.RoleCatalog)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            if (originalAssignment != null)
+            if (delegateAssignment != null)
             {
-                var result = _mapper.Map<AssignmentDto>(originalAssignment);
-                return BaseResponse<AssignmentDto?>.SuccessResult(result);
+                return _mapper.Map<AssignmentDto>(delegateAssignment);
             }
+        }
 
-            return BaseResponse<AssignmentDto?>.SuccessResult(null);
-        }
-        catch (Exception ex)
+        // Se não há delegação ativa, retornar o aprovador original
+        var originalAssignment = await _unitOfWork.Repository<Assignment>()
+            .GetFirstOrDefaultAsync(a => a.Role == role &&
+                                        a.ScopeType == scopeType &&
+                                        a.ScopeId == scopeId &&
+                                        a.IsActive,
+                                    cancellationToken);
+
+        if (originalAssignment == null)
         {
-            return BaseResponse<AssignmentDto?>.ErrorResult($"Error getting effective approver: {ex.Message}");
+            ExceptionHelper.ThrowNotFoundException("Assignment",
+                $"Atribuição não encontrada para a função '{role}' no escopo {scopeType}:{scopeId}");
         }
+
+        return _mapper.Map<AssignmentDto>(originalAssignment);
     }
 
     #endregion

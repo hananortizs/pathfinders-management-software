@@ -1,14 +1,16 @@
+using Pms.Backend.Application.DTOs.Common;
+
 namespace Pms.Backend.Application.DTOs.Hierarchy;
 
 /// <summary>
 /// Data Transfer Object for Division entity
 /// </summary>
-public class DivisionDto
+public class DivisionDto : AddressableEntityDtoBase
 {
     /// <summary>
-    /// Division ID
+    /// Entity type for address relationships
     /// </summary>
-    public Guid Id { get; set; }
+    public override string EntityType => "Division";
 
     /// <summary>
     /// Unique code for the division (≤5 chars, UPPERCASE A-Z0-9)

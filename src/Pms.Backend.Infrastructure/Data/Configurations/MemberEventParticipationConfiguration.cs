@@ -53,7 +53,7 @@ public class MemberEventParticipationConfiguration : BaseEntityConfiguration<Mem
 
         // Relationships
         builder.HasOne(e => e.Member)
-            .WithMany()
+            .WithMany(m => m.EventParticipations)
             .HasForeignKey(e => e.MemberId)
             .OnDelete(DeleteBehavior.Restrict);
 

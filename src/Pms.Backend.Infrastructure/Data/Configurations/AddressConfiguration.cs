@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Pms.Backend.Domain.Entities;
+using Pms.Backend.Domain.Helpers;
 
 namespace Pms.Backend.Infrastructure.Data.Configurations;
 
@@ -43,7 +44,10 @@ public class AddressConfiguration : BaseEntityConfiguration<Address>
             .HasDefaultValue("Brasil");
 
         builder.Property(e => e.Cep)
-            .HasMaxLength(10);
+            .HasMaxLength(8)
+            .HasConversion(
+                v => NormalizeCepForDatabase(v),
+                v => v);
 
         builder.Property(e => e.Type)
             .IsRequired()
@@ -83,5 +87,15 @@ public class AddressConfiguration : BaseEntityConfiguration<Address>
             .HasDatabaseName("IX_Addresses_City_State");
 
         // Note: FullAddress is computed in the application layer, not in the database
+    }
+
+    /// <summary>
+    /// Normalizes CEP for database storage (digits only, with leading zeros)
+    /// </summary>
+    /// <param name="cep">CEP input</param>
+    /// <returns>Normalized CEP for database</returns>
+    private static string? NormalizeCepForDatabase(string? cep)
+    {
+        return CepHelper.NormalizeCep(cep);
     }
 }

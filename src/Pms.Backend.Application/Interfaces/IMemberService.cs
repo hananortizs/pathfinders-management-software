@@ -47,6 +47,14 @@ public interface IMemberService
     Task<BaseResponse<MemberDto>> CreateMemberAsync(CreateMemberDto dto, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Creates a new Member with contact information.
+    /// </summary>
+    /// <param name="dto">The CreateMemberWithContactsDto containing the member and contact data.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A BaseResponse containing the created MemberDto or an error.</returns>
+    Task<BaseResponse<MemberDto>> CreateMemberWithContactsAsync(CreateMemberWithContactsDto dto, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Updates an existing Member.
     /// </summary>
     /// <param name="id">The unique identifier of the Member to update.</param>

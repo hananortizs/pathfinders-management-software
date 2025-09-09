@@ -27,6 +27,11 @@ public class Division : BaseEntity
     public ICollection<Union> Unions { get; set; } = new List<Union>();
 
     /// <summary>
+    /// Navigation property to contacts
+    /// </summary>
+    public ICollection<Contact> Contacts { get; set; } = new List<Contact>();
+
+    /// <summary>
     /// Gets the code path for this division (same as Code since it's root)
     /// </summary>
     public string CodePath => Code.Trim();

@@ -25,6 +25,11 @@ public class Region : HierarchyEntityBase
     public ICollection<District> Districts { get; set; } = new List<District>();
 
     /// <summary>
+    /// Navigation property to contacts
+    /// </summary>
+    public ICollection<Contact> Contacts { get; set; } = new List<Contact>();
+
+    /// <summary>
     /// Gets the code path for this region (Division.Code.Union.Code.Association.Code.Region.Code)
     /// </summary>
     public override string CodePath => $"{Association.CodePath.Trim()}.{Code.Trim()}";

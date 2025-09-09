@@ -45,7 +45,7 @@ public class InvestitureConfiguration : BaseEntityConfiguration<Investiture>
 
         // Relationships
         builder.HasOne(e => e.Member)
-            .WithMany()
+            .WithMany(m => m.Investitures)
             .HasForeignKey(e => e.MemberId)
             .OnDelete(DeleteBehavior.Restrict);
 

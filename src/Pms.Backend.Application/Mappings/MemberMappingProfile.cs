@@ -17,6 +17,8 @@ public class MemberMappingProfile : Profile
     {
         // Member mappings
         CreateMap<Member, MemberDto>()
+            .ForMember(dest => dest.PrimaryEmail, opt => opt.MapFrom(src => src.PrimaryEmail))
+            .ForMember(dest => dest.PrimaryPhone, opt => opt.MapFrom(src => src.PrimaryPhone))
             .ReverseMap();
 
         CreateMap<CreateMemberDto, Member>()
@@ -33,7 +35,39 @@ public class MemberMappingProfile : Profile
             .ForMember(dest => dest.EventParticipations, opt => opt.Ignore())
             .ForMember(dest => dest.Investitures, opt => opt.Ignore())
             .ForMember(dest => dest.InvestitureWitnesses, opt => opt.Ignore())
-            .ForMember(dest => dest.TimelineEntries, opt => opt.Ignore());
+            .ForMember(dest => dest.TimelineEntries, opt => opt.Ignore())
+            .ForMember(dest => dest.Contacts, opt => opt.Ignore())
+            .ForMember(dest => dest.BaptismRecords, opt => opt.Ignore())
+            .ForMember(dest => dest.DisciplineRecords, opt => opt.Ignore());
+
+        // Mapping for CreateMemberWithContactsDto
+        CreateMap<CreateMemberWithContactsDto, Member>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => MemberStatus.Pending))
+            .ForMember(dest => dest.CreatedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.ActivatedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.DeactivatedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.DeactivationReason, opt => opt.Ignore())
+            .ForMember(dest => dest.UserCredential, opt => opt.Ignore())
+            .ForMember(dest => dest.Memberships, opt => opt.Ignore())
+            .ForMember(dest => dest.Assignments, opt => opt.Ignore())
+            .ForMember(dest => dest.EventParticipations, opt => opt.Ignore())
+            .ForMember(dest => dest.Investitures, opt => opt.Ignore())
+            .ForMember(dest => dest.InvestitureWitnesses, opt => opt.Ignore())
+            .ForMember(dest => dest.TimelineEntries, opt => opt.Ignore())
+            .ForMember(dest => dest.Contacts, opt => opt.Ignore())
+            .ForMember(dest => dest.BaptismRecords, opt => opt.Ignore())
+            .ForMember(dest => dest.DisciplineRecords, opt => opt.Ignore());
+
+        // Mapping for MemberContactDto to Contact
+        CreateMap<MemberContactDto, Contact>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.EntityId, opt => opt.Ignore())
+            .ForMember(dest => dest.EntityType, opt => opt.MapFrom(src => "Member"))
+            .ForMember(dest => dest.CreatedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
 
         CreateMap<UpdateMemberDto, Member>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())

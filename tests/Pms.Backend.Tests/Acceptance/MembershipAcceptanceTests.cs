@@ -45,7 +45,7 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
         };
 
         // Act - Inscrever membro no clube
-        var response = await Client.PostAsJsonAsync("/pms/membership", enrollmentDto);
+        var response = await Client.PostAsJsonAsync("/membership", enrollmentDto);
 
         // Assert - Verificar se a inscrição foi criada
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -84,7 +84,7 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
             StartDate = DateTime.UtcNow
         };
 
-        await Client.PostAsJsonAsync("/pms/membership", enrollmentDto);
+        await Client.PostAsJsonAsync("/membership", enrollmentDto);
 
         // Act - Alocar membro na unidade
         var assignmentDto = new UpdateMembershipDto
@@ -95,7 +95,7 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
         var membership = DbContext.Memberships
             .FirstOrDefault(m => m.MemberId == member.Id && m.ClubId == club.Id);
 
-        var response = await Client.PutAsJsonAsync($"/pms/membership/{membership!.Id}", assignmentDto);
+        var response = await Client.PutAsJsonAsync($"/membership/{membership!.Id}", assignmentDto);
 
         // Assert - Verificar se a alocação foi feita
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -129,7 +129,7 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
         await EnrollMemberInClubAsync(member2.Id, club.Id);
 
         // Act - Buscar membros do clube
-        var response = await Client.GetAsync($"/pms/membership/club/{club.Id}/members");
+        var response = await Client.GetAsync($"/membership/club/{club.Id}/members");
 
         // Assert - Verificar se os membros foram retornados
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -138,8 +138,8 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
         result.Should().NotBeNull();
         result!.Data.Should().NotBeNull();
         result.Data!.Should().HaveCount(2);
-        result.Data.Should().Contain(m => m.Email == "membro1@test.com");
-        result.Data.Should().Contain(m => m.Email == "membro2@test.com");
+        result.Data.Should().Contain(m => m.PrimaryEmail == "membro1@test.com");
+        result.Data.Should().Contain(m => m.PrimaryEmail == "membro2@test.com");
     }
 
     [Fact]
@@ -159,7 +159,7 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
             .FirstOrDefault(m => m.MemberId == member.Id && m.ClubId == club.Id);
 
         // Act - Desativar membership
-        var response = await Client.DeleteAsync($"/pms/membership/{membership!.Id}");
+        var response = await Client.DeleteAsync($"/membership/{membership!.Id}");
 
         // Assert - Verificar se foi desativado
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -209,7 +209,7 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
             UnitId = unit.Id
         };
 
-        var response = await Client.PutAsJsonAsync($"/pms/membership/{membership!.Id}", assignmentDto);
+        var response = await Client.PutAsJsonAsync($"/membership/{membership!.Id}", assignmentDto);
 
         // Assert - Verificar se a validação de idade foi aplicada
         // Nota: Este teste assume que a validação de idade está implementada no serviço
@@ -275,10 +275,6 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
         {
             Id = Guid.NewGuid(),
             Name = "Igreja Teste",
-            Address = "Rua Teste, 123",
-            City = "São Paulo",
-            State = "SP",
-            Cep = "01234567",
             CreatedAtUtc = DateTime.UtcNow
         };
 
@@ -340,7 +336,7 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
             ConfirmPassword = "Senha123!"
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/members/register", registerDto);
+        var response = await Client.PostAsJsonAsync("/members/register", registerDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<MemberDto>>();
@@ -359,7 +355,7 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
             Password = "Senha123!"
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/members/login", loginDto);
+        var response = await Client.PostAsJsonAsync("/members/login", loginDto);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var result = await response.Content.ReadFromJsonAsync<BaseResponse<AuthResultDto>>();
@@ -378,7 +374,7 @@ public class MembershipAcceptanceTests : BaseIntegrationTest
             StartDate = DateTime.UtcNow
         };
 
-        var response = await Client.PostAsJsonAsync("/pms/membership", enrollmentDto);
+        var response = await Client.PostAsJsonAsync("/membership", enrollmentDto);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 

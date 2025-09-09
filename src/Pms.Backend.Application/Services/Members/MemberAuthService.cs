@@ -5,6 +5,7 @@ using Pms.Backend.Application.DTOs;
 using Pms.Backend.Application.DTOs.Auth;
 using Pms.Backend.Application.Interfaces;
 using Pms.Backend.Domain.Entities;
+using Pms.Backend.Domain.Enums;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -29,9 +30,11 @@ public partial class MemberService : IMemberService
     {
         try
         {
-            // Find member by email
+            // Find member by email through contacts
             var member = await _unitOfWork.Repository<Member>().GetFirstOrDefaultAsync(
-                m => m.Email == request.Email,
+                m => m.Contacts.Any(c => c.Type == ContactType.Email &&
+                                        c.Value == request.Email &&
+                                        !c.IsDeleted),
                 cancellationToken);
 
             if (member == null)
@@ -200,9 +203,11 @@ public partial class MemberService : IMemberService
     {
         try
         {
-            // Find member by email
+            // Find member by email through contacts
             var member = await _unitOfWork.Repository<Member>().GetFirstOrDefaultAsync(
-                m => m.Email == request.Email,
+                m => m.Contacts.Any(c => c.Type == ContactType.Email &&
+                                        c.Value == request.Email &&
+                                        !c.IsDeleted),
                 cancellationToken);
 
             if (member == null)
@@ -230,7 +235,7 @@ public partial class MemberService : IMemberService
             // In a production system, you'd want a dedicated PasswordResetToken table
 
             // TODO: Implement email sending service
-            // await _emailService.SendPasswordResetEmailAsync(member.Email, resetToken);
+            // await _emailService.SendPasswordResetEmailAsync(member.PrimaryEmail, resetToken);
 
             return BaseResponse<bool>.SuccessResult(true, "If the email exists, a reset link has been sent");
         }

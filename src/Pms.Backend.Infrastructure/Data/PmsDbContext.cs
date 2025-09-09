@@ -112,6 +112,41 @@ public class PmsDbContext : DbContext
     /// Task items
     /// </summary>
     public DbSet<TaskItem> TaskItems { get; set; }
+    /// <summary>
+    /// Contacts for all entities
+    /// </summary>
+    public DbSet<Contact> Contacts { get; set; }
+
+    /// <summary>
+    /// Baptism records for members
+    /// </summary>
+    public DbSet<BaptismRecord> BaptismRecords { get; set; }
+
+    /// <summary>
+    /// Discipline records for members
+    /// </summary>
+    public DbSet<DisciplineRecord> DisciplineRecords { get; set; }
+
+    /// <summary>
+    /// Pastors in the system
+    /// </summary>
+    public DbSet<Pastor> Pastors { get; set; }
+
+    // Medical entities
+    /// <summary>
+    /// Medical records for members
+    /// </summary>
+    public DbSet<MedicalRecord> MedicalRecords { get; set; }
+
+    /// <summary>
+    /// Medical tags for categorizing medical information
+    /// </summary>
+    public DbSet<MedicalTag> MedicalTags { get; set; }
+
+    /// <summary>
+    /// Medical record tags for associating tags with medical records
+    /// </summary>
+    public DbSet<MedicalRecordTag> MedicalRecordTags { get; set; }
 
     /// <summary>
     /// Configures the model for the database
@@ -146,5 +181,12 @@ public class PmsDbContext : DbContext
         modelBuilder.Entity<InvestitureWitness>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<TimelineEntry>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<TaskItem>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<Contact>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<BaptismRecord>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<DisciplineRecord>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<Pastor>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<MedicalRecord>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<MedicalTag>().HasQueryFilter(e => !e.IsDeleted);
+        modelBuilder.Entity<MedicalRecordTag>().HasQueryFilter(e => !e.IsDeleted);
     }
 }

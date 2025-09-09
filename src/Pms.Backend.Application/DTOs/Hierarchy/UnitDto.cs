@@ -1,14 +1,16 @@
+using Pms.Backend.Application.DTOs.Common;
+
 namespace Pms.Backend.Application.DTOs.Hierarchy;
 
 /// <summary>
 /// Data Transfer Object for Unit entity
 /// </summary>
-public class UnitDto
+public class UnitDto : AddressableEntityDtoBase
 {
     /// <summary>
-    /// Unit ID
+    /// Entity type for address relationships
     /// </summary>
-    public Guid Id { get; set; }
+    public override string EntityType => "Unit";
 
     /// <summary>
     /// Name of the unit
@@ -45,10 +47,7 @@ public class UnitDto
     /// </summary>
     public Guid ClubId { get; set; }
 
-    /// <summary>
-    /// Parent club
-    /// </summary>
-    public ClubDto? Club { get; set; }
+    // Parent club removed - avoid circular references and performance issues
 
     /// <summary>
     /// Current number of active members in this unit

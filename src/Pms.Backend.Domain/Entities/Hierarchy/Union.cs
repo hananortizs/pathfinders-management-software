@@ -37,6 +37,11 @@ public class Union : BaseEntity
     public ICollection<Association> Associations { get; set; } = new List<Association>();
 
     /// <summary>
+    /// Navigation property to contacts
+    /// </summary>
+    public ICollection<Contact> Contacts { get; set; } = new List<Contact>();
+
+    /// <summary>
     /// Gets the code path for this union (Division.Code.Union.Code)
     /// </summary>
     public string CodePath => $"{Division.Code.Trim()}.{Code.Trim()}";

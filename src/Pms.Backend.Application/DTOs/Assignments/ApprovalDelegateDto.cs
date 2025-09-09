@@ -98,6 +98,11 @@ public class CreateApprovalDelegateDto
     /// Reason for the delegation
     /// </summary>
     public string? Reason { get; set; }
+
+    /// <summary>
+    /// Additional notes for the delegation
+    /// </summary>
+    public string? Notes { get; set; }
 }
 
 /// <summary>
@@ -105,6 +110,16 @@ public class CreateApprovalDelegateDto
 /// </summary>
 public class UpdateApprovalDelegateDto
 {
+    /// <summary>
+    /// Role that is being delegated
+    /// </summary>
+    public string Role { get; set; } = string.Empty;
+
+    /// <summary>
+    /// When the delegation starts
+    /// </summary>
+    public DateTime StartDate { get; set; }
+
     /// <summary>
     /// When the delegation ends
     /// </summary>
@@ -114,4 +129,9 @@ public class UpdateApprovalDelegateDto
     /// Reason for the delegation
     /// </summary>
     public string? Reason { get; set; }
+
+    /// <summary>
+    /// Additional notes for the delegation
+    /// </summary>
+    public string? Notes { get; set; }
 }

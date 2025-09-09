@@ -59,6 +59,11 @@ public class Club : BaseEntity
     public ICollection<Membership> Memberships { get; set; } = new List<Membership>();
 
     /// <summary>
+    /// Navigation property to contacts
+    /// </summary>
+    public ICollection<Contact> Contacts { get; set; } = new List<Contact>();
+
+    /// <summary>
     /// Gets the code path for this club (Division.Code.Union.Code.Association.Code.Region.Code.District.Code.Club.Code)
     /// </summary>
     public string CodePath => $"{District.CodePath.Trim()}.{Code.Trim()}";

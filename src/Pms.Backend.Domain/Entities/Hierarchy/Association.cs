@@ -37,6 +37,11 @@ public class Association : BaseEntity
     public ICollection<Region> Regions { get; set; } = new List<Region>();
 
     /// <summary>
+    /// Navigation property to contacts
+    /// </summary>
+    public ICollection<Contact> Contacts { get; set; } = new List<Contact>();
+
+    /// <summary>
     /// Gets the code path for this association (Division.Code.Union.Code.Association.Code)
     /// </summary>
     public string CodePath => $"{Union.CodePath.Trim()}.{Code.Trim()}";

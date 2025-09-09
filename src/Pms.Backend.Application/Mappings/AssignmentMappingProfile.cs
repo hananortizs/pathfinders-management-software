@@ -49,6 +49,21 @@ public class AssignmentMappingProfile : Profile
         // RoleCatalog mappings
         CreateMap<RoleCatalog, RoleCatalogDto>();
 
+        CreateMap<CreateRoleCatalogDto, RoleCatalog>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.Assignments, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
+
+        CreateMap<UpdateRoleCatalogDto, RoleCatalog>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.Level, opt => opt.Ignore())
+            .ForMember(dest => dest.Assignments, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
+
         // ApprovalDelegate mappings
         CreateMap<ApprovalDelegate, ApprovalDelegateDto>()
             .ForMember(dest => dest.DelegatedToAssignment, opt => opt.MapFrom(src => src.DelegatedToAssignment))
@@ -65,16 +80,15 @@ public class AssignmentMappingProfile : Profile
 
         CreateMap<UpdateApprovalDelegateDto, ApprovalDelegate>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
-            .ForMember(dest => dest.Role, opt => opt.Ignore())
             .ForMember(dest => dest.ScopeType, opt => opt.Ignore())
             .ForMember(dest => dest.ScopeId, opt => opt.Ignore())
-            .ForMember(dest => dest.StartDate, opt => opt.Ignore())
             .ForMember(dest => dest.DelegatedToAssignmentId, opt => opt.Ignore())
             .ForMember(dest => dest.DelegatedToAssignment, opt => opt.Ignore())
             .ForMember(dest => dest.DelegatedFromAssignmentId, opt => opt.Ignore())
             .ForMember(dest => dest.DelegatedFromAssignment, opt => opt.Ignore())
             .ForMember(dest => dest.CreatedAtUtc, opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedAtUtc, opt => opt.Ignore())
-            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+            .ForMember(dest => dest.EndedAtUtc, opt => opt.Ignore());
     }
 }
