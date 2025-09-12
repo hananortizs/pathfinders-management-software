@@ -32,7 +32,6 @@ public class AssociationDto : AddressableEntityDtoBase
     /// </summary>
     public Guid UnionId { get; set; }
 
-    // Parent union removed - avoid circular references and performance issues
 
     /// <summary>
     /// Code path (Division.Code.Union.Code.Association.Code)

@@ -75,8 +75,10 @@ public class HierarchyMappingProfile : Profile
 
         // Club mappings
         CreateMap<Club, ClubDto>()
-            .ForMember(dest => dest.Units, opt => opt.MapFrom(src => src.Units));
-        CreateMap<Club, ClubSummaryDto>();
+            .ForMember(dest => dest.Units, opt => opt.MapFrom(src => src.Units))
+            .ForMember(dest => dest.CodePath, opt => opt.MapFrom(src => src.CodePath));
+        CreateMap<Club, ClubSummaryDto>()
+            .ForMember(dest => dest.CodePath, opt => opt.MapFrom(src => src.CodePath));
         CreateMap<CreateClubDto, Club>();
         CreateMap<UpdateClubDto, Club>();
 
@@ -107,7 +109,8 @@ public class HierarchyMappingProfile : Profile
             .ForMember(dest => dest.Clubs, opt => opt.MapFrom(src => src.Clubs))
             .ForMember(dest => dest.CodePath, opt => opt.MapFrom(src => src.CodePath));
         CreateMap<Club, ClubQueryDto>()
-            .ForMember(dest => dest.Units, opt => opt.MapFrom(src => src.Units));
+            .ForMember(dest => dest.Units, opt => opt.MapFrom(src => src.Units))
+            .ForMember(dest => dest.CodePath, opt => opt.MapFrom(src => src.CodePath));
         CreateMap<Unit, UnitQueryDto>();
     }
 }

@@ -5,6 +5,8 @@ using Pms.Backend.Api.Configuration;
 using Pms.Backend.Api.Infrastructure;
 using Pms.Backend.Api.Extensions;
 using Pms.Backend.Api.Filters;
+using Pms.Backend.Application.Interfaces;
+using Pms.Backend.Application.Services.Seed;
 using Serilog;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -22,7 +24,7 @@ public class Program
     /// Main entry point for the application.
     /// </summary>
     /// <param name="args">Command line arguments.</param>
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 
@@ -60,13 +62,48 @@ builder.Services.AddControllers(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.PropertyNamingPolicy = null; // Use PascalCase
-        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles; // Handle circular references
-        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull; // Ignore null values
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true; // Case insensitive property matching
+        options.JsonSerializerOptions.AllowTrailingCommas = true; // Permitir vírgulas finais
+        options.JsonSerializerOptions.ReadCommentHandling = JsonCommentHandling.Skip; // Pular comentários
     });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "PMS Backend API",
+        Version = "v1",
+        Description = "API para gerenciamento de membros e hierarquia da Igreja Adventista"
+    });
+
+    // Configurar autenticação JWT no Swagger
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header usando o esquema Bearer. Exemplo: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
 
 // Add database context
 builder.Services.AddPmsDbContext(builder.Configuration);
@@ -100,6 +137,21 @@ builder.Services.AddAutoMapper(typeof(Pms.Backend.Application.Mappings.Assignmen
 builder.Services.AddAutoMapper(typeof(Pms.Backend.Application.Mappings.ContactMappingProfile));
 builder.Services.AddAutoMapper(typeof(Pms.Backend.Application.Mappings.AllocationMappingProfile));
 
+// Add JWT Authentication
+builder.Services.AddJwtAuthentication(builder.Configuration);
+
+// Add Hierarchy Code Service
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IHierarchyCodeService, Pms.Backend.Application.Services.Hierarchy.HierarchyCodeService>();
+
+// Add Seed Service
+builder.Services.AddScoped<ISeedService, SeedService>();
+
+// Add Health Service
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IHealthService, Pms.Backend.Application.Services.Health.HealthService>();
+
+// Add Reports Service
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IReportsService, Pms.Backend.Application.Services.Reports.ReportsService>();
+
 // Add CORS
 builder.Services.AddCors(options =>
 {
@@ -125,7 +177,18 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "PMS Backend API v1");
+        c.RoutePrefix = "swagger";
+        c.DocumentTitle = "PMS Backend API";
+        c.DefaultModelsExpandDepth(-1);
+        c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+        c.EnableDeepLinking();
+        c.EnableFilter();
+        c.ShowExtensions();
+        c.EnableValidator();
+    });
 }
 
 app.UseHttpsRedirection();
@@ -138,9 +201,13 @@ app.UseCors("DefaultPolicy");
 // Add response standardization middleware
 app.UseResponseStandardization();
 
+// Add JWT Authentication middleware
+app.UseJwtAuthentication();
+
 // Rate limiting will be implemented in future MVP
 // app.UseRateLimiter();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
@@ -153,10 +220,22 @@ using (var scope = app.Services.CreateScope())
     {
         context.Database.EnsureCreated();
         Log.Information("Database connection successful");
+
+        // Execute seed data
+        var seedService = scope.ServiceProvider.GetRequiredService<ISeedService>();
+        var seedResult = await seedService.SeedAllAsync();
+        if (seedResult.IsSuccess)
+        {
+            Log.Information("Seed data executed successfully: {Message}", seedResult.Message);
+        }
+        else
+        {
+            Log.Warning("Seed data execution failed: {Message}", seedResult.Message);
+        }
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "An error occurred while connecting to the database");
+        Log.Error(ex, "An error occurred while connecting to the database or executing seed data");
         throw;
     }
 }

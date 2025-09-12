@@ -1,4 +1,5 @@
 using Pms.Backend.Domain.Entities;
+using System.ComponentModel.DataAnnotations;
 
 namespace Pms.Backend.Application.DTOs.Auth;
 
@@ -10,11 +11,15 @@ public class LoginRequestDto
     /// <summary>
     /// User's email address
     /// </summary>
+    [Required(ErrorMessage = "E-mail é obrigatório")]
+    [EmailAddress(ErrorMessage = "E-mail deve ter um formato válido")]
     public string Email { get; set; } = string.Empty;
 
     /// <summary>
     /// User's password
     /// </summary>
+    [Required(ErrorMessage = "Senha é obrigatória")]
+    [MinLength(10, ErrorMessage = "Senha deve ter pelo menos 10 caracteres")]
     public string Password { get; set; } = string.Empty;
 }
 
@@ -83,6 +88,21 @@ public class UserInfoDto
     /// User's scopes
     /// </summary>
     public List<string> Scopes { get; set; } = new();
+
+    /// <summary>
+    /// Indica se o usuário está ativo
+    /// </summary>
+    public bool IsActive { get; set; }
+
+    /// <summary>
+    /// Data de criação da conta
+    /// </summary>
+    public DateTime CreatedAtUtc { get; set; }
+
+    /// <summary>
+    /// Data da última atualização
+    /// </summary>
+    public DateTime UpdatedAtUtc { get; set; }
 }
 
 /// <summary>
@@ -220,9 +240,7 @@ public class CompleteMemberInfoDto
     /// </summary>
     public string? Rg { get; set; }
 
-    // Address fields removed - now using centralized Address entity
 
-    // Address fields removed - now using centralized Address entity
 
     /// <summary>
     /// Member's emergency contact name

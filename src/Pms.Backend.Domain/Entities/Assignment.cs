@@ -82,6 +82,11 @@ public class Assignment : BaseEntity
 public enum ScopeType
 {
     /// <summary>
+    /// Division scope (highest level)
+    /// </summary>
+    Division,
+
+    /// <summary>
     /// Union scope
     /// </summary>
     Union,

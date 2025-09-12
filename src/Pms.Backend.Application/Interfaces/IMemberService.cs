@@ -39,20 +39,23 @@ public interface IMemberService
     Task<BaseResponse<PaginatedResponse<IEnumerable<MemberDto>>>> GetMembersByClubAsync(Guid clubId, int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Creates a new Member.
+    /// Retrieves a paginated list of Members with optimized response structure.
     /// </summary>
-    /// <param name="dto">The data transfer object containing the Member's details.</param>
+    /// <param name="pageNumber">The page number for pagination (default is 1).</param>
+    /// <param name="pageSize">The number of items per page (default is 10).</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A BaseResponse containing the created MemberDto if successful, or an error.</returns>
-    Task<BaseResponse<MemberDto>> CreateMemberAsync(CreateMemberDto dto, CancellationToken cancellationToken = default);
+    /// <returns>A BaseResponse containing an OptimizedMemberListResponse.</returns>
+    Task<BaseResponse<OptimizedMemberListResponse>> GetMembersOptimizedAsync(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Creates a new Member with contact information.
+    /// Creates a new Member with complete information including address, medical info, contacts, etc.
+    /// Valida sub-objetos se preenchidos e faz inserção sequencial com rollback em caso de erro.
     /// </summary>
-    /// <param name="dto">The CreateMemberWithContactsDto containing the member and contact data.</param>
+    /// <param name="dto">The data transfer object containing the Member's complete details.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A BaseResponse containing the created MemberDto or an error.</returns>
-    Task<BaseResponse<MemberDto>> CreateMemberWithContactsAsync(CreateMemberWithContactsDto dto, CancellationToken cancellationToken = default);
+    /// <returns>A BaseResponse containing the created MemberDto if successful, or an error.</returns>
+    Task<BaseResponse<MemberDto>> CreateMemberCompleteAsync(CreateMemberCompleteDto dto, CancellationToken cancellationToken = default);
+
 
     /// <summary>
     /// Updates an existing Member.
@@ -70,6 +73,14 @@ public interface IMemberService
     /// <param name="cancellationToken">A token to cancel the operation.</param>
     /// <returns>A BaseResponse indicating success or failure of the deletion.</returns>
     Task<BaseResponse<bool>> DeleteMemberAsync(Guid id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Hard deletes a Member and all related data permanently.
+    /// </summary>
+    /// <param name="id">The unique identifier of the Member to hard delete.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A BaseResponse indicating success or failure of the hard deletion.</returns>
+    Task<BaseResponse<bool>> HardDeleteMemberAsync(Guid id, CancellationToken cancellationToken = default);
 
     #endregion
 

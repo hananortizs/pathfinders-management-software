@@ -24,6 +24,14 @@ public class UserCredentialConfiguration : BaseEntityConfiguration<UserCredentia
             .IsRequired()
             .HasMaxLength(255);
 
+        builder.Property(e => e.Email)
+            .IsRequired()
+            .HasMaxLength(255);
+
+        builder.Property(e => e.IsEmailVerified)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.Property(e => e.IsLockedOut)
             .IsRequired()
             .HasDefaultValue(false);

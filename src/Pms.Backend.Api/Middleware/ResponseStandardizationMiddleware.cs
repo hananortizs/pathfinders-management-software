@@ -239,6 +239,8 @@ public class ResponseStandardizationMiddleware
         return contentType.Contains("text/html") ||
                contentType.Contains("text/css") ||
                contentType.Contains("application/javascript") ||
+               contentType.Contains("text/csv") ||
+               contentType.Contains("application/octet-stream") ||
                contentType.Contains("image/") ||
                contentType.Contains("font/");
     }
@@ -356,6 +358,13 @@ public class ResponseStandardizationMiddleware
         {
             // Try to parse as JSON to extract validation errors
             var parsed = JsonSerializer.Deserialize<object>(originalContent);
+            
+            // If it's already a BaseResponse-like structure, return as is
+            if (parsed is JsonElement jsonElement && HasBaseResponseStructure(jsonElement))
+            {
+                return parsed;
+            }
+            
             return parsed;
         }
         catch

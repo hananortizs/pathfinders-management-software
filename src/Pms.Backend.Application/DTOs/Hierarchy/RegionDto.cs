@@ -33,7 +33,6 @@ public class RegionDto : AddressableEntityDtoBase
     /// </summary>
     public Guid AssociationId { get; set; }
 
-    // Parent association removed - avoid circular references and performance issues
 
     /// <summary>
     /// Code path (Division.Code.Union.Code.Association.Code.Region.Code)

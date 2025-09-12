@@ -32,14 +32,12 @@ public class ClubDto : AddressableEntityDtoBase
     /// </summary>
     public Guid DistrictId { get; set; }
 
-    // Parent district removed - avoid circular references and performance issues
 
     /// <summary>
     /// Linked church ID
     /// </summary>
     public Guid ChurchId { get; set; }
 
-    // Linked church removed - avoid circular references and performance issues
 
     /// <summary>
     /// Indicates if the club is active (has an active Director)

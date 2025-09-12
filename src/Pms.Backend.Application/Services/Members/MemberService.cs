@@ -54,6 +54,20 @@ public partial class MemberService : IMemberService
                 return BaseResponse<MemberDto>.ErrorResult("Member not found");
             }
 
+            // Carregar contatos para calcular PrimaryEmail e PrimaryPhone
+            var contacts = await _unitOfWork.Repository<Contact>()
+                .GetAsync(c => c.EntityId == member.Id && c.EntityType == "Member" && !c.IsDeleted, cancellationToken);
+            member.Contacts = contacts.ToList();
+
+            // Debug: Log dos contatos carregados
+            Console.WriteLine($"Member {member.FirstName} {member.LastName} - Contatos carregados: {member.Contacts.Count}");
+            foreach (var contact in member.Contacts)
+            {
+                Console.WriteLine($"  - Tipo: {contact.Type}, Valor: {contact.Value}, IsPrimary: {contact.IsPrimary}, IsActive: {contact.IsActive}");
+            }
+            Console.WriteLine($"  - PrimaryEmail: {member.PrimaryEmail}");
+            Console.WriteLine($"  - PrimaryPhone: {member.PrimaryPhone}");
+
             var dto = _mapper.Map<MemberDto>(member);
             return BaseResponse<MemberDto>.SuccessResult(dto);
         }
@@ -137,106 +151,140 @@ public partial class MemberService : IMemberService
     }
 
     /// <summary>
-    /// Creates a new Member.
+    /// Retrieves a paginated list of Members with optimized response structure.
     /// </summary>
-    /// <param name="dto">The data transfer object containing the Member's details.</param>
+    /// <param name="pageNumber">The page number for pagination (default is 1).</param>
+    /// <param name="pageSize">The number of items per page (default is 10).</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A BaseResponse containing the created MemberDto if successful, or an error.</returns>
-    public async Task<BaseResponse<MemberDto>> CreateMemberAsync(CreateMemberDto dto, CancellationToken cancellationToken = default)
+    /// <returns>A BaseResponse containing an OptimizedMemberListResponse.</returns>
+    public async Task<BaseResponse<OptimizedMemberListResponse>> GetMembersOptimizedAsync(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default)
     {
         try
         {
-            // Note: Email validation is now handled in CreateMemberWithContactsAsync
-            // This method is kept for backward compatibility but should not be used for new implementations
+            var members = await _unitOfWork.Repository<Member>()
+                .GetAsync(m => !m.IsDeleted, cancellationToken);
 
-            // Validate CPF if provided
-            if (!string.IsNullOrEmpty(dto.Cpf))
+            var totalCount = members.Count();
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+            var hasPreviousPage = pageNumber > 1;
+            var hasNextPage = pageNumber < totalPages;
+
+            var pagedMembers = members
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            // Carregar contatos para cada membro para calcular PrimaryEmail e PrimaryPhone
+            foreach (var member in pagedMembers)
             {
-                var cpfAvailable = await IsCpfAvailableAsync(dto.Cpf, null, cancellationToken);
-                if (!cpfAvailable.Data)
+                var contacts = await _unitOfWork.Repository<Contact>()
+                    .GetAsync(c => c.EntityId == member.Id && c.EntityType == "Member" && !c.IsDeleted, cancellationToken);
+                member.Contacts = contacts.ToList();
+
+                // Debug: Log dos contatos carregados
+                Console.WriteLine($"Member {member.FirstName} {member.LastName} - Contatos carregados: {member.Contacts.Count}");
+                foreach (var contact in member.Contacts)
                 {
-                    return BaseResponse<MemberDto>.ErrorResult("CPF already exists");
+                    Console.WriteLine($"  - Tipo: {contact.Type}, Valor: {contact.Value}, IsPrimary: {contact.IsPrimary}, IsActive: {contact.IsActive}");
                 }
+                Console.WriteLine($"  - PrimaryEmail: {member.PrimaryEmail}");
+                Console.WriteLine($"  - PrimaryPhone: {member.PrimaryPhone}");
             }
 
-            // Validate age (minimum 10 years old)
-            var age = CalculateAge(dto.DateOfBirth);
-            if (age < 10)
+            var memberListDtos = _mapper.Map<List<MemberListDto>>(pagedMembers);
+
+            var optimizedResponse = new OptimizedMemberListResponse
             {
-                return BaseResponse<MemberDto>.ErrorResult("Member must be at least 10 years old");
-            }
+                Items = memberListDtos,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                TotalPages = totalPages,
+                HasPreviousPage = hasPreviousPage,
+                HasNextPage = hasNextPage
+            };
 
-            var member = _mapper.Map<Member>(dto);
-            member.Id = Guid.NewGuid();
-            member.Status = MemberStatus.Pending;
-            member.CreatedAtUtc = DateTime.UtcNow;
-            member.UpdatedAtUtc = DateTime.UtcNow;
-
-            await _unitOfWork.Repository<Member>().AddAsync(member, cancellationToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            var resultDto = _mapper.Map<MemberDto>(member);
-            return BaseResponse<MemberDto>.SuccessResult(resultDto, "Member created successfully");
+            return BaseResponse<OptimizedMemberListResponse>.SuccessResult(optimizedResponse);
         }
         catch (Exception ex)
         {
-            return BaseResponse<MemberDto>.ErrorResult($"Error creating member: {ex.Message}");
+            return BaseResponse<OptimizedMemberListResponse>.ErrorResult($"Erro ao recuperar membros: {ex.Message}");
         }
     }
 
+
     /// <summary>
-    /// Creates a new Member with contact information.
+    /// Creates a new Member with complete information including address, medical info, contacts, etc.
+    /// Valida sub-objetos se preenchidos e faz inserção sequencial com rollback em caso de erro.
     /// </summary>
-    /// <param name="dto">The CreateMemberWithContactsDto containing the member and contact data.</param>
+    /// <param name="dto">The data transfer object containing the Member's complete details.</param>
     /// <param name="cancellationToken">A token to cancel the operation.</param>
-    /// <returns>A BaseResponse containing the created MemberDto or an error.</returns>
-    public async Task<BaseResponse<MemberDto>> CreateMemberWithContactsAsync(CreateMemberWithContactsDto dto, CancellationToken cancellationToken = default)
+    /// <returns>A BaseResponse containing the created MemberDto if successful, or an error.</returns>
+    public async Task<BaseResponse<MemberDto>> CreateMemberCompleteAsync(CreateMemberCompleteDto dto, CancellationToken cancellationToken = default)
     {
         try
         {
-            // Validate name fields
+            // 1. Validações básicas do membro
             var nameValidation = ValidateMemberName(dto.FirstName, dto.MiddleNames, dto.LastName);
             if (!nameValidation.IsSuccess)
             {
                 return BaseResponse<MemberDto>.ErrorResult(nameValidation.Message ?? "Erro de validação de nome");
             }
 
-            // Validate CPF if provided
+            // Validar CPF se fornecido
             if (!string.IsNullOrEmpty(dto.Cpf))
             {
                 var cpfAvailable = await IsCpfAvailableAsync(dto.Cpf, null, cancellationToken);
                 if (!cpfAvailable.Data)
                 {
-                    return BaseResponse<MemberDto>.ErrorResult("CPF already exists");
+                    return BaseResponse<MemberDto>.ErrorResult("CPF já existe");
                 }
             }
 
-            // Validate age (minimum 10 years old)
+            // Validar idade (mínimo 10 anos)
             var age = CalculateAge(dto.DateOfBirth);
             if (age < 10)
             {
-                return BaseResponse<MemberDto>.ErrorResult("Member must be at least 10 years old");
+                return BaseResponse<MemberDto>.ErrorResult("Membro deve ter pelo menos 10 anos de idade");
             }
 
-            // Validate contacts
-            var contactValidation = ValidateMemberContacts(dto.Contacts);
-            if (!contactValidation.IsSuccess)
+            // 2. Validação de e-mail obrigatório (considerando loginInfo)
+            var hasEmailInContacts = dto.ContactInfo?.Any(c => c.Type == ContactType.Email) ?? false;
+            var hasEmailInLogin = !string.IsNullOrEmpty(dto.LoginInfo?.Email);
+
+
+            if (!hasEmailInContacts && !hasEmailInLogin)
             {
-                return BaseResponse<MemberDto>.ErrorResult(contactValidation.Message ?? "Erro de validação de contatos");
+                return BaseResponse<MemberDto>.ErrorResult("Pelo menos um contato de email é obrigatório (forneça no contactInfo ou loginInfo)");
             }
 
-            // Check for duplicate emails in contacts
-            var emailContacts = dto.Contacts.Where(c => c.Type == ContactType.Email).ToList();
-            foreach (var emailContact in emailContacts)
+            // 2.1. Validações de contatos se preenchidos
+            if (dto.ContactInfo != null && dto.ContactInfo.Any())
             {
-                var emailAvailable = await IsEmailAvailableAsync(emailContact.Value, null, cancellationToken);
-                if (!emailAvailable.Data)
+                // Verificar emails duplicados nos contatos fornecidos
+                var emailContacts = dto.ContactInfo.Where(c => c.Type == ContactType.Email).ToList();
+                foreach (var emailContact in emailContacts)
                 {
-                    return BaseResponse<MemberDto>.ErrorResult($"Email {emailContact.Value} already exists");
+                    var emailAvailable = await IsEmailAvailableAsync(emailContact.Value, null, cancellationToken);
+                    if (!emailAvailable.Data)
+                    {
+                        return BaseResponse<MemberDto>.ErrorResult($"Email {emailContact.Value} já existe");
+                    }
                 }
             }
 
-            // Create member
+
+            // 2.4. Verificação de disponibilidade do email no loginInfo
+            if (dto.LoginInfo != null && !string.IsNullOrEmpty(dto.LoginInfo.Email))
+            {
+                var emailAvailable = await IsEmailAvailableAsync(dto.LoginInfo.Email, null, cancellationToken);
+                if (!emailAvailable.Data)
+                {
+                    return BaseResponse<MemberDto>.ErrorResult($"Email {dto.LoginInfo.Email} já existe");
+                }
+            }
+
+            // 3. Criar membro principal
             var member = _mapper.Map<Member>(dto);
             member.Id = Guid.NewGuid();
             member.Status = MemberStatus.Pending;
@@ -244,30 +292,118 @@ public partial class MemberService : IMemberService
             member.UpdatedAtUtc = DateTime.UtcNow;
 
             await _unitOfWork.Repository<Member>().AddAsync(member, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Create contacts
-            foreach (var contactDto in dto.Contacts)
+            // 4. Criar contatos se fornecidos + contato de e-mail automático do loginInfo
+            var contactsToCreate = new List<Contact>();
+
+            // 4.1. Adicionar contatos fornecidos pelo usuário
+            if (dto.ContactInfo != null && dto.ContactInfo.Any())
             {
-                var contact = _mapper.Map<Contact>(contactDto);
-                contact.Id = Guid.NewGuid();
-                contact.EntityId = member.Id;
-                contact.EntityType = "Member";
-                contact.CreatedAtUtc = DateTime.UtcNow;
-                contact.UpdatedAtUtc = DateTime.UtcNow;
+                foreach (var contactDto in dto.ContactInfo)
+                {
+                    var contact = _mapper.Map<Contact>(contactDto);
+                    contact.Id = Guid.NewGuid();
+                    contact.EntityId = member.Id;
+                    contact.EntityType = "Member";
+                    contact.CreatedAtUtc = DateTime.UtcNow;
+                    contact.UpdatedAtUtc = DateTime.UtcNow;
 
+                    contactsToCreate.Add(contact);
+                }
+            }
+
+            // 4.2. Adicionar contato de e-mail automaticamente a partir do loginInfo
+            if (dto.LoginInfo != null && !string.IsNullOrEmpty(dto.LoginInfo.Email))
+            {
+                // Verificar se já não existe um contato de e-mail nos contatos fornecidos
+                var hasEmailContact = dto.ContactInfo?.Any(c => c.Type == ContactType.Email) ?? false;
+
+                if (!hasEmailContact)
+                {
+                    var emailContact = new Contact
+                    {
+                        Id = Guid.NewGuid(),
+                        EntityId = member.Id,
+                        EntityType = "Member",
+                        Type = ContactType.Email,
+                        Value = dto.LoginInfo.Email,
+                        IsPrimary = true,
+                        IsActive = true,
+                        CreatedAtUtc = DateTime.UtcNow,
+                        UpdatedAtUtc = DateTime.UtcNow
+                    };
+
+                    contactsToCreate.Add(emailContact);
+                }
+            }
+
+            // 4.3. Salvar todos os contatos
+            foreach (var contact in contactsToCreate)
+            {
                 await _unitOfWork.Repository<Contact>().AddAsync(contact, cancellationToken);
             }
 
+            // 5. Criar endereço se fornecido
+            if (dto.Address != null)
+            {
+                var address = _mapper.Map<Domain.Entities.Address>(dto.Address);
+                address.Id = Guid.NewGuid();
+                address.EntityId = member.Id;
+                address.EntityType = "Member";
+                address.CreatedAtUtc = DateTime.UtcNow;
+                address.UpdatedAtUtc = DateTime.UtcNow;
+
+                await _unitOfWork.Repository<Domain.Entities.Address>().AddAsync(address, cancellationToken);
+            }
+
+            // 6. Criar prontuário médico se fornecido
+            if (dto.MedicalInfo != null)
+            {
+                var medicalRecord = _mapper.Map<MedicalRecord>(dto.MedicalInfo);
+                medicalRecord.Id = Guid.NewGuid();
+                medicalRecord.MemberId = member.Id;
+                medicalRecord.CreatedAtUtc = DateTime.UtcNow;
+                medicalRecord.UpdatedAtUtc = DateTime.UtcNow;
+
+                await _unitOfWork.Repository<MedicalRecord>().AddAsync(medicalRecord, cancellationToken);
+            }
+
+            // 7. Criar credenciais de usuário se fornecidas
+            if (dto.LoginInfo != null)
+            {
+                var userCredential = new UserCredential
+                {
+                    Id = Guid.NewGuid(),
+                    MemberId = member.Id,
+                    Email = dto.LoginInfo.Email,
+                    PasswordHash = HashPassword(dto.LoginInfo.Password),
+                    Salt = "", // Será preenchido pelo HashPassword se necessário
+                    IsActive = true,
+                    IsEmailVerified = false,
+                    IsLockedOut = false,
+                    FailedLoginAttempts = 0,
+                    CreatedAtUtc = DateTime.UtcNow,
+                    UpdatedAtUtc = DateTime.UtcNow
+                };
+
+                await _unitOfWork.Repository<UserCredential>().AddAsync(userCredential, cancellationToken);
+            }
+
+            // 8. Salvar todas as alterações (com rollback automático em caso de erro)
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var resultDto = _mapper.Map<MemberDto>(member);
-            return BaseResponse<MemberDto>.SuccessResult(resultDto, "Member created successfully with contacts");
+            return BaseResponse<MemberDto>.SuccessResult(resultDto, "Membro criado com sucesso com todas as informações");
         }
         catch (Exception ex)
         {
-            return BaseResponse<MemberDto>.ErrorResult($"Error creating member: {ex.Message}");
+            // O rollback é automático devido ao UnitOfWork
+            return BaseResponse<MemberDto>.ErrorResult($"Erro ao criar membro: {ex.Message}");
         }
     }
+
+
 
     /// <summary>
     /// Updates an existing Member.
@@ -299,11 +435,14 @@ public partial class MemberService : IMemberService
                 }
             }
 
-            // Validate age (minimum 10 years old)
-            var age = CalculateAge(dto.DateOfBirth);
-            if (age < 10)
+            // Validate age (minimum 10 years old) if DateOfBirth is provided
+            if (dto.DateOfBirth.HasValue)
             {
-                return BaseResponse<MemberDto>.ErrorResult("Member must be at least 10 years old");
+                var age = CalculateAge(dto.DateOfBirth.Value);
+                if (age < 10)
+                {
+                    return BaseResponse<MemberDto>.ErrorResult("Member must be at least 10 years old");
+                }
             }
 
             _mapper.Map(dto, member);
@@ -357,6 +496,77 @@ public partial class MemberService : IMemberService
         catch (Exception ex)
         {
             return BaseResponse<bool>.ErrorResult($"Error deleting member: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Hard deletes a Member and all related data permanently.
+    /// </summary>
+    /// <param name="id">The unique identifier of the Member to hard delete.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A BaseResponse indicating success or failure of the hard deletion.</returns>
+    public async Task<BaseResponse<bool>> HardDeleteMemberAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Verificar se o membro existe
+            var member = await _unitOfWork.Repository<Member>().GetByIdAsync(id, cancellationToken);
+            if (member == null)
+            {
+                return BaseResponse<bool>.ErrorResult("Membro não encontrado");
+            }
+
+            // 1. Deletar assignments (papéis) do membro
+            var assignments = await _unitOfWork.Repository<Assignment>()
+                .GetAsync(a => a.MemberId == id, cancellationToken);
+            foreach (var assignment in assignments)
+            {
+                await _unitOfWork.Repository<Assignment>().DeleteAsync(assignment.Id, cancellationToken);
+            }
+
+            // 2. Deletar credenciais de usuário do membro
+            var userCredentials = await _unitOfWork.Repository<UserCredential>()
+                .GetAsync(uc => uc.MemberId == id, cancellationToken);
+            foreach (var credential in userCredentials)
+            {
+                await _unitOfWork.Repository<UserCredential>().DeleteAsync(credential.Id, cancellationToken);
+            }
+
+            // 3. Deletar contatos do membro
+            var contacts = await _unitOfWork.Repository<Contact>()
+                .GetAsync(c => c.EntityId == id && c.EntityType == "Member", cancellationToken);
+            foreach (var contact in contacts)
+            {
+                await _unitOfWork.Repository<Contact>().DeleteAsync(contact.Id, cancellationToken);
+            }
+
+            // 4. Deletar endereços do membro
+            var addresses = await _unitOfWork.Repository<Domain.Entities.Address>()
+                .GetAsync(a => a.EntityId == id && a.EntityType == "Member", cancellationToken);
+            foreach (var address in addresses)
+            {
+                await _unitOfWork.Repository<Domain.Entities.Address>().DeleteAsync(address.Id, cancellationToken);
+            }
+
+            // 5. Deletar membroships do membro
+            var memberships = await _unitOfWork.Repository<Domain.Entities.Membership>()
+                .GetAsync(m => m.MemberId == id, cancellationToken);
+            foreach (var membership in memberships)
+            {
+                await _unitOfWork.Repository<Domain.Entities.Membership>().DeleteAsync(membership.Id, cancellationToken);
+            }
+
+            // 6. Deletar o membro
+            await _unitOfWork.Repository<Member>().DeleteAsync(id, cancellationToken);
+
+            // Salvar todas as mudanças
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return BaseResponse<bool>.SuccessResult(true, "Membro e todos os dados relacionados foram deletados permanentemente");
+        }
+        catch (Exception ex)
+        {
+            return BaseResponse<bool>.ErrorResult($"Erro ao deletar membro permanentemente: {ex.Message}");
         }
     }
 
@@ -479,6 +689,67 @@ public partial class MemberService : IMemberService
     /// <param name="contacts">List of contacts</param>
     /// <returns>Validation result</returns>
     private static BaseResponse<bool> ValidateMemberContacts(List<MemberContactDto> contacts)
+    {
+        if (contacts == null || !contacts.Any())
+        {
+            return BaseResponse<bool>.ErrorResult("Pelo menos um contato é obrigatório");
+        }
+
+        // Check for at least one email contact
+        var hasEmail = contacts.Any(c => c.Type == ContactType.Email);
+        if (!hasEmail)
+        {
+            return BaseResponse<bool>.ErrorResult("Pelo menos um contato de email é obrigatório");
+        }
+
+        // Check for duplicate contact types
+        var duplicateTypes = contacts.GroupBy(c => c.Type)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key.ToString())
+            .ToList();
+
+        if (duplicateTypes.Any())
+        {
+            return BaseResponse<bool>.ErrorResult($"Tipos de contato duplicados encontrados: {string.Join(", ", duplicateTypes)}");
+        }
+
+        // Validate each contact
+        foreach (var contact in contacts)
+        {
+            if (string.IsNullOrWhiteSpace(contact.Value))
+            {
+                return BaseResponse<bool>.ErrorResult($"Valor do contato {contact.Type} não pode estar vazio");
+            }
+
+            // Basic email validation
+            if (contact.Type == ContactType.Email)
+            {
+                if (!contact.Value.Contains("@") || contact.Value.Length < 5)
+                {
+                    return BaseResponse<bool>.ErrorResult("Email inválido");
+                }
+            }
+
+            // Basic phone validation
+            if (contact.Type == ContactType.Mobile || contact.Type == ContactType.Landline)
+            {
+                var phoneDigits = new string(contact.Value.Where(char.IsDigit).ToArray());
+                if (phoneDigits.Length < 10)
+                {
+                    return BaseResponse<bool>.ErrorResult("Telefone deve ter pelo menos 10 dígitos");
+                }
+            }
+        }
+
+        return BaseResponse<bool>.SuccessResult(true);
+    }
+
+    /// <summary>
+    /// Validates create member contacts
+    /// </summary>
+    /// <param name="contacts">List of create member contacts</param>
+    /// <returns>Validation result</returns>
+    private static BaseResponse<bool> ValidateCreateMemberContacts(List<CreateMemberContactDto> contacts)
     {
         if (contacts == null || !contacts.Any())
         {

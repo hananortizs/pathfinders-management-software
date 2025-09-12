@@ -19,10 +19,42 @@ public class MemberMappingProfile : Profile
         CreateMap<Member, MemberDto>()
             .ForMember(dest => dest.PrimaryEmail, opt => opt.MapFrom(src => src.PrimaryEmail))
             .ForMember(dest => dest.PrimaryPhone, opt => opt.MapFrom(src => src.PrimaryPhone))
+            .ForMember(dest => dest.MiddleNames, opt => opt.MapFrom(src => src.MiddleNames))
             .ReverseMap();
 
-        CreateMap<CreateMemberDto, Member>()
+        // Optimized member list mapping
+        CreateMap<Member, MemberListDto>()
+            .ForMember(dest => dest.PrimaryEmail, opt => opt.MapFrom(src => src.PrimaryEmail))
+            .ForMember(dest => dest.PrimaryPhone, opt => opt.MapFrom(src => src.PrimaryPhone))
+            .ForMember(dest => dest.MiddleNames, opt => opt.MapFrom(src => src.MiddleNames))
+            .ForMember(dest => dest.SocialName, opt => opt.MapFrom(src => src.SocialName))
+            .ForMember(dest => dest.Rg, opt => opt.MapFrom(src => src.Rg))
+            .ForMember(dest => dest.Cpf, opt => opt.MapFrom(src => src.Cpf))
+            .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
+            .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))
+            .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src => src.DateOfBirth))
+            .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+            .ForMember(dest => dest.CreatedAtUtc, opt => opt.MapFrom(src => src.CreatedAtUtc))
+            .ForMember(dest => dest.UpdatedAtUtc, opt => opt.MapFrom(src => src.UpdatedAtUtc))
+            .ForMember(dest => dest.ActivatedAtUtc, opt => opt.MapFrom(src => src.ActivatedAtUtc))
+            .ForMember(dest => dest.DeactivatedAtUtc, opt => opt.MapFrom(src => src.DeactivatedAtUtc))
+            .ForMember(dest => dest.DeactivationReason, opt => opt.MapFrom(src => src.DeactivationReason))
+            .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.Status == MemberStatus.Active));
+
+        // CreateMemberDto mapping removed - using CreateMemberCompleteDto only
+
+        CreateMap<CreateMemberCompleteDto, Member>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
+            .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))
+            .ForMember(dest => dest.MiddleNames, opt => opt.MapFrom(src => src.MiddleNames))
+            .ForMember(dest => dest.SocialName, opt => opt.MapFrom(src => src.SocialName))
+            .ForMember(dest => dest.Cpf, opt => opt.MapFrom(src => src.Cpf))
+            .ForMember(dest => dest.Rg, opt => opt.MapFrom(src => src.Rg))
+            .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender))
+            .ForMember(dest => dest.DateOfBirth, opt => opt.MapFrom(src =>
+                src.DateOfBirth.Kind == DateTimeKind.Utc ? src.DateOfBirth : DateTime.SpecifyKind(src.DateOfBirth, DateTimeKind.Utc)))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => MemberStatus.Pending))
             .ForMember(dest => dest.CreatedAtUtc, opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedAtUtc, opt => opt.Ignore())
@@ -69,6 +101,25 @@ public class MemberMappingProfile : Profile
             .ForMember(dest => dest.UpdatedAtUtc, opt => opt.Ignore())
             .ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
 
+        // Mapping for CreateMemberContactDto to Contact
+        CreateMap<CreateMemberContactDto, Contact>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.EntityId, opt => opt.Ignore())
+            .ForMember(dest => dest.EntityType, opt => opt.MapFrom(src => "Member"))
+            .ForMember(dest => dest.CreatedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+            .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true));
+
+        // Mapping for CreateMemberAddressDto to Address
+        CreateMap<CreateMemberAddressDto, Address>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.EntityId, opt => opt.Ignore())
+            .ForMember(dest => dest.EntityType, opt => opt.MapFrom(src => "Member"))
+            .ForMember(dest => dest.CreatedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.UpdatedAtUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
+
         CreateMap<UpdateMemberDto, Member>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.CreatedAtUtc, opt => opt.Ignore())
@@ -97,7 +148,19 @@ public class MemberMappingProfile : Profile
             .ForMember(dest => dest.FailedLoginAttempts, opt => opt.Ignore())
             .ForMember(dest => dest.LockedUntilUtc, opt => opt.Ignore())
             .ForMember(dest => dest.PasswordHistory, opt => opt.Ignore())
-            .ForMember(dest => dest.Member, opt => opt.Ignore());
+            .ForMember(dest => dest.Member, opt => opt.Ignore())
+            .ForMember(dest => dest.IsEmailVerified, opt => opt.MapFrom(src => false))
+            .ForMember(dest => dest.IsLockedOut, opt => opt.MapFrom(src => false))
+            .ForMember(dest => dest.LockedOutUntilUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.LastFailedLoginAttemptUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive))
+            .ForMember(dest => dest.LastActiveUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.ActivationToken, opt => opt.Ignore())
+            .ForMember(dest => dest.ActivationTokenExpiresUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.PasswordResetToken, opt => opt.Ignore())
+            .ForMember(dest => dest.PasswordResetTokenExpiresUtc, opt => opt.Ignore())
+            .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
+            .ForMember(dest => dest.Salt, opt => opt.Ignore());
 
         // Auth mappings
         CreateMap<Member, UserInfoDto>()
@@ -108,22 +171,14 @@ public class MemberMappingProfile : Profile
             .ForMember(dest => dest.Scopes, opt => opt.Ignore());
 
         // Invitation mappings
-        CreateMap<InviteMemberRequestDto, CreateMemberDto>()
+        CreateMap<InviteMemberRequestDto, CreateMemberCompleteDto>()
             .ForMember(dest => dest.Cpf, opt => opt.Ignore())
             .ForMember(dest => dest.Rg, opt => opt.Ignore())
-            // Address fields removed - now using centralized Address entity
-            .ForMember(dest => dest.EmergencyContactName, opt => opt.Ignore())
-            .ForMember(dest => dest.EmergencyContactPhone, opt => opt.Ignore())
-            .ForMember(dest => dest.EmergencyContactRelationship, opt => opt.Ignore())
+            .ForMember(dest => dest.Address, opt => opt.Ignore())
+            .ForMember(dest => dest.BaptismInfo, opt => opt.Ignore())
+            .ForMember(dest => dest.ContactInfo, opt => opt.Ignore())
             .ForMember(dest => dest.MedicalInfo, opt => opt.Ignore())
-            .ForMember(dest => dest.Allergies, opt => opt.Ignore())
-            .ForMember(dest => dest.Medications, opt => opt.Ignore())
-            .ForMember(dest => dest.BaptismDate, opt => opt.Ignore())
-            .ForMember(dest => dest.BaptismChurch, opt => opt.Ignore())
-            .ForMember(dest => dest.BaptismPastor, opt => opt.Ignore())
-            .ForMember(dest => dest.ScarfDate, opt => opt.Ignore())
-            .ForMember(dest => dest.ScarfChurch, opt => opt.Ignore())
-            .ForMember(dest => dest.ScarfPastor, opt => opt.Ignore());
+            .ForMember(dest => dest.LoginInfo, opt => opt.Ignore());
     }
 }
 
@@ -152,10 +207,6 @@ public class UserCredentialDto
     /// </summary>
     public bool IsActive { get; set; }
 
-    /// <summary>
-    /// Whether the email is verified
-    /// </summary>
-    public bool IsEmailVerified { get; set; }
 
     /// <summary>
     /// Last login date
@@ -202,9 +253,4 @@ public class CreateUserCredentialDto
     /// Whether the account is active
     /// </summary>
     public bool IsActive { get; set; } = true;
-
-    /// <summary>
-    /// Whether the email is verified
-    /// </summary>
-    public bool IsEmailVerified { get; set; } = false;
 }

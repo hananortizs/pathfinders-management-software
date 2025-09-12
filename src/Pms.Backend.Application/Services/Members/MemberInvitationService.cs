@@ -46,7 +46,7 @@ public partial class MemberService : IMemberService
             }
 
             // Create member from invitation
-            var createMemberDto = _mapper.Map<CreateMemberDto>(request);
+            var createMemberDto = _mapper.Map<CreateMemberCompleteDto>(request);
             var member = _mapper.Map<Member>(createMemberDto);
             member.Id = Guid.NewGuid();
             member.Status = MemberStatus.Pending;
@@ -61,10 +61,8 @@ public partial class MemberService : IMemberService
             {
                 Id = Guid.NewGuid(),
                 MemberId = member.Id,
-                Email = member.PrimaryEmail ?? "",
                 PasswordHash = string.Empty, // Will be set during activation
                 IsActive = false,
-                IsEmailVerified = false,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
             };
@@ -187,7 +185,6 @@ public partial class MemberService : IMemberService
             // Update user credential
             userCredential.PasswordHash = HashPassword(request.Password);
             userCredential.IsActive = true;
-            userCredential.IsEmailVerified = true;
             userCredential.UpdatedAtUtc = DateTime.UtcNow;
 
             // Add to password history

@@ -27,6 +27,16 @@ public class UserCredential : BaseEntity
     public string Salt { get; set; } = string.Empty;
 
     /// <summary>
+    /// Email address for authentication
+    /// </summary>
+    public string Email { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Indicates if the email is verified
+    /// </summary>
+    public bool IsEmailVerified { get; set; } = false;
+
+    /// <summary>
     /// Indicates if the user account is locked out
     /// </summary>
     public bool IsLockedOut { get; set; }
@@ -66,15 +76,6 @@ public class UserCredential : BaseEntity
     /// </summary>
     public DateTime? LockedUntilUtc { get; set; }
 
-    /// <summary>
-    /// Email address for the credential
-    /// </summary>
-    public string Email { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Indicates if the email has been verified
-    /// </summary>
-    public bool IsEmailVerified { get; set; }
 
     /// <summary>
     /// Token for account activation (24h validity)
@@ -109,46 +110,15 @@ public class UserCredential : BaseEntity
     /// <summary>
     /// Checks if the activation token is valid
     /// </summary>
-    public bool IsActivationTokenValid => !string.IsNullOrEmpty(ActivationToken) && 
-                                         ActivationTokenExpiresUtc.HasValue && 
+    public bool IsActivationTokenValid => !string.IsNullOrEmpty(ActivationToken) &&
+                                         ActivationTokenExpiresUtc.HasValue &&
                                          ActivationTokenExpiresUtc.Value > DateTime.UtcNow;
 
     /// <summary>
     /// Checks if the password reset token is valid
     /// </summary>
-    public bool IsPasswordResetTokenValid => !string.IsNullOrEmpty(PasswordResetToken) && 
-                                            PasswordResetTokenExpiresUtc.HasValue && 
+    public bool IsPasswordResetTokenValid => !string.IsNullOrEmpty(PasswordResetToken) &&
+                                            PasswordResetTokenExpiresUtc.HasValue &&
                                             PasswordResetTokenExpiresUtc.Value > DateTime.UtcNow;
 }
 
-/// <summary>
-/// Represents a password in the history
-/// Used to prevent reuse of recent passwords
-/// </summary>
-public class PasswordHistory : BaseEntity
-{
-    /// <summary>
-    /// Foreign key to the user credential
-    /// </summary>
-    public Guid UserCredentialId { get; set; }
-
-    /// <summary>
-    /// Navigation property to the user credential
-    /// </summary>
-    public UserCredential UserCredential { get; set; } = null!;
-
-    /// <summary>
-    /// Hashed password
-    /// </summary>
-    public string PasswordHash { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Salt used for hashing
-    /// </summary>
-    public string Salt { get; set; } = string.Empty;
-
-    /// <summary>
-    /// When this password was used (UTC)
-    /// </summary>
-    public DateTime UsedAtUtc { get; set; }
-}

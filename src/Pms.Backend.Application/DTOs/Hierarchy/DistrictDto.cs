@@ -33,7 +33,6 @@ public class DistrictDto : AddressableEntityDtoBase
     /// </summary>
     public Guid RegionId { get; set; }
 
-    // Parent region removed - avoid circular references and performance issues
 
     /// <summary>
     /// Code path (Division.Code.Union.Code.Association.Code.Region.Code.District.Code)

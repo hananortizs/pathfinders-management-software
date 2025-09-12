@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Pms.Backend.Application.DTOs;
 using Pms.Backend.Application.DTOs.Auth;
 using Pms.Backend.Application.DTOs.Members;
 using Pms.Backend.Application.Interfaces;
@@ -39,21 +40,22 @@ public partial class MemberController : ControllerBase
     }
 
     /// <summary>
-    /// Gets a paginated list of members
+    /// Gets a paginated list of members with optimized response structure (no repetitive fields)
     /// </summary>
     /// <param name="pageNumber">Page number (default: 1)</param>
     /// <param name="pageSize">Page size (default: 10)</param>
     /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Paginated list of members</returns>
+    /// <returns>Optimized paginated list of members</returns>
     [HttpGet]
     public async Task<IActionResult> GetMembers(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
-        var result = await _memberService.GetMembersAsync(pageNumber, pageSize, cancellationToken);
+        var result = await _memberService.GetMembersOptimizedAsync(pageNumber, pageSize, cancellationToken);
         return Ok(result);
     }
+
 
     /// <summary>
     /// Gets members by club ID
@@ -75,17 +77,94 @@ public partial class MemberController : ControllerBase
     }
 
     /// <summary>
-    /// Creates a new member
+    /// Cria um novo membro com informações completas incluindo endereço, informações médicas, contatos, etc.
     /// </summary>
-    /// <param name="dto">Member creation data</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Created member information</returns>
+    /// <remarks>
+    /// Este endpoint permite criar um membro com todas as informações necessárias:
+    ///
+    /// **Regras de Negócio:**
+    /// - Email é obrigatório: deve estar em `contactInfo` (tipo 3) OU em `loginInfo`
+    /// - Se não houver email em `contactInfo`, o sistema cria automaticamente um contato de email usando `loginInfo.email`
+    /// - CPF deve ser único no sistema (se fornecido)
+    /// - Membro deve ter pelo menos 10 anos de idade
+    /// - Senha deve ter pelo menos 10 caracteres (se fornecida)
+    ///
+    /// **Tipos de Contato:**
+    /// - 1: Mobile (Celular)
+    /// - 2: Landline (Telefone Fixo)
+    /// - 3: Email
+    /// - 4: WhatsApp
+    /// - 5-11: Redes Sociais (Facebook, Instagram, YouTube, etc.)
+    ///
+    /// **Exemplo de Payload:**
+    /// ```json
+    /// {
+    ///   "firstName": "João",
+    ///   "lastName": "Silva",
+    ///   "middleNames": "Santos",
+    ///   "socialName": "João Silva",
+    ///   "dateOfBirth": "1990-05-15T00:00:00.000Z",
+    ///   "gender": 1,
+    ///   "cpf": "12345678901",
+    ///   "rg": "123456789",
+    ///   "contactInfo": [
+    ///     {
+    ///       "type": 1,
+    ///       "value": "+5511999999999",
+    ///       "isPrimary": true,
+    ///       "description": "Telefone celular"
+    ///     }
+    ///   ],
+    ///   "loginInfo": {
+    ///     "email": "joao.silva@email.com",
+    ///     "password": "MinhaSenh@123",
+    ///     "confirmPassword": "MinhaSenh@123"
+    ///   },
+    ///   "address": {
+    ///     "postalCode": "01234567",
+    ///     "street": "Rua das Flores, 123",
+    ///     "neighborhood": "Centro",
+    ///     "city": "São Paulo",
+    ///     "state": "SP",
+    ///     "country": "Brasil",
+    ///     "isPrimary": true
+    ///   }
+    /// }
+    /// ```
+    /// </remarks>
+    /// <param name="dto">Dados completos para criação do membro</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>
+    /// **201 Created**: Membro criado com sucesso
+    ///
+    /// **400 Bad Request**: Dados inválidos ou regras de negócio violadas
+    /// - "Pelo menos um contato de email é obrigatório (forneça no contactInfo ou loginInfo)"
+    /// - "CPF já existe"
+    /// - "Email {email} já existe"
+    /// - "Membro deve ter pelo menos 10 anos de idade"
+    /// - "Senha deve ter pelo menos 10 caracteres"
+    ///
+    /// **401 Unauthorized**: Token JWT inválido ou expirado
+    ///
+    /// **500 Internal Server Error**: Erro interno do servidor
+    /// </returns>
     [HttpPost]
-    public async Task<IActionResult> CreateMember([FromBody] CreateMemberDto dto, CancellationToken cancellationToken = default)
+    [ProducesResponseType(typeof(BaseResponse<MemberDto>), 201)]
+    [ProducesResponseType(typeof(BaseResponse<object>), 400)]
+    [ProducesResponseType(typeof(BaseResponse<object>), 401)]
+    [ProducesResponseType(typeof(BaseResponse<object>), 500)]
+    public async Task<IActionResult> CreateMember([FromBody] CreateMemberCompleteDto dto, CancellationToken cancellationToken = default)
     {
-        var result = await _memberService.CreateMemberAsync(dto, cancellationToken);
-        return CreatedAtAction(nameof(GetMember), new { id = result.Data?.Id }, result);
+        var result = await _memberService.CreateMemberCompleteAsync(dto, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result);
+        }
+
+        return Created($"/member/{result.Data?.Id}", result);
     }
+
 
     /// <summary>
     /// Updates an existing member
@@ -102,7 +181,7 @@ public partial class MemberController : ControllerBase
     }
 
     /// <summary>
-    /// Deletes a member
+    /// Deletes a member (soft delete)
     /// </summary>
     /// <param name="id">Member ID</param>
     /// <param name="cancellationToken">Cancellation token</param>
@@ -114,22 +193,22 @@ public partial class MemberController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// Hard deletes a member and all related data (permanent deletion)
+    /// </summary>
+    /// <param name="id">Member ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Hard deletion result</returns>
+    [HttpDelete("{id}/hard")]
+    public async Task<IActionResult> HardDeleteMember(Guid id, CancellationToken cancellationToken = default)
+    {
+        var result = await _memberService.HardDeleteMemberAsync(id, cancellationToken);
+        return Ok(result);
+    }
+
     #endregion
 
     #region Authentication Operations
-
-    /// <summary>
-    /// Authenticates a user
-    /// </summary>
-    /// <param name="request">Login request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Authentication response with JWT token</returns>
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequestDto request, CancellationToken cancellationToken = default)
-    {
-        var result = await _memberService.LoginAsync(request, cancellationToken);
-        return Ok(result);
-    }
 
     /// <summary>
     /// Changes user password

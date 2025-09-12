@@ -32,6 +32,16 @@ public class ExportService : IExportService
     /// <returns>CSV content as string</returns>
     public async Task<string> ExportMembersToCsvAsync(Guid clubId, CancellationToken cancellationToken = default)
     {
+        // Verificar se o clube existe
+        var club = await _unitOfWork.Repository<Club>().GetByIdAsync(clubId, cancellationToken);
+        if (club == null)
+        {
+            // Retornar CSV com cabeçalho e mensagem informativa
+            var emptyData = new List<MemberExportDto>();
+            var emptyCsv = ConvertToCsv(emptyData);
+            return emptyCsv + "\n# Clube não encontrado";
+        }
+
         var members = await _unitOfWork.Repository<Member>().GetAllWithIncludesAsync(
             m => m.Memberships.Any(mem => mem.ClubId == clubId && mem.IsActive),
             new[]
@@ -78,7 +88,14 @@ public class ExportService : IExportService
             };
         }).ToList();
 
-        return ConvertToCsv(exportData);
+        // Se não há membros, adicionar comentário informativo
+        var csv = ConvertToCsv(exportData);
+        if (!exportData.Any())
+        {
+            csv += $"\n# Nenhum membro encontrado para o clube '{club.Name}' (ID: {clubId})";
+        }
+
+        return csv;
     }
 
     /// <summary>

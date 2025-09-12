@@ -47,7 +47,6 @@ public class UnitDto : AddressableEntityDtoBase
     /// </summary>
     public Guid ClubId { get; set; }
 
-    // Parent club removed - avoid circular references and performance issues
 
     /// <summary>
     /// Current number of active members in this unit

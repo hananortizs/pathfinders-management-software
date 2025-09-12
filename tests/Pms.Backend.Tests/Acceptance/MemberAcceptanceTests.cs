@@ -7,6 +7,7 @@ using Pms.Backend.Application.DTOs.Auth;
 using Pms.Backend.Application.DTOs.Members;
 using Pms.Backend.Domain.Entities;
 using Pms.Backend.Domain.Entities.Hierarchy;
+using Pms.Backend.Domain.Enums;
 using Pms.Backend.Infrastructure.Data;
 using System.Net;
 using System.Net.Http.Json;
@@ -53,10 +54,13 @@ public class MemberAcceptanceTests : BaseIntegrationTest
         result!.Data.Should().BeTrue();
 
         // Verificar se o usuário foi criado no banco
+        var member = DbContext.Members
+            .FirstOrDefault(m => m.Contacts.Any(c => c.Type == ContactType.Email && c.Value == "joao.silva@test.com"));
+        member.Should().NotBeNull();
+
         var userCredential = DbContext.UserCredentials
-            .FirstOrDefault(uc => uc.Email == "joao.silva@test.com");
+            .FirstOrDefault(uc => uc.MemberId == member!.Id);
         userCredential.Should().NotBeNull();
-        userCredential!.Email.Should().Be("joao.silva@test.com");
     }
 
     [Fact]

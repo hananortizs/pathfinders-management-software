@@ -1,35 +1,26 @@
 using Pms.Backend.Domain.Entities;
-using Pms.Backend.Application.DTOs.Common;
-using Pms.Backend.Application.Validators;
-using System.Text.Json.Serialization;
 
 namespace Pms.Backend.Application.DTOs.Members;
 
 /// <summary>
-/// Data Transfer Object for Member entity
+/// Data Transfer Object for updating a Member
 /// </summary>
-public class MemberDto : AddressableEntityDtoBase
+public class UpdateMemberDto
 {
-    /// <summary>
-    /// Entity type for address relationships
-    /// </summary>
-    public override string EntityType => "Member";
-
     /// <summary>
     /// Member's first name
     /// </summary>
-    public string FirstName { get; set; } = string.Empty;
+    public string? FirstName { get; set; }
 
     /// <summary>
     /// Member's middle names (optional) - can contain multiple middle names
     /// </summary>
-    [JsonPropertyName("middleNames")]
     public string? MiddleNames { get; set; }
 
     /// <summary>
     /// Member's last name
     /// </summary>
-    public string LastName { get; set; } = string.Empty;
+    public string? LastName { get; set; }
 
     /// <summary>
     /// Member's social name (preferred name for identification)
@@ -37,24 +28,14 @@ public class MemberDto : AddressableEntityDtoBase
     public string? SocialName { get; set; }
 
     /// <summary>
-    /// Member's full name (computed property)
-    /// </summary>
-    public string FullName => $"{FirstName} {MiddleNames} {LastName}".Trim().Replace("  ", " ");
-
-    /// <summary>
-    /// Member's display name (prefers social name if available, otherwise full name)
-    /// </summary>
-    public string DisplayName => !string.IsNullOrWhiteSpace(SocialName) ? SocialName : FullName;
-
-    /// <summary>
     /// Member's date of birth
     /// </summary>
-    public DateTime DateOfBirth { get; set; }
+    public DateTime? DateOfBirth { get; set; }
 
     /// <summary>
     /// Member's gender
     /// </summary>
-    public MemberGender Gender { get; set; }
+    public MemberGender? Gender { get; set; }
 
     /// <summary>
     /// Member's CPF (Brazilian tax ID)
@@ -65,7 +46,6 @@ public class MemberDto : AddressableEntityDtoBase
     /// Member's RG (Brazilian ID)
     /// </summary>
     public string? Rg { get; set; }
-
 
     /// <summary>
     /// Member's emergency contact name
@@ -130,40 +110,5 @@ public class MemberDto : AddressableEntityDtoBase
     /// <summary>
     /// Member's status
     /// </summary>
-    public MemberStatus Status { get; set; }
-
-    /// <summary>
-    /// Member's creation date
-    /// </summary>
-    public DateTime CreatedAtUtc { get; set; }
-
-    /// <summary>
-    /// Member's last update date
-    /// </summary>
-    public DateTime UpdatedAtUtc { get; set; }
-
-    /// <summary>
-    /// Member's activation date
-    /// </summary>
-    public DateTime? ActivatedAtUtc { get; set; }
-
-    /// <summary>
-    /// Member's deactivation date
-    /// </summary>
-    public DateTime? DeactivatedAtUtc { get; set; }
-
-    /// <summary>
-    /// Member's deactivation reason
-    /// </summary>
-    public string? DeactivationReason { get; set; }
-
-    /// <summary>
-    /// Member's primary email address (computed from contacts)
-    /// </summary>
-    public string? PrimaryEmail { get; set; }
-
-    /// <summary>
-    /// Member's primary phone number (computed from contacts)
-    /// </summary>
-    public string? PrimaryPhone { get; set; }
+    public MemberStatus? Status { get; set; }
 }
