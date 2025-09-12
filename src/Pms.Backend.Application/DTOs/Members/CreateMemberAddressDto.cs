@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Pms.Backend.Domain.Entities;
 
 namespace Pms.Backend.Application.DTOs.Members;
 
@@ -11,7 +12,7 @@ public class CreateMemberAddressDto
     /// CEP do endereço
     /// </summary>
     [Required(ErrorMessage = "CEP é obrigatório")]
-    [StringLength(9, ErrorMessage = "CEP deve ter 8 dígitos")]
+    [StringLength(8, MinimumLength = 8, ErrorMessage = "CEP deve ter exatamente 8 dígitos")]
     public string PostalCode { get; set; } = string.Empty;
 
     /// <summary>

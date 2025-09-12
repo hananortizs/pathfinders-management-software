@@ -4,7 +4,7 @@
 
 Desenvolver um sistema de gestão de desbravadores para diretores de clube testarem em 20 dias.
 
-## ✅ **FUNCIONALIDADES CONCLUÍDAS (95%)**
+## ✅ **FUNCIONALIDADES CONCLUÍDAS (100%)**
 
 ### 🔐 **Autenticação & Autorização (100%)**
 
@@ -12,6 +12,8 @@ Desenvolver um sistema de gestão de desbravadores para diretores de clube testa
 - ✅ Middleware de autenticação e autorização
 - ✅ Gestão de credenciais de usuário (UserCredential)
 - ✅ Controle de acesso baseado em papéis (RBAC)
+- ✅ Validação de dados pendentes no login
+- ✅ Informações detalhadas sobre dados obrigatórios
 
 ### 👥 **Gestão de Membros (100%)**
 
@@ -23,6 +25,10 @@ Desenvolver um sistema de gestão de desbravadores para diretores de clube testa
 - ✅ Gestão automática de contatos (email, telefone, etc)
 - ✅ Gestão de endereços integrada
 - ✅ Regras de negócio: idade mínima, CPF único, email obrigatório
+- ✅ **Validação de dados mínimos obrigatórios** - Sistema completo de validação
+- ✅ **Validação de batismo para >= 16 anos** - Baseado em 1º de junho do ano vigente
+- ✅ **Status automático baseado em validação** - Pending/Active conforme dados
+- ✅ **Informações de dados pendentes no login** - Para onboarding do usuário
 
 ### 🏢 **Gestão Organizacional (100%)**
 
@@ -188,13 +194,16 @@ Desenvolver um sistema de gestão de desbravadores para diretores de clube testa
 
 - **HealthService**: Verificações de saúde da API
 - **ReportsService**: Geração de relatórios para diretores
+- **MemberValidationService**: Validação de dados mínimos obrigatórios
 - **IHealthService**: Interface para verificações de saúde
 - **IReportsService**: Interface para geração de relatórios
+- **IMemberValidationService**: Interface para validação de membros
 
 ### ✅ **DTOs Organizados:**
 
 - **HealthDtos**: DTOs para verificações de saúde
 - **ReportDtos**: DTOs para relatórios de clube
+- **PendingDataInfoDto**: DTO para informações de dados pendentes no login
 
 ### ✅ **Melhores Práticas Implementadas:**
 

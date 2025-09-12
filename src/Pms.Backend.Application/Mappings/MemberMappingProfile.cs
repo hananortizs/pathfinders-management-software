@@ -108,14 +108,15 @@ public class MemberMappingProfile : Profile
             .ForMember(dest => dest.EntityType, opt => opt.MapFrom(src => "Member"))
             .ForMember(dest => dest.CreatedAtUtc, opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedAtUtc, opt => opt.Ignore())
-            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
-            .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true));
+            .ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
 
         // Mapping for CreateMemberAddressDto to Address
         CreateMap<CreateMemberAddressDto, Address>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.EntityId, opt => opt.Ignore())
             .ForMember(dest => dest.EntityType, opt => opt.MapFrom(src => "Member"))
+            .ForMember(dest => dest.Cep, opt => opt.MapFrom(src => src.PostalCode))
+            .ForMember(dest => dest.Type, opt => opt.MapFrom(src => AddressType.Home))
             .ForMember(dest => dest.CreatedAtUtc, opt => opt.Ignore())
             .ForMember(dest => dest.UpdatedAtUtc, opt => opt.Ignore())
             .ForMember(dest => dest.IsDeleted, opt => opt.Ignore());

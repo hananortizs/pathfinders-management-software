@@ -47,6 +47,11 @@ public class LoginResponseDto
     /// User information
     /// </summary>
     public UserInfoDto User { get; set; } = new();
+
+    /// <summary>
+    /// Informações sobre dados pendentes (se aplicável)
+    /// </summary>
+    public PendingDataInfoDto? PendingData { get; set; }
 }
 
 /// <summary>
@@ -301,4 +306,45 @@ public class CompleteMemberInfoDto
     /// Member's scarf pastor
     /// </summary>
     public string? ScarfPastor { get; set; }
+}
+
+/// <summary>
+/// Data Transfer Object for pending data information
+/// </summary>
+public class PendingDataInfoDto
+{
+    /// <summary>
+    /// Indica se há dados pendentes
+    /// </summary>
+    public bool HasPendingData { get; set; }
+
+    /// <summary>
+    /// Motivo da inatividade
+    /// </summary>
+    public string? InactivityReason { get; set; }
+
+    /// <summary>
+    /// Lista de tipos de dados pendentes
+    /// </summary>
+    public List<string> PendingDataTypes { get; set; } = new();
+
+    /// <summary>
+    /// Lista de campos pendentes
+    /// </summary>
+    public List<string> PendingFields { get; set; } = new();
+
+    /// <summary>
+    /// Mensagem de erro detalhada
+    /// </summary>
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Indica se os dados de batismo são obrigatórios
+    /// </summary>
+    public bool BaptismDataRequired { get; set; }
+
+    /// <summary>
+    /// Indica se os dados de batismo estão completos
+    /// </summary>
+    public bool BaptismDataComplete { get; set; }
 }

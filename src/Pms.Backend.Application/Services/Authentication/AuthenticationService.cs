@@ -19,6 +19,7 @@ public class AuthenticationService : IAuthenticationService
     private readonly IConfiguration _configuration;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<AuthenticationService> _logger;
+    private readonly IMemberValidationService _validationService;
 
     /// <summary>
     /// Inicializa uma nova instância do AuthenticationService
@@ -26,14 +27,17 @@ public class AuthenticationService : IAuthenticationService
     /// <param name="configuration">Configuração da aplicação</param>
     /// <param name="unitOfWork">Unit of Work</param>
     /// <param name="logger">Logger</param>
+    /// <param name="validationService">Serviço de validação de membros</param>
     public AuthenticationService(
         IConfiguration configuration,
         IUnitOfWork unitOfWork,
-        ILogger<AuthenticationService> logger)
+        ILogger<AuthenticationService> logger,
+        IMemberValidationService validationService)
     {
         _configuration = configuration;
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _validationService = validationService;
     }
 
     /// <summary>
@@ -90,6 +94,15 @@ public class AuthenticationService : IAuthenticationService
                 return BaseResponse<LoginResponseDto>.ErrorResult("Conta inativa. Entre em contato com o administrador.");
             }
 
+            // Se o usuário tem status Pending, validar dados para informar o que está pendente
+            MemberValidationResult? validationResult = null;
+            if (member.Status == Domain.Entities.MemberStatus.Pending)
+            {
+                validationResult = await _validationService.ValidateMemberDataAsync(member, cancellationToken);
+                _logger.LogInformation("Usuário com status Pending. Dados pendentes: {PendingDataTypes}", 
+                    string.Join(", ", validationResult.PendingDataTypes));
+            }
+
             // Verificar senha
             if (!BCrypt.Net.BCrypt.Verify(request.Password, userCredential.PasswordHash))
             {
@@ -128,7 +141,17 @@ public class AuthenticationService : IAuthenticationService
                 AccessToken = token,
                 TokenType = "Bearer",
                 ExpiresIn = expiresIn,
-                User = userInfo
+                User = userInfo,
+                PendingData = validationResult != null ? new PendingDataInfoDto
+                {
+                    HasPendingData = !validationResult.IsValid,
+                    InactivityReason = validationResult.InactivityReason,
+                    PendingDataTypes = validationResult.PendingDataTypes,
+                    PendingFields = validationResult.PendingFields,
+                    ErrorMessage = validationResult.ErrorMessage,
+                    BaptismDataRequired = validationResult.BaptismDataRequired,
+                    BaptismDataComplete = validationResult.BaptismDataComplete
+                } : null
             };
 
             _logger.LogInformation("Login bem-sucedido para usuário: {UserId}", member.Id);

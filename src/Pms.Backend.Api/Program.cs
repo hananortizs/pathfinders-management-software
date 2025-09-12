@@ -113,6 +113,7 @@ builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IUnitOfWork, Pms.B
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IHierarchyService, Pms.Backend.Application.Services.Hierarchy.HierarchyService>();
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IHierarchyQueryService, Pms.Backend.Application.Services.Hierarchy.HierarchyQueryService>();
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IMemberService, Pms.Backend.Application.Services.Members.MemberService>();
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IMemberValidationService, Pms.Backend.Application.Services.Members.MemberValidationService>();
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IMembershipService, Pms.Backend.Application.Services.Membership.MembershipService>();
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IAssignmentService, Pms.Backend.Application.Services.Assignments.AssignmentService>();
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IApprovalDelegateService, Pms.Backend.Application.Services.Assignments.ApprovalDelegateService>();

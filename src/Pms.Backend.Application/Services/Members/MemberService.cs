@@ -22,6 +22,7 @@ public partial class MemberService : IMemberService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly IConfiguration _configuration;
+    private readonly IMemberValidationService _validationService;
 
     /// <summary>
     /// Initializes a new instance of the MemberService
@@ -29,11 +30,13 @@ public partial class MemberService : IMemberService
     /// <param name="unitOfWork">Unit of work for data access</param>
     /// <param name="mapper">AutoMapper instance for object mapping</param>
     /// <param name="configuration">Configuration instance for JWT settings</param>
-    public MemberService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration)
+    /// <param name="validationService">Service for member data validation</param>
+    public MemberService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IMemberValidationService validationService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _configuration = configuration;
+        _validationService = validationService;
     }
 
     #region Member CRUD Operations
@@ -235,6 +238,10 @@ public partial class MemberService : IMemberService
             if (!string.IsNullOrEmpty(dto.Cpf))
             {
                 var cpfAvailable = await IsCpfAvailableAsync(dto.Cpf, null, cancellationToken);
+                if (!cpfAvailable.IsSuccess)
+                {
+                    return BaseResponse<MemberDto>.ErrorResult(cpfAvailable.Message ?? "Erro na validação do CPF");
+                }
                 if (!cpfAvailable.Data)
                 {
                     return BaseResponse<MemberDto>.ErrorResult("CPF já existe");
@@ -247,6 +254,10 @@ public partial class MemberService : IMemberService
             {
                 return BaseResponse<MemberDto>.ErrorResult("Membro deve ter pelo menos 10 anos de idade");
             }
+
+            // 1.5. Validação de dados mínimos obrigatórios
+            var validationResult = await _validationService.ValidateCreateMemberDtoAsync(dto, cancellationToken);
+            // Sempre permitir criação - a validação apenas determina o status do membro
 
             // 2. Validação de e-mail obrigatório (considerando loginInfo)
             var hasEmailInContacts = dto.ContactInfo?.Any(c => c.Type == ContactType.Email) ?? false;
@@ -287,7 +298,15 @@ public partial class MemberService : IMemberService
             // 3. Criar membro principal
             var member = _mapper.Map<Member>(dto);
             member.Id = Guid.NewGuid();
-            member.Status = MemberStatus.Pending;
+
+            // Limpar CPF se fornecido (remover pontos, traços e espaços)
+            if (!string.IsNullOrEmpty(member.Cpf))
+            {
+                member.Cpf = member.Cpf.Replace(".", "").Replace("-", "").Replace(" ", "");
+            }
+
+            // Definir status baseado na validação
+            member.Status = validationResult.CanBeActivated ? MemberStatus.Active : MemberStatus.Pending;
             member.CreatedAtUtc = DateTime.UtcNow;
             member.UpdatedAtUtc = DateTime.UtcNow;
 
