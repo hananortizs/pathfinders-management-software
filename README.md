@@ -57,14 +57,24 @@ dotnet run
 
 ## 🏗️ Arquitetura
 
-### Estrutura do Projeto
+### Estrutura do Projeto (Monorepo)
 
 ```
-src/
-├── Pms.Backend.Api/          # Camada de API (Controllers, Middleware)
-├── Pms.Backend.Application/  # Camada de Aplicação (Services, DTOs, Interfaces)
-├── Pms.Backend.Domain/       # Camada de Domínio (Entities, Enums, Helpers)
-└── Pms.Backend.Infrastructure/ # Camada de Infraestrutura (Data, Repositories)
+pathfinders-management-software/
+├── src/
+│   ├── backend/                    # Backend .NET
+│   │   ├── Pms.Backend.Api/        # Camada de API (Controllers, Middleware)
+│   │   ├── Pms.Backend.Application/ # Camada de Aplicação (Services, DTOs, Interfaces)
+│   │   ├── Pms.Backend.Domain/     # Camada de Domínio (Entities, Enums, Helpers)
+│   │   ├── Pms.Backend.Infrastructure/ # Camada de Infraestrutura (Data, Repositories)
+│   │   ├── tests/                  # Testes do Backend
+│   │   └── Pms.Backend.sln         # Solution File
+│   └── frontend/                   # Frontend React (em desenvolvimento)
+├── docs/                          # Documentação compartilhada
+├── scripts/                       # Scripts compartilhados
+├── docker-compose.yml             # Orquestração de containers
+├── docker-compose.dev.yml         # Desenvolvimento local
+└── package.json                   # Workspace root
 ```
 
 ### Tecnologias Utilizadas
@@ -97,18 +107,40 @@ src/
 
 ### Comandos Úteis
 
+#### Desenvolvimento Local
+```bash
+# Instalar dependências
+npm run install:all
+
+# Desenvolvimento (backend + frontend)
+npm run dev
+
+# Apenas backend
+npm run dev:backend
+
+# Apenas frontend
+npm run dev:frontend
+
+# Docker (banco + API)
+npm run docker:up
+
+# Docker desenvolvimento (apenas banco)
+npm run docker:dev
+```
+
+#### Backend (.NET)
 ```bash
 # Executar migrações
-dotnet ef database update
+cd src/backend && dotnet ef database update
 
 # Criar nova migração
-dotnet ef migrations add NomeDaMigracao
+cd src/backend && dotnet ef migrations add NomeDaMigracao
 
 # Executar testes
-dotnet test
+cd src/backend && dotnet test
 
 # Build do projeto
-dotnet build
+cd src/backend && dotnet build
 ```
 
 ### Padrões de Código

@@ -8,19 +8,19 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy project files
-COPY ["src/Pms.Backend.Api/Pms.Backend.Api.csproj", "src/Pms.Backend.Api/"]
-COPY ["src/Pms.Backend.Application/Pms.Backend.Application.csproj", "src/Pms.Backend.Application/"]
-COPY ["src/Pms.Backend.Domain/Pms.Backend.Domain.csproj", "src/Pms.Backend.Domain/"]
-COPY ["src/Pms.Backend.Infrastructure/Pms.Backend.Infrastructure.csproj", "src/Pms.Backend.Infrastructure/"]
+COPY ["src/backend/Pms.Backend.Api/Pms.Backend.Api.csproj", "src/backend/Pms.Backend.Api/"]
+COPY ["src/backend/Pms.Backend.Application/Pms.Backend.Application.csproj", "src/backend/Pms.Backend.Application/"]
+COPY ["src/backend/Pms.Backend.Domain/Pms.Backend.Domain.csproj", "src/backend/Pms.Backend.Domain/"]
+COPY ["src/backend/Pms.Backend.Infrastructure/Pms.Backend.Infrastructure.csproj", "src/backend/Pms.Backend.Infrastructure/"]
 
 # Restore dependencies
-RUN dotnet restore "src/Pms.Backend.Api/Pms.Backend.Api.csproj"
+RUN dotnet restore "src/backend/Pms.Backend.Api/Pms.Backend.Api.csproj"
 
 # Copy all source code
 COPY . .
 
 # Build the application
-WORKDIR "/src/src/Pms.Backend.Api"
+WORKDIR "/src/src/backend/Pms.Backend.Api"
 RUN dotnet build "Pms.Backend.Api.csproj" -c Release -o /app/build
 
 # Publish the application

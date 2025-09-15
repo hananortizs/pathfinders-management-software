@@ -34,5 +34,21 @@ services:
     volumes:
       - ./logs:/app/logs
 
+  pms-frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    container_name: pms-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5001
+      - NODE_ENV=development
+    depends_on:
+      - pms-api
+    volumes:
+      - ./src/frontend:/app
+      - /app/node_modules
+
 volumes:
   postgres_data:

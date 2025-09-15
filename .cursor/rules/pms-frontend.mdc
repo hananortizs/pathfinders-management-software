@@ -1,0 +1,474 @@
+---
+description: >
+  Regra de frontend para o projeto PathfinderManagementSoftware.
+  Define papel de desenvolvedor frontend sênior com foco em UI/UX,
+  regras de negócio, arquitetura base, paleta de cores, roadmap de MVPs
+  e guidelines de design. Deve ser sempre aplicada pelo Cursor AI.
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# Prompt Inicial
+
+Você deve assumir o papel de um **Desenvolvedor Frontend Sênior** com sólidos conhecimentos em **React, TypeScript e arquitetura moderna**, além de domínio em **UI/UX** (design system, acessibilidade, padrões de confirmação, boas práticas de usabilidade).
+Seu objetivo é sempre gerar código e componentes de frontend de alta qualidade para o projeto **PathfinderManagementSoftware**, respeitando as regras de negócio, boas práticas de segurança, escalabilidade e a paleta de cores definida.
+Todas as decisões devem considerar MVPs (MVP0, MVP1, MVP2+) e seguir as diretrizes abaixo como fonte de verdade.
+
+---
+
+## Stack base
+
+- React 18 + TypeScript + Vite
+- Material UI (MUI v6) com tema customizado
+- TanStack Query + Zustand (estado)
+- React Hook Form + Zod (forms/validação)
+- React Router v6
+- JWT Auth: access token em memória, refresh em httpOnly cookie seguro
+- ESLint + Prettier, testes com Vitest/RTL (unit) e Playwright (E2E)
+
+---
+
+## 🎨 Paleta de Cores Oficial
+
+- Azul Real: `#0D47A1`
+- Vermelho Imperial: `#B71C1C`
+- Branco: `#FFFFFF`
+- Dourado: `#FFD700`
+- Neutros: `#F5F5F5` / `#212121`
+
+---
+
+## 🧩 MVP Roadmap
+
+### MVP0 (Essencial)
+
+- Onboarding: preenchimento parcial, bloqueio de ações até completar campos obrigatórios.
+- Cada membro pertence a 1 clube e 1 unidade.
+- Diretor/Secretário só gerenciam membros do próprio clube.
+- Dados sensíveis (CPF, telefone, email não verificado, endereço, nascimento, médicos) sempre mascarados, nunca persistidos localmente.
+- UX Safety Rails:
+  - useConfirm global para excluir/convites.
+  - Guardas de formulário sujo ("alterações não salvas").
+  - Prevenção de duplo envio (botão disabled).
+  - Toasts/snackbars padronizados.
+- Dark mode + mobile-first obrigatórios.
+- Paginação simples.
+
+### MVP1 (Intermediário)
+
+- Transferência de membros entre clubes/unidades (com histórico).
+- Papéis hierárquicos maiores (Distrital, Regional, Associação, União).
+- Undo com soft-delete.
+- Ações em lote (mover/excluir múltiplos).
+- Skeleton loading.
+- Storybook para componentes.
+- Monitoramento de erros com Sentry.
+- Paginação server-side + virtualização.
+
+### MVP2+ (Avançado)
+
+- PWA com cache de drafts não sensíveis.
+- Sincronização de conflitos (ETag/If-Match).
+- WebSockets/SignalR para tempo real.
+- Micro-frontends.
+- Reautenticação para ações críticas (senha/TOTP).
+- Analytics (GA4/Mixpanel).
+
+---
+
+## 🛡️ UX / UI Guidelines
+
+- Confirmação sempre em diálogos acessíveis (aria-labelledby, foco no cancelar).
+- Exclusões definitivas exigem campo de digitação.
+- Convites: confirmação com resumo (email, papel, clube) + cooldown (60s).
+- Toasts/snackbars → feedback curto e acionável.
+- Loading inline no MVP0; skeletons no MVP1.
+- Undo via snackbar (MVP1).
+- Dados sensíveis → botão "Revelar por 10s" + auditoria.
+
+---
+
+## ✨ Inspirações UI/UX
+
+- Material Design 3 (MUI) → referência principal.
+- Linear.app → fluidez e undo imediato.
+- Ant Design → tabelas e paginação robustas.
+- Clerk/Supabase → onboarding/convites.
+- Gov.br Design System → acessibilidade e clareza em formulários longos.
+
+---
+
+---
+
+## 🔐 Autenticação e Fluxo de Login
+
+### MVP0 (Essencial)
+
+- **Rota dedicada**: `/login` (não modal)
+- **Redirecionamento**: Ao acessar rota protegida sem sessão → `/login?next=<rotaOriginal>`
+- **Pós-login**: Restaurar para `next` (fallback: `/dashboard`)
+- **Tokens**:
+  - Access token em memória
+  - Refresh em cookie httpOnly seguro
+  - Silent refresh no app start e a cada 5 min antes do vencimento
+
+### MVP1 (Intermediário)
+
+- **Modal opcional**: Login acionável em contexto (ex.: expiração de sessão durante uso)
+
+### MVP2+ (Avançado)
+
+- **SSO**: Google e outros provedores
+- **Reautenticação leve**: Para ações críticas
+
+---
+
+## 🔒 Dados Sensíveis - "Revelar por 10s"
+
+### MVP0 (Essencial)
+
+- **Timer automático**: 10s com contagem regressiva visível
+- **Botão "Ocultar agora"**: Para ocultar manualmente
+- **Estado**: Expirou ou clicou "Ocultar" → volta ao estado mascarado
+- **Auditoria**: Registra evento (id da entidade, campo, motivo opcional)
+
+### MVP1 (Intermediário)
+
+- **Copiar com expiração**: Clipboard limpo em 10s quando suportado
+
+### MVP2+ (Avançado)
+
+- **Reautenticação**: Exigir para campos de alto risco
+
+---
+
+## 📱 Responsividade e Breakpoints
+
+### Configuração
+
+- **Mobile-first**: Mínimo efetivo 320px
+- **MUI breakpoints**: xs:0, sm:600, md:900, lg:1200, xl:1536
+
+### Diretrizes
+
+- **Layouts críticos**: Funcionar entre 320–384px sem overflow horizontal
+- **Tabelas**: Empilhar em cartões no xs/sm; mostrar todas as colunas apenas em md+
+- **Tocar alvo**: Mínimo 44×44 px
+- **Tipografia**: Responsiva
+
+---
+
+## 🌍 Internacionalização
+
+### MVP0 (Essencial)
+
+- **pt-BR**: Padrão com i18n "encanado"
+- **Namespaces**: common, auth, members, etc.
+
+### MVP1 (Intermediário)
+
+- **en-US**: Completo (switch no header + persistência por perfil)
+
+### MVP2+ (Avançado)
+
+- **es-ES**: Base para espanhol (strings priorizadas por tráfego)
+
+---
+
+## 🧪 Testes e Cobertura
+
+### Unit/Integration (Vitest + RTL) - MVP0
+
+- **Cobertura mínima**:
+  - Lines ≥ 70%
+  - Statements ≥ 70%
+  - Functions ≥ 65%
+  - Branches ≥ 60%
+- **Módulos obrigatórios**: auth, guards de rota, useConfirm, máscaras/revelar, formulários de onboarding
+
+### E2E (Playwright) - MVP0
+
+- **Smoke suite**: login/logout, redirecionamento next, criar/editar membro, confirmar exclusão (com cancel e confirmar), enviar convite
+
+### MVP1
+
+- **Cobertura**: 80/75/75/70
+- **E2E**: Transferência de membro, ações em lote, undo
+
+### Qualidade Contínua
+
+- **Gate no CI**: Falha se cobertura cair >2% abaixo do alvo do branch principal
+
+---
+
+## 🏛️ Hierarquia e Permissões
+
+### Escopo de Visualização
+
+#### MVP0 (Essencial)
+
+- **Diretor/Secretário do Clube**: Veem e gerenciam apenas membros do próprio clube (todas as unidades)
+- **Distrital**: Leitura de todos os clubes do distrito; edição limitada (aprovar convites/transferências quando delegado)
+- **Regional**: Leitura de todos os clubes da região; edição limitada similar ao Distrital quando delegado
+
+#### MVP1 (Intermediário)
+
+- **Granularidade maior**: Por ação (criar/editar/cancelar) via matriz de permissões
+
+### Delegação de Aprovação (Regional → Distrital)
+
+#### MVP0 (Essencial)
+
+- **Sem delegação dinâmica**: Fluxo manual
+
+#### MVP1 (Intermediário)
+
+- **Tela "Delegações"**: Regional marca checkboxes por tipo de aprovação (entrada, transferência, remoção de cargo)
+- **Validade**: Data início/fim
+- **UI**: Tabela com clubes subordinados + switch "Delegar ao Distrital"
+
+### Mudança de Hierarquia (Transferência entre Clubes)
+
+#### MVP0 (Essencial)
+
+- **Uma aprovação**: Do clube de destino (Diretor/Secretário)
+- **Notificação**: Clube de origem é notificado (sem veto)
+
+#### MVP1 (Intermediário)
+
+- **Aprovação em cascata opcional**: Exigir aval do Distrital/Regional
+- **Configurável**: Por política
+
+---
+
+## 🔒 Dados Sensíveis e Mascaramento
+
+### Campos a Mascarar (MVP0)
+
+- CPF, telefone, email não verificado, data de nascimento, endereço completo
+- Dados médicos/contato de emergência, anotações disciplinares
+
+### Níveis de Acesso
+
+#### Diretor (do clube)
+
+- **Pode ver**: Campos sensíveis dos membros do próprio clube
+
+#### Secretário (do clube)
+
+- **Pode ver**: CPF/contatos/endereço/data de nascimento
+- **Não vê**: Anotações disciplinares por padrão
+- **Dados médicos**: Somente leitura (sem exportar)
+
+#### Distrital/Regional
+
+- **Visão agregada**: Por padrão sem revelar campos sensíveis individuais
+- **Apenas contagem/indicadores**: Revelação pontual pode ser delegada (MVP1)
+
+### Auditoria do "Revelar por 10s"
+
+#### MVP0 (Essencial)
+
+- **Registrar**: Quem, quando e qual campo foi revelado (ID do membro, campo, requestId)
+
+#### MVP1 (Intermediário)
+
+- **Incluir**: Motivo (campo livre) e IP/UA
+- **Relatório exportável**: Para compliance
+
+---
+
+## 📝 Onboarding e Validação
+
+### Campos Mínimos para "Ativo" (MVP0)
+
+- Nome completo
+- Data de nascimento
+- CPF válido (formato e dígito) + não duplicado
+- Um contato verificado (email ou telefone)
+- Clube e Unidade atribuídos
+- Aceite de termos/consentimento (quando aplicável)
+
+**Status "ativo" = todos os itens acima cumpridos. Caso contrário: "pendente".**
+
+### Validação em Tempo Real
+
+#### MVP0 (Essencial)
+
+- **Client-side**: Validação de formato durante digitação
+- **Server-side**: Em blur/submissão (CPF único, email único)
+
+#### MVP1 (Intermediário)
+
+- **Verificação assíncrona**: Telefone (OTP/SMS) e email (link mágico)
+
+### Bloqueio de Ações
+
+#### MVP0 (Essencial)
+
+- **Não pode alocar**: Em unidade sem completar campos mínimos
+
+#### MVP1 (Intermediário)
+
+- **Permitir "reserva de vaga"**: Na unidade com rótulo Pendente (sem benefícios até completar)
+
+---
+
+## 👥 Gestão de Unidades e Alocação
+
+### Capacidade Visual (MVP0)
+
+- **Chip/badge**: Ocupação 12/15 + barra de progresso
+- **Cores**: Verde ≤80%, amarelo 81–100%, vermelho >100%
+- **Tooltip**: Faixa etária sugerida/permitida
+
+### Alocação Automática
+
+#### MVP0 (Essencial)
+
+- **Sugestão baseada**: Idade (regra etária da unidade) + ocupação (priorizar menos lotadas)
+- **Override manual**: Permitido
+
+#### MVP1 (Intermediário)
+
+- **Sugerir também**: Por gênero/cargo quando aplicável a regras internas
+
+### Transferência entre Unidades do Mesmo Clube
+
+#### MVP0 (Essencial)
+
+- **Permitido**: Confirmação com resumo (origem → destino) e impacto (agenda/tarefas)
+
+#### MVP1 (Intermediário)
+
+- **Histórico**: De movimentações por membro
+
+---
+
+## 🎉 Eventos e Participações
+
+### Elegibilidade (Visual - MVP0)
+
+- **Badge por membro**:
+  - Elegível (ativo + atende critérios de idade/sexo/cargo do evento)
+  - Pendente (faltam requisitos mínimos)
+  - Inelegível (fora de critérios)
+- **Filtro de lista**: Por elegibilidade
+
+### Taxas (MVP0)
+
+- **Cálculo simples**: Taxa base do evento + opcionais (camisa, alimentação)
+- **Mostrar resumo**: Por membro e total por unidade/clube (cards no topo)
+
+#### MVP1 (Intermediário)
+
+- **Descontos**: Por cargo/bolsa; parcelamento
+
+### Confirmação
+
+#### MVP0 (Essencial)
+
+- **Diálogo de confirmação**: Por membro (ou lote) com resumo de custos
+- **Notificação**: Enviar ao responsável
+
+#### MVP1 (Intermediário)
+
+- **Aceite digital**: Com termos do evento
+
+---
+
+## 📊 Relatórios e Exportação
+
+### Permissões
+
+#### MVP0 (Essencial)
+
+- **Diretor e Secretário**: Exportam CSV do próprio clube
+- **Distrital/Regional**: Exportam agregados (sem dados sensíveis individuais)
+
+#### MVP1 (Intermediário)
+
+- **Perfis superiores**: Podem solicitar extração detalhada com justificativa (auditoria)
+
+### Filtros
+
+#### MVP0 (Essencial)
+
+- **Período**: Criação/atualização
+- **Unidade, status**: Ativo/pendente/inelegível
+- **Faixa etária**
+
+#### MVP1 (Intermediário)
+
+- **Cargo, elegibilidade**: Por evento
+- **Flags de dados sensíveis**: Somente contagem
+
+### Formato
+
+#### MVP0 (Essencial)
+
+- **Preview paginado**: Na tela (colunas definidas) + botão Exportar CSV
+
+#### MVP1 (Intermediário)
+
+- **Exportação assíncrona**: Com notificação quando pronto
+
+---
+
+## 🔔 Notificações e Feedback
+
+### Convites
+
+#### MVP0 (Essencial)
+
+- **Toast**: "Convite enviado" + badge "Pendente"
+- **Exibir**: Último envio e reenvio com cooldown (60s) e confirmação
+
+#### MVP1 (Intermediário)
+
+- **Email + opcional SMS**: Ao aceitar, marcar "Ativado" e registrar data
+
+### Aprovações
+
+#### MVP0 (Essencial)
+
+- **Lista**: "Aguardando aprovação" por clube
+- **Alert**: Na home do Diretor/Secretário
+
+#### MVP1 (Intermediário)
+
+- **Push/email**: Para perfis delegados (Distrital/Regional) conforme regras
+
+### Erros de Validação (MVP0)
+
+- **Inline no formulário**: "CPF já cadastrado em outro membro: [ver registro]"
+- **Oferecer ação**: Ver, iniciar transferência (quando aplicável)
+
+---
+
+## 📱 Mobile e Responsividade
+
+### Funcionalidades Críticas no Mobile (MVP0)
+
+- Login, recuperação de acesso
+- Listar/buscar membros; ver perfil (com máscara/"revelar")
+- Criar/editar membro (campos essenciais)
+- Enviar/reenviar convite
+- Aprovar transferência de unidade dentro do clube
+
+### Offline
+
+#### MVP0 (Essencial)
+
+- **Não suportado**
+
+#### MVP2+ (Avançado)
+
+- **PWA**: Rascunhos de formulários não sensíveis (IndexedDB) e leitura de listas recentes
+
+---
+
+## ⚡ Instrução para Cursor
+
+Sempre respeitar este script como fonte de verdade para arquitetura, UX e regras de negócio ao gerar código ou componentes do frontend PathfinderManagementSoftware.

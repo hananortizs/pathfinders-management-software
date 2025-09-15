@@ -1,0 +1,648 @@
+---
+description: Você é um engenheiro sênior .NET e também um gerente técnico disciplinado. Construa a API REST **pms-backend** do projeto **PathfinderManagementSoftware** em **ASP.NET Core .NET 8 (LTS)** com **EF Core (code-first)** e **PostgreSQL 16**.
+
+globs:
+  - "src/**/*.cs"
+  - "tests/**/*.cs"
+  - "*.csproj"
+  - "*.sln"
+  - "*.json"
+  - "*.yml"
+  - "*.yaml"
+  - "*.md"
+  - "*.sql"
+  - "*.ps1"
+  - "*.sh"
+  - "Dockerfile*"
+  - "docker-compose*.yml"
+  - ".editorconfig"
+  - "dotnet-tools.json"
+  - "*.mdc"
+alwaysApply: true
+---
+
+# 📋 PMS Backend - Regras de Desenvolvimento
+
+## 📑 Índice
+
+- [🎯 Governança de MVPs](#governança-de-mvps)
+- [🏗️ Arquitetura e Plataforma](#arquitetura-e-plataforma)
+- [🔐 Autenticação e Autorização](#autenticação-e-autorização)
+- [🏛️ Hierarquia e Relações](#hierarquia-e-relações)
+- [👥 Pessoas, Cargos e Regras](#pessoas-cargos-e-regras)
+- [📚 Programa e Progresso](#programa-e-progresso)
+- [🎉 Eventos e Participações](#eventos-e-participações)
+- [📊 Relatórios e Exportações](#relatórios-e-exportações)
+- [🔧 Qualidade e Testes](#qualidade-e-testes)
+- [📈 MVPs e Escopo](#mvps-e-escopo)
+- [⏳ Status Pending e Onboarding](#status-pending-e-onboarding)
+- [🚀 Quick Reference](#quick-reference)
+
+---
+
+## 🎯 Governança de MVPs
+
+### ⚠️ SCOPE LOCK - OBRIGATÓRIO
+
+- **Entregas por MVP** em fatias verticais
+- **MVPs disponíveis**: MVP-0 (Núcleo operacional), MVP-1 (Programa/Aprovações/Investiduras), MVP-2 (Operação ampliada)
+- **NÃO implementar** nada fora do MVP vigente
+- Itens fora do escopo → **OPEN_QUESTIONS** no **PROGRESS.md**
+- **Critérios de aceite** obrigatórios para cada MVP
+- **Relatório de aceite** em **ACCEPTANCE.md** com casos verificados
+- **Só avançar** para próximo MVP quando atual for **ACEITO** (flag "MVP-X: ACCEPTED")
+
+### 📋 Ordem de Execução Recomendada
+
+1. **Backend** do MVP vigente
+2. **Integração mínima Frontend** do mesmo MVP
+3. **Aceite** do MVP atual
+4. **Próximo MVP**
+
+---
+
+## 🏗️ Arquitetura e Plataforma
+
+### 🎯 Fase e Contexto
+
+- **Fase 1**: BACKEND (atual)
+- **Fase 2**: FRONTEND React (consumirá OpenAPI)
+- **Gerar**: OpenAPI 3.1 (JSON e YAML) + client TypeScript (NSwag)
+- **Habilitar**: CORS com exemplos no README
+
+### 📁 Estrutura de Diretórios - CRÍTICO
+
+**⚠️ IMPORTANTE**: A estrutura de diretórios do backend foi reorganizada para monorepo:
+
+- **Caminho correto da API**: `src/backend/Pms.Backend.Api/`
+- **Comando para executar**: `cd src/backend/Pms.Backend.Api && dotnet run`
+- **Solução**: `src/backend/Pms.Backend.sln`
+- **Docker context**: `src/backend/` (conforme docker-compose.yml)
+
+**📝 Regra de Atualização**: Sempre que houver alteração na estrutura de diretórios, esta seção DEVE ser atualizada imediatamente para evitar confusão e erros de execução.
+
+### 🛠️ Stack Tecnológica
+
+| Componente      | Tecnologia               | Versão       |
+| --------------- | ------------------------ | ------------ |
+| Framework       | ASP.NET Core             | .NET 8 (LTS) |
+| Banco de Dados  | PostgreSQL               | 16           |
+| ORM             | EF Core                  | Code-first   |
+| Documentação    | Swashbuckle              | OpenAPI 3.1  |
+| Validação       | FluentValidation         | HTTP 422     |
+| Testes          | xUnit + FluentAssertions | -            |
+| Observabilidade | Serilog + OpenTelemetry  | -            |
+
+### 🏛️ Arquitetura Clean
+
+```
+Pms.Backend.sln
+├── Pms.Backend.Domain/          # Entities, ValueObjects, DomainServices, Events
+├── Pms.Backend.Application/     # UseCases, DTOs, Validation, Mappings
+├── Pms.Backend.Infrastructure/  # EF Core, Npgsql, Repos, Migrations, Seeds
+├── Pms.Backend.Api/            # Controllers, Auth, Swagger, CORS
+└── Pms.Backend.Tests/          # Unit, Integration, Acceptance Tests
+```
+
+### ⚙️ Configurações de Qualidade
+
+- **TargetFramework**: net8.0 (LTS)
+- **Banco**: PostgreSQL 16 (Npgsql) - sem SQLite
+- **Índices parciais** para "unicidade quando ativo"
+- **Observabilidade**: Serilog + CorrelationId + OpenTelemetry (DEV)
+- **Validações**: FluentValidation → HTTP 422
+- **Qualidade**: analyzers + warnings-as-errors + nullable enable
+- **CI**: GitHub Actions (build+test + verificação de migrações)
+
+---
+
+## 🔐 Autenticação e Autorização
+
+### 🔑 JWT e Claims
+
+```json
+{
+  "sub": "user-id",
+  "email": "user@example.com",
+  "roles": ["Director", "Regional"],
+  "scopes": ["Club:123", "Region:456"],
+  "exp": 1234567890
+}
+```
+
+### 👤 Sistema de Usuários
+
+- **E-mail único global** (inclusive para arquivados)
+- **Senha**: Argon2/BCrypt com histórico de 5 senhas
+- **Sem registro público** no MVP
+- **Criação via** `POST /members`
+- **Seed SystemAdmin** com token de ativação
+
+### 🔄 Fluxo de Ativação
+
+1. **Convite** → token 24h
+2. **Ativação** → `/auth/activate`
+3. **Esqueci senha** → reset via token
+
+### 🔓 Release de E-mail
+
+**Apenas SystemAdmin/Regional↑**:
+
+1. Confirmação + motivo
+2. Mascarar e-mail no registro antigo
+3. Remover UserCredential
+4. Logar em SecurityAuditLog
+
+---
+
+## 🏛️ Hierarquia e Relações
+
+### 📊 Cadeia Hierárquica
+
+```
+Divisão → União → Associação → Região → Distrito → Clube → Unidade → Membro
+```
+
+### 🔗 Relações Obrigatórias
+
+- **Clube ↔ Igreja**: 1:1 obrigatório
+- **Igreja**: CEP único global
+- **Cada nível**: 1 pai, 0..N filhos
+- **Clube**: pertence a 1 Distrito (obrigatório)
+
+### 🏷️ Códigos e CodePath
+
+| Campo      | Regras                                   | Exemplo                      |
+| ---------- | ---------------------------------------- | ---------------------------- |
+| `Code`     | ≤5 chars, UPPERCASE A-Z0-9, manual       | `DSA`, `UCB`                 |
+| `CodePath` | ≤60 chars, somente leitura, concatenação | `DSA.UCB.APL.APL3RT.DVM.PAC` |
+
+### 🔄 Mudança de Pai
+
+- **Recalcular** `CodePath` em cascata
+- **Mesma transação** para consistência
+- **Unicidade**: Code único por nível, CodePath único global
+
+---
+
+## 👥 Pessoas, Cargos e Regras
+
+### 👔 Papéis por Nível
+
+#### 🏛️ Liderança Superior
+
+- **União**: 1 Pastor da União (≥18, Batismo+Lenço)
+- **Associação**: 1 Pastor da Associação (≥18, Batismo+Lenço)
+- **Região**: 1 Pastor da Região (≥18, Batismo+Lenço) + 1 Regional (≥18)
+
+#### 🏘️ Liderança Local
+
+- **Distrito**: 1 Distrital (≥18)
+- **Clube**: Diretoria com regras específicas
+- **Unidade**: Conselheiros e juvenis
+
+### 🏛️ Diretoria do Clube
+
+| Cargo                | Quantidade   | Idade | Gênero    | Requisitos    |
+| -------------------- | ------------ | ----- | --------- | ------------- |
+| Diretor              | 1            | ≥18   | -         | Batismo+Lenço |
+| Diretores Associados | ≤2           | ≥16   | Distintos | -             |
+| Secretário           | 1            | ≥16   | -         | -             |
+| Ancião               | 1 (opcional) | ≥18   | -         | Batismo+Lenço |
+| Capelão              | 1 (opcional) | ≥18   | -         | Batismo+Lenço |
+| Instrutores          | N            | ≥16   | -         | -             |
+
+### 🚫 Regras de Acúmulo
+
+- **Sem acúmulo** de cargos de diretoria no Clube
+- **Instrutor incluso** na regra de acúmulo
+- **Requisitos espirituais**: Batismo + Lenço para toda liderança
+
+### 🔄 Promoções e Baixas
+
+#### Regional/Distrital/Pastores
+
+- **Proibido**: membership de clube e vínculo de unidade
+- **Ao assumir**: encerrar memberships/cargos de Clube/Unidade
+- **Ao deixar**: serviço "associar a um clube"
+
+#### Rebaixamento
+
+- **Regional ↔ Distrital**: cargo anterior é perdido (mantém histórico)
+
+### 👥 Delegado de Aprovação
+
+```csharp
+ApprovalDelegate {
+    Role,           // Cargo que pode delegar
+    ScopeType,      // Tipo do escopo
+    ScopeId,        // ID do escopo
+    Start,          // Data início
+    End,            // Data fim
+    DelegatedToAssignmentId  // Para quem delegou
+}
+```
+
+**Regras**:
+
+- Regional pode delegar a Distrital da sua Região
+- Ou a Regional de outra Região
+- **Conflito de interesse**: não aprova próprio progresso nem de filho
+
+---
+
+## 📚 Programa e Progresso
+
+### 🎓 Classes Regulares
+
+| Classe        | Idade | Ordem |
+| ------------- | ----- | ----- |
+| Amigo         | 10    | 1     |
+| Companheiro   | 11    | 2     |
+| Pesquisador   | 12    | 3     |
+| Pioneiro      | 13    | 4     |
+| Excursionista | 14    | 5     |
+| Guia          | 15    | 6     |
+
+### 🏆 Classes Avançadas
+
+- **Podem iniciar** a qualquer momento
+- **Só concluem** após a respectiva regular estar **Concluída**
+
+### 👑 Liderança
+
+| Cargo                 | Idade Início | Idade Investidura | Pré-requisitos       |
+| --------------------- | ------------ | ----------------- | -------------------- |
+| Líder                 | ≥16          | ≥18               | Regulares concluídas |
+| Líder Master          | -            | -                 | Requer Líder         |
+| Líder Master Avançado | -            | -                 | Requer Líder Master  |
+
+**Regra**: Não é permitido pular regulares e ir direto a Líder
+
+### 🏅 Especialidades
+
+#### Categorias Canônicas
+
+- **AD, HM, AA, AM, AP, AR, CS, EN, HD**
+- **Chave**: Acronym (≤3 alfanum.) + Code (1..999)
+- **Exibição**: D3 (001, 010, 245)
+- **Múltiplas**: mesmo membro pode ter várias da mesma categoria
+
+### 🎖️ Mestrados
+
+- **Entidade própria** (`Mastery`)
+- **Independentes** de classes
+- **Requisitos**: AND/OR/MIN-OF-N por especialidades
+- **Histórico único**: não repetir itens já Concluídos
+
+---
+
+## 🎉 Eventos e Participações
+
+### 📅 Organização
+
+- **Qualquer nível**: Divisão/União/Associação/Região/Distrito/Clube
+- **Registrar**: `OrganizerLevel` e `OrganizerId`
+
+### ✅ Elegibilidade Multi-dia
+
+- **Membro ativo** em toda a janela (Start→End)
+- **Clube inativo**: membros **não** podem participar
+- **Lideranças sem membership**: podem participar
+
+### 💰 Taxas
+
+- **FeeAmount?/FeeCurrency?** por evento
+- **Default**: gratuito
+- **Moeda global**: BRL (configurável)
+
+---
+
+## 📊 Relatórios e Exportações
+
+### 📈 Exportações CSV (Diretor)
+
+| Endpoint                                                   | Descrição          | Formato    |
+| ---------------------------------------------------------- | ------------------ | ---------- |
+| `/reports/members.csv?clubId=...`                          | Membros do clube   | UTF-8, `;` |
+| `/reports/timeline.csv?memberId=...`                       | Timeline do membro | UTF-8, `;` |
+| `/reports/participations.csv?clubId=...&start=...&end=...` | Participações      | UTF-8, `;` |
+
+### 📅 Datas
+
+- **Persistir**: UTC
+- **Exibir/Validar**: America/Sao_Paulo (Horário de Brasília)
+
+---
+
+## 🔧 Qualidade e Testes
+
+### 🧪 Cobertura Mínima
+
+- **Domain + Application**: ≥70%
+- **Total**: ≥60%
+
+### ✅ Casos de Teste Obrigatórios
+
+#### Membership
+
+- [ ] Membership única (e "0 ativa" para Regional/Distrital/Pastores)
+- [ ] Regra 1º/06
+- [ ] Capacidade de unidade
+- [ ] 0/>1 opções → tarefas/422
+
+#### Diretoria
+
+- [ ] 1 Diretor
+- [ ] Associados (máx. 2, gêneros distintos)
+- [ ] Sem acúmulo
+- [ ] Clube sem diretor → `IsActive=false` + bloqueios
+
+#### Aprovações
+
+- [ ] Cadeias de aprovação (pular Distrital)
+- [ ] Conflito/auto/familiar → pular
+- [ ] Delegado de aprovação
+
+#### Outros
+
+- [ ] Gating por Lenço
+- [ ] Investidura (testemunhas ativas na data/escopo)
+- [ ] CodePath recalculado em cascata
+- [ ] Clube inativo bloqueia eventos/progressos
+
+### 🔒 Segurança
+
+- **Política de senha**: min 10; 1 maiúscula; 1 minúscula; 1 dígito
+- **Histórico**: 5 senhas
+- **Lockout**: 5/15→15 (configurável)
+- **Rate limit**: global habilitado (por IP e por usuário)
+
+---
+
+## 📈 MVPs e Escopo
+
+### 🎯 MVP-0: Núcleo Operacional
+
+**Escopo**:
+
+- Plataforma/segurança
+- Hierarquia+igrejas (Code/CodePath)
+- Membros (≥10, batismo)
+- Convite/ativação
+- Lenço
+- Clubes/unidades/membership
+- Cargos/sem acúmulo
+- Delegado
+- Eventos (eligibilidade multi-dia)
+- Timeline básica
+- CSV Director
+
+### 🎯 MVP-1: Programa/Aprovações/Investiduras
+
+**Escopo**:
+
+- Categorias/especialidades/classes/mestrados
+- Progressos (status, gating lenço)
+- Cadeias (pulos/Delegado/Conflito)
+- Reprovação/reabertura
+- Investiduras (testemunhas ativas)
+
+### 🎯 MVP-2: Operação Ampliada
+
+**Escopo**:
+
+- Relatórios ampliados
+- Caches opcionais
+- Webhooks/notificações
+- Anexos binários (S3/local)
+- Rate-limit por papel
+
+---
+
+## ⏳ Status Pending e Onboarding
+
+### 📊 Member Status
+
+- **Pending**: Membro recém-cadastrado com dados incompletos
+- **Active**: Membro com dados completos e ativo
+- **Archived**: Membro arquivado/inativo
+
+### 🔄 Activation Checklist (MVP)
+
+**Critérios para ativação automática (Pending → Active)**:
+
+- ✅ **Address completo**: zipCode, street, number, city, state
+- ✅ **Contact Email**: presente (do convite)
+- ✅ **Mobile recomendado**: não obrigatório no MVP
+
+### 🚫 Operation Checklist
+
+**Não afeta status, mas bloqueia operações de negócio**:
+
+- ✅ **ScarfInvestiture**: requerido para progress (classes/especialidades/mestrados)
+- ✅ **BaptismValidComputed**: true AND no active censure AND ScarfInvested = true para leadership
+
+### 🔐 Login e Permissões
+
+#### Status Pending
+
+- ✅ **Login permitido**: JWT emitido normalmente
+- ❌ **Escritas de domínio bloqueadas**: 403 MemberPending
+- ✅ **Endpoints /me/**: permitidos para completar cadastro
+
+#### Status Active
+
+- ✅ **Todas as operações**: permitidas conforme permissões
+
+### 📝 Login Response Structure
+
+```json
+{
+  "token": "jwt_token_here",
+  "member": {
+    "id": "uuid",
+    "status": "Pending|Active|Archived"
+  },
+  "pending": {
+    "activationRequired": ["Address", "ContactEmail"],
+    "operationRequired": ["ScarfInvestiture", "BaptismInfo"],
+    "optional": ["MedicalInfo"],
+    "blockingWrites": true
+  }
+}
+```
+
+**Regras do Login Response**:
+
+- Chaves de "pending" **SEMPRE em inglês**
+- JWT permanece enxuto (sub, email, name, roles[], scopes[], exp)
+- **NÃO incluir** "pending" no token JWT
+
+### 👤 Create Member - Investidura Opcional
+
+```json
+{
+  "firstName": "string",
+  "lastName": "string",
+  "dateOfBirth": "datetime",
+  "gender": "enum",
+  "cpf": "string",
+  "rg": "string",
+  "addressInfo": {
+    /* CreateMemberAddressDto */
+  },
+  "loginInfo": {
+    /* CreateMemberLoginInfoDto */
+  },
+  "contacts": [
+    /* CreateMemberContactDto[] */
+  ],
+  "baptismInfo": {
+    /* CreateMemberBaptismInfoDto - opcional */
+  },
+  "medicalInfo": {
+    /* CreateMemberMedicalInfoDto - opcional */
+  },
+  "initialScarfInvestiture": {
+    /* InvestitureDto - opcional */
+  }
+}
+```
+
+**Regras de Criação**:
+
+- Validação de CPF e Email únicos antes da criação
+- Idade mínima: 10 anos (baseado em 1º de junho do ano vigente)
+- Dados mínimos: FirstName, LastName, DateOfBirth, Gender, CPF, RG
+- Address: zipCode, street, number, neighborhood, city, state (obrigatório)
+- LoginInfo: email, password (obrigatório)
+- Contacts: pelo menos 1 contato Mobile (obrigatório)
+- Email do LoginInfo vira contato Email principal automaticamente
+
+### 🚨 Error Codes
+
+| Código | Significado                       | Uso                                            |
+| ------ | --------------------------------- | ---------------------------------------------- |
+| 403    | MemberPending                     | Tenta operação de domínio com status Pending   |
+| 422    | ScarfRequired                     | Progresso sem lenço                            |
+| 422    | RequisitosEspirituaisNaoAtendidos | Liderança sem batismo válido/lenço/sem censura |
+
+### 🔄 Ativação Automática
+
+- **Idempotente**: verificação contínua do activation checklist
+- **Automática**: promoção para Active quando critérios atendidos
+- **Logs**: registrar mudanças de status para auditoria
+
+---
+
+## 🚀 Quick Reference
+
+### 🔗 Endpoints Principais
+
+#### Autenticação
+
+- `POST /auth/invite` - Convite de usuário
+- `POST /auth/activate` - Ativação de conta
+- `POST /auth/forgot-password` - Esqueci senha
+- `POST /auth/reset-password` - Reset de senha
+
+#### Membros
+
+- `POST /members` - Criar membro completo (≥10 anos, com sub-objetos)
+- `GET /members/me` - Dados do próprio membro (permitido para Pending)
+- `PUT /members/me` - Atualizar dados do próprio membro (permitido para Pending)
+- `POST /members/{id}/memberships` - Criar membership
+- `POST /memberships/{id}/close` - Encerrar membership
+
+#### Cargos
+
+- `POST /assignments` - Criar cargo
+- `POST /assignments/{id}/close` - Encerrar cargo
+- `POST /assignments/associate-to-club` - Associar a clube
+
+#### Progresso
+
+- `POST /members/{id}/classes/{classId}/start` - Iniciar classe
+- `PATCH /members/{id}/classes/{classId}` - Atualizar progresso
+- `POST /progress/{itemType}/{itemId}/approve` - Aprovar progresso
+
+### 📊 Códigos de Status
+
+| Código | Significado                       | Uso                                                    |
+| ------ | --------------------------------- | ------------------------------------------------------ |
+| 200    | OK                                | Sucesso                                                |
+| 201    | Created                           | Criação bem-sucedida                                   |
+| 400    | Bad Request                       | Dados inválidos                                        |
+| 401    | Unauthorized                      | Não autenticado                                        |
+| 403    | Forbidden                         | Sem permissão                                          |
+| 403    | MemberPending                     | Membro com status Pending tentando operação de domínio |
+| 404    | Not Found                         | Recurso não encontrado                                 |
+| 422    | Unprocessable Entity              | Violação de regra de negócio                           |
+| 422    | ScarfRequired                     | Progresso sem lenço                                    |
+| 422    | RequisitosEspirituaisNaoAtendidos | Liderança sem batismo válido/lenço/sem censura         |
+| 500    | Internal Server Error             | Erro interno                                           |
+
+### 🔧 Feature Flags
+
+| Flag                  | Default | Descrição                  |
+| --------------------- | ------- | -------------------------- |
+| `Attachments.Enabled` | false   | Anexos binários (S3/local) |
+| `Redis.Enabled`       | false   | Cache Redis                |
+| `Jobs.Enabled`        | true    | Jobs de realocação         |
+| `Exports.Enabled`     | true    | Exportações CSV            |
+| `RateLimit.ByRole`    | false   | Rate limit por papel       |
+
+---
+
+## 📝 Notas Importantes
+
+### ⚠️ Orientações Finais
+
+- **Em caso de ambiguidade**: NÃO implemente
+- **Registre** em OPEN_QUESTIONS no PROGRESS.md
+- **NÃO avance** para próximo MVP sem "MVP-X: ACCEPTED"
+- **Mantenha escopo** estritamente conforme este documento
+
+### 🔄 PATCH - Investiduras: Testemunhas
+
+#### Modelo Híbrido para Históricos
+
+**Objetivo**: Permitir registrar investiduras antigas/legadas quando não for possível vincular testemunhas a pessoas/cargos existentes.
+
+#### Estrutura de Dados
+
+```csharp
+InvestitureWitness {
+    Id,
+    InvestitureId,           // FK
+    Type,                    // Structured | Text
+    MemberId?,               // quando Structured
+    RoleSnapshot?,           // quando Structured
+    NameText?,               // quando Text (VARCHAR(200))
+    RoleText?,               // quando Text (VARCHAR(100))
+    OrgText?,                // opcional (VARCHAR(120))
+    CreatedAtUtc
+}
+```
+
+#### Regras de Validação
+
+- **≥1 testemunha** obrigatória
+- **Preferência**: Structured quando possível
+- **Fallback texto**: para casos antigos
+- **Auto-testemunho**: proibido
+- **Aprovador ≠ Testemunha**: permitido
+
+#### Liderança - Exigências Específicas
+
+**Investiduras de liderança** devem conter:
+
+- Pelo menos **uma testemunha** com cargo **"Pastor da Associação"**
+- **Fallback**: "Pastor da União"
+- **Override administrativo**: se nenhum dos dois for viável
+
+---
+
+_Documento atualizado em: $(date)_
+_Versão: 2.0_

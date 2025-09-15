@@ -1,0 +1,50 @@
+{
+  "name": "pathfinders-management-software",
+  "version": "1.0.0",
+  "description": "Sistema de gerenciamento para clubes de desbravadores - Monorepo",
+  "private": true,
+  "workspaces": [
+    "src/frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd src/backend && dotnet run --project Pms.Backend.Api",
+    "dev:frontend": "cd src/frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd src/backend && dotnet build",
+    "build:frontend": "cd src/frontend && npm run build",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd src/backend && dotnet test",
+    "test:frontend": "cd src/frontend && npm run test",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:build": "docker-compose build",
+    "docker:dev": "docker-compose -f docker-compose.dev.yml up -d",
+    "install:all": "npm install && cd src/frontend && npm install",
+    "clean": "npm run clean:backend && npm run clean:frontend",
+    "clean:backend": "cd src/backend && dotnet clean",
+    "clean:frontend": "cd src/frontend && npm run clean"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seu-usuario/pathfinders-management-software.git"
+  },
+  "keywords": [
+    "pathfinders",
+    "desbravadores",
+    "management",
+    "system",
+    "monorepo",
+    "dotnet",
+    "react"
+  ],
+  "author": "Hanan Ortiz",
+  "license": "MIT"
+}
