@@ -29,9 +29,10 @@ public interface IRepository<T> where T : class
     /// Gets all entities with navigation properties included
     /// </summary>
     /// <param name="predicate">Filter predicate</param>
+    /// <param name="cancellationToken">Cancellation token</param>
     /// <param name="includes">Navigation properties to include</param>
     /// <returns>Collection of matching entities with navigation properties</returns>
-    Task<IEnumerable<T>> GetWithIncludesAsync(Expression<Func<T, bool>>? predicate = null, params Expression<Func<T, object>>[] includes);
+    Task<IEnumerable<T>> GetWithIncludesAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken cancellationToken = default, params Expression<Func<T, object>>[] includes);
 
     /// <summary>
     /// Gets entities with pagination

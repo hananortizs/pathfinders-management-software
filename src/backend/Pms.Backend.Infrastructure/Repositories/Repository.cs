@@ -60,7 +60,7 @@ public class Repository<T> : IRepository<T> where T : class
     /// <param name="includes">Navigation properties to include</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Collection of matching entities with navigation properties</returns>
-    public async Task<IEnumerable<T>> GetWithIncludesAsync(Expression<Func<T, bool>>? predicate = null, params Expression<Func<T, object>>[] includes)
+    public async Task<IEnumerable<T>> GetWithIncludesAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken cancellationToken = default, params Expression<Func<T, object>>[] includes)
     {
         var query = _dbSet.AsQueryable();
 
@@ -74,7 +74,7 @@ public class Repository<T> : IRepository<T> where T : class
             query = query.Include(include);
         }
 
-        return await query.ToListAsync();
+        return await query.ToListAsync(cancellationToken);
     }
 
     /// <summary>

@@ -57,7 +57,7 @@ public class SeedService : ISeedService
                 FirstName = "System",
                 LastName = "Administrator",
                 DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                Gender = MemberGender.Masculino,
+                Gender = MemberGender.Male,
                 Cpf = "00000000000",
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
@@ -271,7 +271,7 @@ public class SeedService : ISeedService
                 MiddleNames = "Ferreira Ortiz Spinola",
                 LastName = "Del Chiaro",
                 DateOfBirth = new DateTime(2002, 6, 14, 0, 0, 0, DateTimeKind.Utc), // Ajustar conforme necessário
-                Gender = MemberGender.Masculino,
+                Gender = MemberGender.Male,
                 Cpf = "44732518885", // Ajustar conforme necessário
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow

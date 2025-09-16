@@ -396,12 +396,12 @@ public enum MemberGender
     /// <summary>
     /// Masculine
     /// </summary>
-    Masculino,
+    Male = 0,
 
     /// <summary>
     /// Feminine
     /// </summary>
-    Feminino
+    Female = 1
 }
 
 /// <summary>

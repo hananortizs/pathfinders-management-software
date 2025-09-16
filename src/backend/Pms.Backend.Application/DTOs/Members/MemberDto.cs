@@ -23,7 +23,6 @@ public class MemberDto : AddressableEntityDtoBase
     /// <summary>
     /// Member's middle names (optional) - can contain multiple middle names
     /// </summary>
-    [JsonPropertyName("middleNames")]
     public string? MiddleNames { get; set; }
 
     /// <summary>
@@ -41,10 +40,6 @@ public class MemberDto : AddressableEntityDtoBase
     /// </summary>
     public string FullName => $"{FirstName} {MiddleNames} {LastName}".Trim().Replace("  ", " ");
 
-    /// <summary>
-    /// Member's display name (prefers social name if available, otherwise full name)
-    /// </summary>
-    public string DisplayName => !string.IsNullOrWhiteSpace(SocialName) ? SocialName : FullName;
 
     /// <summary>
     /// Member's date of birth

@@ -95,7 +95,7 @@ public class MemberValidationService : IMemberValidationService
     /// <param name="dto">DTO de criação de membro</param>
     /// <param name="cancellationToken">Token de cancelamento</param>
     /// <returns>Resultado da validação com detalhes do que está pendente</returns>
-    public async Task<MemberValidationResult> ValidateCreateMemberDtoAsync(CreateMemberCompleteDto dto, CancellationToken cancellationToken = default)
+    public Task<MemberValidationResult> ValidateCreateMemberDtoAsync(CreateMemberCompleteDto dto, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -139,18 +139,18 @@ public class MemberValidationService : IMemberValidationService
             _logger.LogInformation("Validação de DTO concluída. Válido: {IsValid}, Pode ser ativado: {CanBeActivated}",
                 result.IsValid, result.CanBeActivated);
 
-            return result;
+            return Task.FromResult(result);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao validar DTO de criação de membro");
-            return new MemberValidationResult
+            return Task.FromResult(new MemberValidationResult
             {
                 IsValid = false,
                 CanBeActivated = false,
                 ErrorMessage = "Erro interno durante a validação",
                 InactivityReason = "ValidationError"
-            };
+            });
         }
     }
 

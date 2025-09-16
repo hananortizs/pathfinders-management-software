@@ -543,8 +543,8 @@ public class AllocationService : IAllocationService
     /// </summary>
     private static bool IsGenderCompatible(MemberGender memberGender, UnitGender unitGender)
     {
-        return (memberGender == MemberGender.Masculino && unitGender == UnitGender.Masculina) ||
-               (memberGender == MemberGender.Feminino && unitGender == UnitGender.Feminina);
+        return (memberGender == MemberGender.Male && unitGender == UnitGender.Masculina) ||
+               (memberGender == MemberGender.Female && unitGender == UnitGender.Feminina);
     }
 
     /// <summary>

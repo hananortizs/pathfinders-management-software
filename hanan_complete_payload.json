@@ -1,0 +1,51 @@
+{
+  "firstName": "Hanan",
+  "middleNames": "Ferreira Ortiz Spinola",
+  "lastName": "Del Chiaro",
+  "dateOfBirth": "2002-06-14T00:00:00Z",
+  "gender": 0,
+  "cpf": "44732518885",
+  "rg": "387091051",
+  "addressInfo": {
+    "street": "Rua Soldado Geraldo Augusto dos Santos",
+    "number": "23",
+    "complement": "Casa",
+    "neighborhood": "Parque Novo Mundo",
+    "city": "São Paulo",
+    "state": "SP",
+    "postalCode": "02177-050",
+    "country": "Brasil",
+    "isPrimary": true
+  },
+  "loginInfo": {
+    "email": "hanan.ortiz.hnnrtz@gmail.com",
+    "password": "Qazzxc@001Kzixs@001"
+  },
+  "contacts": [
+    {
+      "type": 1,
+      "value": "+5511952404468",
+      "isPrimary": true
+    }
+  ],
+  "baptismInfo": {
+    "baptismDate": "2015-12-14T00:00:00Z",
+    "baptismChurch": "IASD Vila Medeiros",
+    "baptismPastor": "Arilton Ferreira"
+  },
+  "initialScarfInvestiture": {
+    "type": 0,
+    "date": "2016-09-24T00:00:00Z",
+    "place": "IASD Vila Medeiros",
+    "witnesses": [
+      {
+        "type": 1,
+        "memberId": null,
+        "roleSnapshot": null,
+        "nameText": "Pastor Arilton Ferreira",
+        "roleText": "Pastor da Igreja",
+        "orgText": "IASD Vila Medeiros"
+      }
+    ]
+  }
+}

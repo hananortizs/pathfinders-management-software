@@ -56,8 +56,8 @@ public class ReportsService : IReportsService
             var totalMembers = members.Count();
             var activeMembers = members.Count(m => m.Status == MemberStatus.Active);
             var inactiveMembers = members.Count(m => m.Status == MemberStatus.Inactive);
-            var maleMembers = members.Count(m => m.Gender == MemberGender.Masculino);
-            var femaleMembers = members.Count(m => m.Gender == MemberGender.Feminino);
+            var maleMembers = members.Count(m => m.Gender == MemberGender.Male);
+            var femaleMembers = members.Count(m => m.Gender == MemberGender.Female);
 
             // Calcular faixas etárias
             var currentDate = DateTime.UtcNow;

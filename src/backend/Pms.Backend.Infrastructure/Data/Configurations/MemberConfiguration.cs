@@ -117,6 +117,13 @@ public class MemberConfiguration : BaseEntityConfiguration<Member>
             .HasForeignKey(e => e.MemberId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Relationship with Contacts (polymorphic)
+        builder.HasMany(e => e.Contacts)
+            .WithOne()
+            .HasForeignKey(c => c.EntityId)
+            .HasPrincipalKey(e => e.Id)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // Constraints
         builder.ToTable(t => t.HasCheckConstraint("CK_Member_Baptism", "\"Baptized\" = false OR (\"BaptizedAt\" IS NOT NULL AND \"BaptizedPlace\" IS NOT NULL)"));
         builder.ToTable(t => t.HasCheckConstraint("CK_Member_Scarf", "\"ScarfInvested\" = false OR \"ScarfInvestedAt\" IS NOT NULL"));

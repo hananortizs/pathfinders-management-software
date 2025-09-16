@@ -62,8 +62,23 @@ public class MedicalRecordTag : BaseEntity
 /// </summary>
 public enum MedicalSeverity
 {
+    /// <summary>
+    /// Severidade leve
+    /// </summary>
     Mild = 1,
+    
+    /// <summary>
+    /// Severidade moderada
+    /// </summary>
     Moderate = 2,
+    
+    /// <summary>
+    /// Severidade grave
+    /// </summary>
     Severe = 3,
+    
+    /// <summary>
+    /// Severidade crítica
+    /// </summary>
     Critical = 4
 }

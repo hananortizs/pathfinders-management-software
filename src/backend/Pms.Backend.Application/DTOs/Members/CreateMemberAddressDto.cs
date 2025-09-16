@@ -12,7 +12,7 @@ public class CreateMemberAddressDto
     /// CEP do endereço
     /// </summary>
     [Required(ErrorMessage = "CEP é obrigatório")]
-    [StringLength(8, MinimumLength = 8, ErrorMessage = "CEP deve ter exatamente 8 dígitos")]
+    [StringLength(9, MinimumLength = 8, ErrorMessage = "CEP deve ter 8 ou 9 caracteres (com ou sem hífen)")]
     public string PostalCode { get; set; } = string.Empty;
 
     /// <summary>

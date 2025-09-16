@@ -21,8 +21,6 @@ public class MemberListDto
     /// <summary>
     /// Nomes do meio do membro (opcional)
     /// </summary>
-    [JsonPropertyName("middleNames")]
-    [JsonInclude]
     public string? MiddleNames { get; set; }
 
     /// <summary>
@@ -40,10 +38,6 @@ public class MemberListDto
     /// </summary>
     public string FullName => $"{FirstName} {MiddleNames} {LastName}".Trim().Replace("  ", " ");
 
-    /// <summary>
-    /// Nome de exibição do membro (prefere nome social se disponível, senão nome completo)
-    /// </summary>
-    public string DisplayName => !string.IsNullOrWhiteSpace(SocialName) ? SocialName : FullName;
 
     /// <summary>
     /// Data de nascimento do membro

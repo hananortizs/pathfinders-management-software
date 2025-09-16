@@ -41,9 +41,9 @@ public class HierarchyQueryService : IHierarchyQueryService
         try
         {
             // Get divisions with their unions included for rich query data
-            var divisions = await _unitOfWork.Repository<Division>().GetWithIncludesAsync(null, d => d.Unions);
+            var divisions = await _unitOfWork.Repository<Division>().GetWithIncludesAsync(null, cancellationToken, d => d.Unions);
             var totalCount = divisions.Count();
-            
+
             var pagedDivisions = divisions
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
@@ -83,9 +83,9 @@ public class HierarchyQueryService : IHierarchyQueryService
         try
         {
             // Get unions with their associations and division included for rich query data (division needed for CodePath calculation)
-            var unions = await _unitOfWork.Repository<Union>().GetWithIncludesAsync(null, u => u.Associations, u => u.Division);
+            var unions = await _unitOfWork.Repository<Union>().GetWithIncludesAsync(null, cancellationToken, u => u.Associations, u => u.Division);
             var totalCount = unions.Count();
-            
+
             var pagedUnions = unions
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
@@ -125,9 +125,9 @@ public class HierarchyQueryService : IHierarchyQueryService
         try
         {
             // Get associations with their regions and union included for rich query data (union needed for CodePath calculation)
-            var associations = await _unitOfWork.Repository<Association>().GetWithIncludesAsync(null, a => a.Regions, a => a.Union);
+            var associations = await _unitOfWork.Repository<Association>().GetWithIncludesAsync(null, cancellationToken, a => a.Regions, a => a.Union);
             var totalCount = associations.Count();
-            
+
             var pagedAssociations = associations
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
@@ -167,9 +167,9 @@ public class HierarchyQueryService : IHierarchyQueryService
         try
         {
             // Get regions with their districts and association included for rich query data (association needed for CodePath calculation)
-            var regions = await _unitOfWork.Repository<Region>().GetWithIncludesAsync(null, r => r.Districts, r => r.Association);
+            var regions = await _unitOfWork.Repository<Region>().GetWithIncludesAsync(null, cancellationToken, r => r.Districts, r => r.Association);
             var totalCount = regions.Count();
-            
+
             var pagedRegions = regions
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
@@ -209,9 +209,9 @@ public class HierarchyQueryService : IHierarchyQueryService
         try
         {
             // Get districts with their clubs and region included for rich query data (region needed for CodePath calculation)
-            var districts = await _unitOfWork.Repository<District>().GetWithIncludesAsync(null, d => d.Clubs, d => d.Region);
+            var districts = await _unitOfWork.Repository<District>().GetWithIncludesAsync(null, cancellationToken, d => d.Clubs, d => d.Region);
             var totalCount = districts.Count();
-            
+
             var pagedDistricts = districts
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
@@ -251,9 +251,9 @@ public class HierarchyQueryService : IHierarchyQueryService
         try
         {
             // Get clubs with their units included for rich query data (no parent objects)
-            var clubs = await _unitOfWork.Repository<Club>().GetWithIncludesAsync(null, c => c.Units);
+            var clubs = await _unitOfWork.Repository<Club>().GetWithIncludesAsync(null, cancellationToken, c => c.Units);
             var totalCount = clubs.Count();
-            
+
             var pagedClubs = clubs
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)

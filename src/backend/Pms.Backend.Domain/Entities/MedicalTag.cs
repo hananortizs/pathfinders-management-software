@@ -48,9 +48,28 @@ public class MedicalTag : BaseEntity
 /// </summary>
 public enum MedicalTagCategory
 {
+    /// <summary>
+    /// Categoria de alergia
+    /// </summary>
     Allergy = 1,
+    
+    /// <summary>
+    /// Categoria de medicamento
+    /// </summary>
     Medication = 2,
+    
+    /// <summary>
+    /// Categoria de condição médica
+    /// </summary>
     Condition = 3,
+    
+    /// <summary>
+    /// Categoria de deficiência
+    /// </summary>
     Disability = 4,
+    
+    /// <summary>
+    /// Outras categorias médicas
+    /// </summary>
     Other = 5
 }

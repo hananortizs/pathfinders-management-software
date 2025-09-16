@@ -2,6 +2,7 @@ using AutoMapper;
 using Pms.Backend.Application.DTOs.Auth;
 using Pms.Backend.Application.DTOs.Members;
 using Pms.Backend.Domain.Entities;
+using Pms.Backend.Domain.Enums;
 
 namespace Pms.Backend.Application.Mappings;
 
@@ -17,15 +18,15 @@ public class MemberMappingProfile : Profile
     {
         // Member mappings
         CreateMap<Member, MemberDto>()
-            .ForMember(dest => dest.PrimaryEmail, opt => opt.MapFrom(src => src.PrimaryEmail))
-            .ForMember(dest => dest.PrimaryPhone, opt => opt.MapFrom(src => src.PrimaryPhone))
+            .ForMember(dest => dest.PrimaryEmail, opt => opt.MapFrom(src => GetPrimaryEmail(src)))
+            .ForMember(dest => dest.PrimaryPhone, opt => opt.MapFrom(src => GetPrimaryPhone(src)))
             .ForMember(dest => dest.MiddleNames, opt => opt.MapFrom(src => src.MiddleNames))
             .ReverseMap();
 
         // Optimized member list mapping
         CreateMap<Member, MemberListDto>()
-            .ForMember(dest => dest.PrimaryEmail, opt => opt.MapFrom(src => src.PrimaryEmail))
-            .ForMember(dest => dest.PrimaryPhone, opt => opt.MapFrom(src => src.PrimaryPhone))
+            .ForMember(dest => dest.PrimaryEmail, opt => opt.MapFrom(src => GetPrimaryEmail(src)))
+            .ForMember(dest => dest.PrimaryPhone, opt => opt.MapFrom(src => GetPrimaryPhone(src)))
             .ForMember(dest => dest.MiddleNames, opt => opt.MapFrom(src => src.MiddleNames))
             .ForMember(dest => dest.SocialName, opt => opt.MapFrom(src => src.SocialName))
             .ForMember(dest => dest.Rg, opt => opt.MapFrom(src => src.Rg))
@@ -180,6 +181,50 @@ public class MemberMappingProfile : Profile
             .ForMember(dest => dest.Contacts, opt => opt.Ignore())
             .ForMember(dest => dest.MedicalInfo, opt => opt.Ignore())
             .ForMember(dest => dest.LoginInfo, opt => opt.Ignore());
+    }
+
+    /// <summary>
+    /// Gets the primary email from member contacts
+    /// </summary>
+    /// <param name="member">Member entity</param>
+    /// <returns>Primary email or null</returns>
+    private static string? GetPrimaryEmail(Member member)
+    {
+        if (member.Contacts == null)
+            return null;
+
+        return member.Contacts
+            .Where(c => !c.IsDeleted && c.Type == ContactType.Email && c.IsPrimary)
+            .OrderBy(c => c.CreatedAtUtc)
+            .FirstOrDefault()?.Value;
+    }
+
+    /// <summary>
+    /// Gets the primary phone from member contacts
+    /// </summary>
+    /// <param name="member">Member entity</param>
+    /// <returns>Primary phone or null</returns>
+    private static string? GetPrimaryPhone(Member member)
+    {
+        if (member.Contacts == null)
+            return null;
+
+        // Primeiro tenta encontrar um contato marcado como primário
+        var primaryPhone = member.Contacts
+            .Where(c => !c.IsDeleted && (c.Type == ContactType.Mobile || c.Type == ContactType.Landline) && c.IsPrimary)
+            .OrderBy(c => c.CreatedAtUtc)
+            .FirstOrDefault()?.Value;
+
+        // Se não encontrar, pega o primeiro telefone disponível
+        if (string.IsNullOrEmpty(primaryPhone))
+        {
+            primaryPhone = member.Contacts
+                .Where(c => !c.IsDeleted && (c.Type == ContactType.Mobile || c.Type == ContactType.Landline))
+                .OrderBy(c => c.CreatedAtUtc)
+                .FirstOrDefault()?.Value;
+        }
+
+        return primaryPhone;
     }
 }
 

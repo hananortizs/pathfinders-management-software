@@ -412,6 +412,20 @@ public partial class MemberService : IMemberService
             // 8. Salvar todas as alterações (com rollback automático em caso de erro)
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            // 9. Carregar contatos manualmente para calcular PrimaryEmail e PrimaryPhone
+            var contacts = await _unitOfWork.Repository<Contact>()
+                .GetAsync(c => c.EntityId == member.Id && c.EntityType == "Member" && !c.IsDeleted, cancellationToken);
+            
+            // Debug: verificar contatos carregados
+            Console.WriteLine($"DEBUG: Contatos carregados: {contacts.Count()}");
+            foreach (var contact in contacts)
+            {
+                Console.WriteLine($"DEBUG: Contato - Tipo: {contact.Type}, Valor: {contact.Value}, IsPrimary: {contact.IsPrimary}, IsDeleted: {contact.IsDeleted}");
+            }
+
+            // Atribuir contatos ao membro para o mapeamento
+            member.Contacts = contacts.ToList();
+
             var resultDto = _mapper.Map<MemberDto>(member);
             return BaseResponse<MemberDto>.SuccessResult(resultDto, "Membro criado com sucesso com todas as informações");
         }
@@ -867,15 +881,15 @@ public partial class MemberService : IMemberService
 
                 if (existingAddress != null)
                 {
-                    existingAddress.Street = dto.AddressInfo.Street;
-                    existingAddress.Number = dto.AddressInfo.Number;
-                    existingAddress.Complement = dto.AddressInfo.Complement;
-                    existingAddress.Neighborhood = dto.AddressInfo.Neighborhood;
-                    existingAddress.City = dto.AddressInfo.City;
-                    existingAddress.State = dto.AddressInfo.State;
-                    existingAddress.Cep = dto.AddressInfo.PostalCode;
-                    existingAddress.Country = dto.AddressInfo.Country;
-                    existingAddress.IsPrimary = dto.AddressInfo.IsPrimary;
+                    existingAddress.Street = dto.AddressInfo?.Street ?? string.Empty;
+                    existingAddress.Number = dto.AddressInfo?.Number ?? string.Empty;
+                    existingAddress.Complement = dto.AddressInfo?.Complement;
+                    existingAddress.Neighborhood = dto.AddressInfo?.Neighborhood ?? string.Empty;
+                    existingAddress.City = dto.AddressInfo?.City ?? string.Empty;
+                    existingAddress.State = dto.AddressInfo?.State ?? string.Empty;
+                    existingAddress.Cep = dto.AddressInfo?.PostalCode ?? string.Empty;
+                    existingAddress.Country = dto.AddressInfo?.Country ?? string.Empty;
+                    existingAddress.IsPrimary = dto.AddressInfo?.IsPrimary ?? false;
                 }
                 else
                 {
@@ -883,15 +897,15 @@ public partial class MemberService : IMemberService
                     {
                         EntityId = id,
                         EntityType = "Member",
-                        Street = dto.AddressInfo.Street,
-                        Number = dto.AddressInfo.Number,
-                        Complement = dto.AddressInfo.Complement,
-                        Neighborhood = dto.AddressInfo.Neighborhood,
-                        City = dto.AddressInfo.City,
-                        State = dto.AddressInfo.State,
-                        Cep = dto.AddressInfo.PostalCode,
-                        Country = dto.AddressInfo.Country,
-                        IsPrimary = dto.AddressInfo.IsPrimary
+                        Street = dto.AddressInfo?.Street ?? string.Empty,
+                        Number = dto.AddressInfo?.Number ?? string.Empty,
+                        Complement = dto.AddressInfo?.Complement,
+                        Neighborhood = dto.AddressInfo?.Neighborhood ?? string.Empty,
+                        City = dto.AddressInfo?.City ?? string.Empty,
+                        State = dto.AddressInfo?.State ?? string.Empty,
+                        Cep = dto.AddressInfo?.PostalCode ?? string.Empty,
+                        Country = dto.AddressInfo?.Country ?? string.Empty,
+                        IsPrimary = dto.AddressInfo?.IsPrimary ?? false
                     };
                     await _unitOfWork.Repository<Domain.Entities.Address>().AddAsync(newAddress, cancellationToken);
                 }
