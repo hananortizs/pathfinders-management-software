@@ -24,7 +24,7 @@ public class Program
     /// Main entry point for the application.
     /// </summary>
     /// <param name="args">Command line arguments.</param>
-    public static async Task Main(string[] args)
+    public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
 

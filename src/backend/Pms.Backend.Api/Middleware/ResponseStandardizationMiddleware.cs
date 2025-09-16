@@ -112,11 +112,17 @@ public class ResponseStandardizationMiddleware
                 return Task.FromResult(responseContent);
             }
 
+            // For validation errors (400), return the original response as is
+            if (statusCode == 400 && responseContent.Contains("ValidationProblemDetails"))
+            {
+                return Task.FromResult(responseContent);
+            }
+
             // Create standardized response based on status code
             var standardizedResponse = CreateStandardizedResponse(statusCode, existingResponse, responseContent);
             return Task.FromResult(JsonSerializer.Serialize(standardizedResponse, new JsonSerializerOptions
             {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                PropertyNamingPolicy = null, // Use PascalCase to match API settings
                 WriteIndented = true
             }));
         }
@@ -162,7 +168,7 @@ public class ResponseStandardizationMiddleware
 
         return JsonSerializer.Serialize(responseWithData, new JsonSerializerOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNamingPolicy = null, // Use PascalCase to match API settings
             WriteIndented = true
         });
     }
@@ -187,7 +193,7 @@ public class ResponseStandardizationMiddleware
 
         return JsonSerializer.Serialize(errorResponse, new JsonSerializerOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNamingPolicy = null, // Use PascalCase to match API settings
             WriteIndented = true
         });
     }
@@ -358,13 +364,13 @@ public class ResponseStandardizationMiddleware
         {
             // Try to parse as JSON to extract validation errors
             var parsed = JsonSerializer.Deserialize<object>(originalContent);
-            
+
             // If it's already a BaseResponse-like structure, return as is
             if (parsed is JsonElement jsonElement && HasBaseResponseStructure(jsonElement))
             {
                 return parsed;
             }
-            
+
             return parsed;
         }
         catch
