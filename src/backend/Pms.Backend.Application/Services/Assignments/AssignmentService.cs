@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Pms.Backend.Application.DTOs;
 using Pms.Backend.Application.DTOs.Assignments;
 using Pms.Backend.Application.Interfaces;
+using Pms.Backend.Application.Interfaces.Validation;
 using Pms.Backend.Domain.Entities;
 using Pms.Backend.Domain.Entities.Hierarchy;
 
@@ -16,16 +17,19 @@ public partial class AssignmentService : IAssignmentService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly IScarfGatingService _scarfGatingService;
 
     /// <summary>
     /// Initializes a new instance of the AssignmentService
     /// </summary>
     /// <param name="unitOfWork">The unit of work</param>
     /// <param name="mapper">The AutoMapper instance</param>
-    public AssignmentService(IUnitOfWork unitOfWork, IMapper mapper)
+    /// <param name="scarfGatingService">Service for scarf gating validation</param>
+    public AssignmentService(IUnitOfWork unitOfWork, IMapper mapper, IScarfGatingService scarfGatingService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _scarfGatingService = scarfGatingService;
     }
 
     #region Assignment CRUD Operations
@@ -328,9 +332,14 @@ public partial class AssignmentService : IAssignmentService
                 return BaseResponse<bool>.ErrorResult("This role requires baptism");
             }
 
-            if (role.RequiresScarf && member.ScarfDate == null)
+            // Use scarf gating service for leadership roles
+            if (role.RequiresScarf)
             {
-                return BaseResponse<bool>.ErrorResult("This role requires scarf (lenço)");
+                var scarfValidation = _scarfGatingService.ValidateLeadershipScarfRequirement(member, role.Name);
+                if (!scarfValidation.IsSuccess)
+                {
+                    return BaseResponse<bool>.ErrorResult(scarfValidation.Message ?? "Validação de lenço falhou");
+                }
             }
 
             // Check if member already has a conflicting assignment

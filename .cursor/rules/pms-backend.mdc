@@ -371,6 +371,76 @@ ApprovalDelegate {
 - [ ] CodePath recalculado em cascata
 - [ ] Clube inativo bloqueia eventos/progressos
 
+### 🔒 Gating por Lenço (Scarf)
+
+#### Aplicação
+
+- **Escopo**: Classes (regulares e avançadas), Especialidades e Mestrados
+- **Endpoints bloqueados sem lenço**: `/start`, `/patch` (updates), `/submit`, `/approve`
+- **Erro**: 422 ScarfRequired
+- **Leituras (GET)**: Não são bloqueadas
+
+#### Validação
+
+- **Campo**: `Member.ScarfInvested = true`
+- **Mensagem**: "Operação '{operationType}' requer investidura de lenço. O membro deve ter recebido o lenço antes de iniciar progressos."
+
+### 🎖️ Investiduras - Testemunhas
+
+#### Estrutura InvestitureWitness
+
+```csharp
+InvestitureWitness {
+    Type,                    // Structured | Text
+    MemberId?,               // quando Structured
+    RoleSnapshot?,           // quando Structured { Role, ScopeType, ScopeCodePath, EffectiveDate }
+    NameText?,               // quando Text (VARCHAR(200))
+    RoleText?,               // quando Text (VARCHAR(100))
+    OrgText?,                // quando Text (VARCHAR(120))
+}
+```
+
+#### Regras de Validação
+
+- **≥1 testemunha** obrigatória (qualquer Type) em toda investidura
+- **Liderança**: obrigatório "Pastor da Associação" (Structured ou Text)
+- **Fallback**: "Pastor da União" se "Pastor da Associação" indisponível
+- **Override admin**: se nenhum dos dois for viável, exigir motivo + Task "Validar Investidura de Liderança (sem Pastor)"
+- **Aprovador ≠ Testemunha**: permitido (não no mesmo ato de auto-testemunho)
+
+### 🏢 Clube Inativo - Bloqueios
+
+#### Fonte de Verdade
+
+- **Campo**: `Club.IsActive` (persistido)
+- **Atualização**: eventos de domínio
+  - `false` quando não existir Diretor ativo
+  - `true` ao nomear novo Diretor
+
+#### Bloqueios (IsActive = false)
+
+**No escopo do clube:**
+- Criação/alteração de eventos
+- Criação/alteração de cargos
+- Criação/alteração de memberships
+- Aprovações
+- Investiduras
+
+**Membros com membership no clube:**
+- Participação em eventos
+- Progresso (start/update/submit/approve)
+- Investiduras
+
+**Exceções:**
+- Regionais/Distritais/Pastores (sem membership de clube) continuam aptos em seus escopos
+- Podem participar de eventos
+- Aprovações relativas a membros do clube inativo permanecem bloqueadas
+
+#### Tarefas Automáticas
+
+- "Reativar Clube (nomear Diretor)"
+- "Ofertar Realocação" conforme regras já definidas
+
 ### 🔒 Segurança
 
 - **Política de senha**: min 10; 1 maiúscula; 1 minúscula; 1 dígito

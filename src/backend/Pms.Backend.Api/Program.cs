@@ -130,6 +130,9 @@ builder.Services.AddScoped<Pms.Backend.Application.Interfaces.ILoggingService, P
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.Validation.IScarfGatingService, Pms.Backend.Application.Services.Validation.ScarfGatingService>();
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.Validation.IClubStatusService, Pms.Backend.Application.Services.Validation.ClubStatusService>();
 
+// Add Event Services
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IEventService, Pms.Backend.Application.Services.Events.SimpleEventService>();
+
 // Add Auth Service
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IAuthService, Pms.Backend.Application.Services.Auth.AuthService>();
 
@@ -137,7 +140,7 @@ builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IAuthService, Pms.
 builder.Services.AddValidatorsFromAssemblyContaining<Pms.Backend.Application.Validators.ApprovalDelegate.CreateApprovalDelegateDtoValidator>();
 
 // Add AutoMapper
-builder.Services.AddAutoMapper(typeof(Pms.Backend.Application.Mappings.HierarchyMappingProfile));
+builder.Services.AddAutoMapper(typeof(Pms.Backend.Application.Mappings.HierarchyMappingProfile), typeof(Pms.Backend.Application.Mappings.EventMappingProfile));
 builder.Services.AddAutoMapper(typeof(Pms.Backend.Application.Mappings.MemberMappingProfile));
 builder.Services.AddAutoMapper(typeof(Pms.Backend.Application.Mappings.MembershipMappingProfile));
 builder.Services.AddAutoMapper(typeof(Pms.Backend.Application.Mappings.AddressMappingProfile));

@@ -90,7 +90,34 @@ Desenvolver um sistema de gestão de desbravadores para diretores de clube testa
 - ✅ Serviços especializados (HealthService, ReportsService)
 - ✅ DTOs organizados por funcionalidade
 
-## 🚧 **FUNCIONALIDADES PENDENTES (0%)**
+## 🚧 **FUNCIONALIDADES PENDENTES (15%)**
+
+### 🎉 **Sistema de Eventos** (PRIORIDADE ALTA - MVP0)
+
+- 🔲 EventController - CRUD de eventos
+- 🔲 EventParticipationController - Participações em eventos
+- 🔲 Elegibilidade multi-dia (membro ativo na janela Start→End)
+- 🔲 Clube inativo bloqueia participação
+- 🔲 Taxas em BRL (default gratuito)
+
+### 📊 **Timeline Básica** (PRIORIDADE ALTA - MVP0)
+
+- 🔲 TimelineController - Timeline append-only
+- 🔲 Entradas automáticas (memberships, cargos, realocações, eventos)
+- 🔲 Datas em UTC, exibição em America/Sao_Paulo
+
+### 📈 **Exportações CSV Completas** (PRIORIDADE MÉDIA - MVP0)
+
+- ✅ `/reports/members.csv?clubId=...` (implementado)
+- 🔲 `/reports/timeline.csv?memberId=...` (pendente)
+- 🔲 `/reports/participations.csv?clubId=...&start=...&end=...` (pendente)
+
+### 🔧 **Funcionalidades de Sistema** (PRIORIDADE MÉDIA - MVP0)
+
+- 🔲 **Gating por Lenço** - Bloqueio de progresso sem lenço
+- 🔲 **Investiduras** - Sem testemunhas ativas obrigatórias
+- 🔲 **CodePath em cascata** - Recalculo automático
+- 🔲 **Clube inativo** - Bloqueia eventos e progressos
 
 ### 🧪 **Testes Automatizados** (PRIORIDADE BAIXA - MVP1)
 

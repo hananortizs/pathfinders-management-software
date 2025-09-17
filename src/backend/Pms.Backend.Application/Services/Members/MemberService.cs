@@ -5,6 +5,7 @@ using Pms.Backend.Application.DTOs;
 using Pms.Backend.Application.DTOs.Auth;
 using Pms.Backend.Application.DTOs.Members;
 using Pms.Backend.Application.Interfaces;
+using Pms.Backend.Application.Interfaces.Validation;
 using Pms.Backend.Domain.Entities;
 using Pms.Backend.Domain.Enums;
 using System.IdentityModel.Tokens.Jwt;
@@ -23,6 +24,7 @@ public partial class MemberService : IMemberService
     private readonly IMapper _mapper;
     private readonly IConfiguration _configuration;
     private readonly IMemberValidationService _validationService;
+    private readonly IScarfGatingService _scarfGatingService;
 
     /// <summary>
     /// Initializes a new instance of the MemberService
@@ -31,12 +33,14 @@ public partial class MemberService : IMemberService
     /// <param name="mapper">AutoMapper instance for object mapping</param>
     /// <param name="configuration">Configuration instance for JWT settings</param>
     /// <param name="validationService">Service for member data validation</param>
-    public MemberService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IMemberValidationService validationService)
+    /// <param name="scarfGatingService">Service for scarf gating validation</param>
+    public MemberService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IMemberValidationService validationService, IScarfGatingService scarfGatingService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _configuration = configuration;
         _validationService = validationService;
+        _scarfGatingService = scarfGatingService;
     }
 
     #region Member CRUD Operations

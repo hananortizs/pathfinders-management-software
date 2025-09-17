@@ -36,7 +36,7 @@ public class ScarfGatingController : BaseController
     [ProducesResponseType(typeof(BaseResponse<bool>), 200)]
     [ProducesResponseType(typeof(BaseResponse<bool>), 400)]
     [ProducesResponseType(typeof(BaseResponse<bool>), 404)]
-    public async Task<IActionResult> ValidateProgressRequirement(Guid memberId, [FromBody] string operationType)
+    public Task<IActionResult> ValidateProgressRequirement(Guid memberId, [FromBody] string operationType)
     {
         try
         {
@@ -49,22 +49,22 @@ public class ScarfGatingController : BaseController
             };
 
             var result = _scarfGatingService.ValidateScarfRequirement(member, operationType);
-            
+
             if (result.IsSuccess)
             {
-                return Ok(result);
+                return Task.FromResult<IActionResult>(Ok(result));
             }
             else
             {
-                return BadRequest(result);
+                return Task.FromResult<IActionResult>(BadRequest(result));
             }
         }
         catch (Exception ex)
         {
-            return StatusCode(500, BaseResponse<bool>.InternalServerErrorResult(
+            return Task.FromResult<IActionResult>(StatusCode(500, BaseResponse<bool>.InternalServerErrorResult(
                 $"Erro interno ao validar requisito de lenço: {ex.Message}",
                 true
-            ));
+            )));
         }
     }
 
@@ -78,7 +78,7 @@ public class ScarfGatingController : BaseController
     [ProducesResponseType(typeof(BaseResponse<bool>), 200)]
     [ProducesResponseType(typeof(BaseResponse<bool>), 400)]
     [ProducesResponseType(typeof(BaseResponse<bool>), 404)]
-    public async Task<IActionResult> ValidateLeadershipRequirement(Guid memberId, [FromBody] string roleName)
+    public Task<IActionResult> ValidateLeadershipRequirement(Guid memberId, [FromBody] string roleName)
     {
         try
         {
@@ -91,22 +91,22 @@ public class ScarfGatingController : BaseController
             };
 
             var result = _scarfGatingService.ValidateLeadershipScarfRequirement(member, roleName);
-            
+
             if (result.IsSuccess)
             {
-                return Ok(result);
+                return Task.FromResult<IActionResult>(Ok(result));
             }
             else
             {
-                return BadRequest(result);
+                return Task.FromResult<IActionResult>(BadRequest(result));
             }
         }
         catch (Exception ex)
         {
-            return StatusCode(500, BaseResponse<bool>.InternalServerErrorResult(
+            return Task.FromResult<IActionResult>(StatusCode(500, BaseResponse<bool>.InternalServerErrorResult(
                 $"Erro interno ao validar requisito de lenço para liderança: {ex.Message}",
                 true
-            ));
+            )));
         }
     }
 
@@ -118,7 +118,7 @@ public class ScarfGatingController : BaseController
     [HttpGet("check/{memberId}")]
     [ProducesResponseType(typeof(BaseResponse<ScarfInvestitureInfo?>), 200)]
     [ProducesResponseType(typeof(BaseResponse<ScarfInvestitureInfo?>), 404)]
-    public async Task<IActionResult> CheckScarfInvestiture(Guid memberId)
+    public Task<IActionResult> CheckScarfInvestiture(Guid memberId)
     {
         try
         {
@@ -135,15 +135,15 @@ public class ScarfGatingController : BaseController
             };
 
             var info = _scarfGatingService.GetScarfInvestitureInfo(member);
-            
-            return Ok(BaseResponse<ScarfInvestitureInfo?>.SuccessResult(info, "Informações de lenço obtidas com sucesso"));
+
+            return Task.FromResult<IActionResult>(Ok(BaseResponse<ScarfInvestitureInfo?>.SuccessResult(info, "Informações de lenço obtidas com sucesso")));
         }
         catch (Exception ex)
         {
-            return StatusCode(500, BaseResponse<ScarfInvestitureInfo?>.InternalServerErrorResult(
+            return Task.FromResult<IActionResult>(StatusCode(500, BaseResponse<ScarfInvestitureInfo?>.InternalServerErrorResult(
                 $"Erro interno ao verificar investidura de lenço: {ex.Message}",
                 true
-            ));
+            )));
         }
     }
 }
