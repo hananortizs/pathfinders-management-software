@@ -126,6 +126,10 @@ builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IContactService, P
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IAllocationService, Pms.Backend.Application.Services.Membership.AllocationService>();
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.ILoggingService, Pms.Backend.Infrastructure.Services.LoggingService>();
 
+// Add Validation Services
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.Validation.IScarfGatingService, Pms.Backend.Application.Services.Validation.ScarfGatingService>();
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.Validation.IClubStatusService, Pms.Backend.Application.Services.Validation.ClubStatusService>();
+
 // Add Auth Service
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IAuthService, Pms.Backend.Application.Services.Auth.AuthService>();
 
@@ -204,6 +208,9 @@ app.UseCors("DefaultPolicy");
 
 // Add response standardization middleware
 app.UseResponseStandardization();
+
+// Add scarf gating middleware (before authentication)
+app.UseMiddleware<Pms.Backend.Api.Middleware.ScarfGatingMiddleware>();
 
 // Rate limiting will be implemented in future MVP
 // app.UseRateLimiter();
