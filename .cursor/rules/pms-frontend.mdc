@@ -469,6 +469,103 @@ Todas as decisões devem considerar MVPs (MVP0, MVP1, MVP2+) e seguir as diretri
 
 ---
 
+## 🩹 PATCH — Respostas às Perguntas Pós-MVP0 do Backend
+
+> **Incorporação:** anexar este bloco ao final do arquivo .mdc existente. Todas as decisões abaixo são **válidas para o MVP0** salvo indicação em contrário.
+
+### 1) Estrutura de Dados para Frontend
+
+**Payload de criação (referência):** usar o JSON enviado como _baseline_, porém o **MVP0** exige apenas o **mínimo**:
+
+- **Obrigatórios (MVP0):**
+  - `firstName`, `lastName`
+  - `dateOfBirth` (ISO curto `YYYY-MM-DD`)
+  - `cpf` (válido, não duplicado)
+  - **Um contato verificado:** `loginInfo.email` **ou** `contacts[0].value` (telefone)
+  - `clubId`, `unitId`
+  - Aceite de termos/consentimento (quando aplicável)
+- **Opcionais (não bloqueiam ativação):**
+  - `middleNames`, `socialName`, `rg`
+  - `addressInfo` completo
+  - contatos adicionais
+- **Pós-MVP0:** `baptismInfo`, `initialScarfInvestiture` e progresso espiritual.
+
+**Validações:**
+
+- **Frontend:** formato e máscaras (CPF, email, telefone, data), obrigatoriedade visual, idade válida, CEP.
+- **Backend (autoritativo):** unicidade (CPF/email/telefone), RBAC, consistência hierárquica (clube→unidade), capacidade de unidade, regras de elegibilidade.
+
+---
+
+### 2) Fluxo de Onboarding
+
+- **Status `Pending`:** exibir **banner** no perfil + **checklist** com itens obrigatórios (✅ completo / ⏳ pendente / ❌ inválido); cada item navega ao campo.
+- **Checklist de ativação:** renderizar como lista clicável; mostrar progresso (%). Ao completar obrigatórios → status muda para **Active**.
+- **Bloqueios de operação:** mostrar **Dialog**/tooltip padronizado quando ação for bloqueada (ex.: "Conclua CPF e contato verificado para continuar") com CTA **"Ir para checklist"**.
+
+---
+
+### 3) Sistema de Eventos
+
+- **Elegibilidade visual:** badge por membro — **Elegível** (verde), **Pendente** (amarelo), **Inelegível** (cinza/vermelho). Filtro rápido por elegibilidade.
+- **Participações (MVP0):** inscrição **simples** (toggle) + **resumo de taxas** (taxa base + opcionais) por membro; cards de totais por unidade/clube.
+- **Pagamentos (MVP0):** registrar **intenção/compromisso** (sem gateway).
+- **Filtros essenciais:** unidade, status (ativo/pendente/inelegível), faixa etária, cargo (quando aplicável).
+
+---
+
+### 4) Permissões e Escopo
+
+- **Diretor/Secretário:** veem e gerenciam **apenas membros do próprio clube** (todas as unidades).
+- **Distrital/Regional:** **leitura** de todos os clubes do seu escopo; **sem revelar dados sensíveis** individualmente no MVP0.
+- **Delegações (Regional→Distrital):** **fora do MVP0**; entra no **MVP1** com tela de Delegações.
+
+---
+
+### 5) UX/UI Específicas
+
+- **Dados sensíveis — "Revelar por 10s":** timer **automático** com contagem regressiva + ação **"Ocultar agora"**; ao expirar, volta a mascarado; **auditoria** (quem, quando, qual campo, id do membro, requestId). Motivo/IP/UA → **MVP1**.
+- **Confirmações:** usar padrão global (`useConfirm`) para **exclusões**, **convites (enviar/reenviar com cooldown 60s)** e **transferência entre unidades**; foco no **Cancelar**, `Esc` cancela, **Enter não confirma**; hard-delete pede **digitar o nome**.
+- **Loading states:** **spinners/linear progress** no **MVP0**; **skeleton loading** apenas no **MVP1**.
+
+---
+
+### 6) Integração com Backend
+
+- **Base URL:** via env `VITE_API_BASE_URL` (dev padrão: `http://localhost:5258`).
+- **CORS (dev):** permitir `http://localhost:5173`; métodos `GET,POST,PUT,PATCH,DELETE,OPTIONS`; headers `Content-Type, Authorization, X-Request-Id, Idempotency-Key`; `Credentials: true`.
+- **Error handling:**
+  - **401** → redirect para `/login?next=…`
+  - **403** → alerta "Permissão insuficiente"
+  - **404** → placeholder "Não encontrado"
+  - **409** → conflito (ex.: **CPF já existe**) com ação sugerida (_ver registro_ / _iniciar transferência_)
+  - **422** → exibir **erros por campo** no formulário
+  - **429** → aviso de rate limit
+  - **5xx** → toast "Erro inesperado" (log no Sentry a partir do MVP1)
+
+---
+
+### 7) Dados de Teste (Dev)
+
+- **Estrutura hierárquica de exemplo:**
+  - **Clube A** (idA): **Harpia** (cap 15), **Falcão** (cap 15)
+  - **Clube B** (idB): **Águia** (cap 12)
+- **Usuários de teste:**
+  - Diretor_ClubeA / `dirA@example.com` / `Passw0rd!`
+  - Secretario_ClubeA / `secA@example.com` / `Passw0rd!`
+  - Distrital_D1 / `dist1@example.com` / `Passw0rd!` (leitura distrito)
+  - Regional_R1 / `reg1@example.com` / `Passw0rd!` (leitura região)
+- **Seed:** ~30 membros variados + 1 evento ativo (taxa base + opcional).
+
+---
+
+### 8) Observações Finais
+
+- **Relatórios CSV (MVP0):** **apenas Diretor do Clube**; Distrital/Regional veem **agregados na UI** (sem dados sensíveis individuais).
+- **Datas/Timezone:** persistir em **UTC**; exibir em **America/Sao_Paulo**; formato `dd/MM/yyyy` (e `HH:mm` quando aplicável).
+
+---
+
 ## ⚡ Instrução para Cursor
 
 Sempre respeitar este script como fonte de verdade para arquitetura, UX e regras de negócio ao gerar código ou componentes do frontend PathfinderManagementSoftware.
