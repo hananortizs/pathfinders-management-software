@@ -232,6 +232,17 @@ public class ActivateMemberRequestDto
 }
 
 /// <summary>
+/// Data Transfer Object for token-based requests
+/// </summary>
+public class TokenRequestDto
+{
+    /// <summary>
+    /// JWT token
+    /// </summary>
+    public string Token { get; set; } = string.Empty;
+}
+
+/// <summary>
 /// Data Transfer Object for completing member information during activation
 /// </summary>
 public class CompleteMemberInfoDto

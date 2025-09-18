@@ -221,8 +221,8 @@ const DashboardPage: React.FC = () => {
             lineHeight: 1.3,
           }}
         >
-          Bem-vindo de volta, <strong>{user?.name}</strong>! Aqui está um resumo
-          do seu clube.
+          Bem-vindo de volta, <strong>{user?.firstName || user?.email}</strong>!
+          Aqui está um resumo do seu clube.
         </Typography>
         <Typography
           variant="body2"
@@ -317,6 +317,7 @@ const DashboardPage: React.FC = () => {
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
+                      component="div"
                       primary={
                         <Typography
                           variant="body2"
@@ -394,6 +395,7 @@ const DashboardPage: React.FC = () => {
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
+                      component="div"
                       primary={
                         <Typography
                           variant="body2"

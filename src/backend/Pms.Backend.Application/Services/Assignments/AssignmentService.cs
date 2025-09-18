@@ -427,6 +427,7 @@ public partial class AssignmentService : IAssignmentService
     {
         return scopeType switch
         {
+            ScopeType.Division => scopeId == Guid.Empty || await _unitOfWork.Repository<Division>().ExistsAsync(d => d.Id == scopeId, cancellationToken),
             ScopeType.Union => await _unitOfWork.Repository<Union>().ExistsAsync(u => u.Id == scopeId, cancellationToken),
             ScopeType.Association => await _unitOfWork.Repository<Association>().ExistsAsync(a => a.Id == scopeId, cancellationToken),
             ScopeType.Region => await _unitOfWork.Repository<Region>().ExistsAsync(r => r.Id == scopeId, cancellationToken),

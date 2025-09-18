@@ -296,7 +296,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <Avatar
               sx={{ width: { xs: 28, sm: 32 }, height: { xs: 28, sm: 32 } }}
             >
-              {user?.name?.charAt(0).toUpperCase()}
+              {user?.firstName?.charAt(0).toUpperCase() ||
+                user?.email?.charAt(0).toUpperCase()}
             </Avatar>
           </IconButton>
         </Toolbar>

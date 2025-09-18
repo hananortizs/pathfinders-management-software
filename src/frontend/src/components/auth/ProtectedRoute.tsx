@@ -1,15 +1,15 @@
 /**
  * Componente de Rota Protegida
- * 
+ *
  * Wrapper que protege rotas baseado no estado de autenticação
  * e roles do usuário
  */
 
-import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { Box, CircularProgress, Typography } from '@mui/material';
-import { useAuth } from '../../hooks/useAuth';
-import type { ProtectedRouteProps } from '../../types';
+import React from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { Box, CircularProgress, Typography } from "@mui/material";
+import { useAuth } from "../../hooks/useAuth";
+import type { ProtectedRouteProps } from "../../types";
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
@@ -24,11 +24,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return (
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '50vh',
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "50vh",
           gap: 2,
         }}
       >
@@ -42,13 +42,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Redirecionar para login se não estiver autenticado
   if (!isAuthenticated) {
-    return (
-      <Navigate
-        to="/login"
-        state={{ from: location }}
-        replace
-      />
-    );
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Verificar se usuário tem a role necessária
@@ -61,11 +55,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return (
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '50vh',
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "50vh",
           gap: 2,
           p: 4,
         }}
@@ -79,7 +73,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         <Typography variant="body2" color="text.secondary" textAlign="center">
           Role necessária: {requiredRole}
           <br />
-          Sua role: {user?.role}
+          Suas roles: {user?.roles?.join(", ") || "Nenhuma"}
         </Typography>
       </Box>
     );

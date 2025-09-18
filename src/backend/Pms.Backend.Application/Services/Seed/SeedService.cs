@@ -165,9 +165,9 @@ public class SeedService : ISeedService
             // Criar Association
             var association = new Association
             {
-                Code = "AS01",
-                Name = "Associação Paulista Central",
-                Description = "Associação Paulista Central da Igreja Adventista do Sétimo Dia",
+                Code = "APL",
+                Name = "Associação Paulista Leste",
+                Description = "Associação Paulista Leste da Igreja Adventista do Sétimo Dia",
                 UnionId = union.Id,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
@@ -176,9 +176,9 @@ public class SeedService : ISeedService
             // Criar Region
             var region = new Region
             {
-                Code = "RG01",
-                Name = "Região Metropolitana de São Paulo",
-                Description = "Região Metropolitana de São Paulo da Igreja Adventista do Sétimo Dia",
+                Code = "3APL",
+                Name = "3ª Região - Tigre",
+                Description = "3ª Região - Tigre da Associação Paulista Leste",
                 AssociationId = association.Id,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
@@ -187,9 +187,9 @@ public class SeedService : ISeedService
             // Criar District
             var district = new District
             {
-                Code = "DT01",
-                Name = "Distrito Central",
-                Description = "Distrito Central da Região Metropolitana de São Paulo",
+                Code = "DVM",
+                Name = "Distrito de Vila Medeiros",
+                Description = "Distrito de Vila Medeiros da 3ª Região - Tigre",
                 RegionId = region.Id,
                 CreatedAtUtc = DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.UtcNow
@@ -256,7 +256,7 @@ public class SeedService : ISeedService
 
             // Obter o distrito criado
             var district = await _unitOfWork.Repository<District>()
-                .GetAsync(d => d.Code == "DT01", cancellationToken);
+                .GetAsync(d => d.Code == "DVM", cancellationToken);
             var districtEntity = district.FirstOrDefault();
 
             if (districtEntity == null)
@@ -374,6 +374,142 @@ public class SeedService : ISeedService
     }
 
     /// <summary>
+    /// Cria a igreja IASD Jardim Brasil
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Resultado da operação</returns>
+    public async Task<BaseResponse<bool>> CreateChurchAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Criando igreja IASD Jardim Brasil...");
+
+            // Verificar se já existe
+            if (await HasChurchAsync(cancellationToken))
+            {
+                _logger.LogInformation("Igreja IASD Jardim Brasil já existe, pulando criação");
+                return BaseResponse<bool>.SuccessResult(true, "Igreja já existe");
+            }
+
+            // Obter o distrito DVM
+            var district = await _unitOfWork.Repository<District>()
+                .GetAsync(d => d.Code == "DVM", cancellationToken);
+            var districtEntity = district.FirstOrDefault();
+
+            if (districtEntity == null)
+            {
+                return BaseResponse<bool>.ErrorResult("Distrito DVM não encontrado. Execute CreateInitialHierarchyAsync primeiro");
+            }
+
+            // Criar a igreja
+            var church = new Church
+            {
+                Name = "IASD Jardim Brasil",
+                DistrictId = districtEntity.Id,
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow
+            };
+
+            await _unitOfWork.Repository<Church>().AddAsync(church, cancellationToken);
+
+            // Criar endereço da igreja
+            var address = new Pms.Backend.Domain.Entities.Address
+            {
+                Street = "Av. Mendes da Rocha",
+                Number = "528",
+                Complement = "Jardim Brasil (Zona Norte)",
+                Neighborhood = "Jardim Brasil",
+                City = "São Paulo",
+                State = "SP",
+                Country = "Brasil",
+                Cep = "02227000", // CEP sem formatação para o banco
+                Type = AddressType.Church,
+                IsPrimary = true,
+                EntityId = church.Id,
+                EntityType = "Church",
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow
+            };
+
+            await _unitOfWork.Repository<Pms.Backend.Domain.Entities.Address>().AddAsync(address, cancellationToken);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Igreja IASD Jardim Brasil criada com sucesso");
+            return BaseResponse<bool>.SuccessResult(true, "Igreja criada com sucesso");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao criar igreja IASD Jardim Brasil");
+            return BaseResponse<bool>.ErrorResult("Erro ao criar igreja");
+        }
+    }
+
+    /// <summary>
+    /// Cria o clube Pássaro Celeste (PAC)
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Resultado da operação</returns>
+    public async Task<BaseResponse<bool>> CreateClubAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Criando clube Pássaro Celeste (PAC)...");
+
+            // Verificar se já existe
+            if (await HasClubAsync(cancellationToken))
+            {
+                _logger.LogInformation("Clube Pássaro Celeste já existe, pulando criação");
+                return BaseResponse<bool>.SuccessResult(true, "Clube já existe");
+            }
+
+            // Obter o distrito DVM
+            var district = await _unitOfWork.Repository<District>()
+                .GetAsync(d => d.Code == "DVM", cancellationToken);
+            var districtEntity = district.FirstOrDefault();
+
+            if (districtEntity == null)
+            {
+                return BaseResponse<bool>.ErrorResult("Distrito DVM não encontrado. Execute CreateInitialHierarchyAsync primeiro");
+            }
+
+            // Obter a igreja IASD Jardim Brasil
+            var church = await _unitOfWork.Repository<Church>()
+                .GetAsync(c => c.Name == "IASD Jardim Brasil", cancellationToken);
+            var churchEntity = church.FirstOrDefault();
+
+            if (churchEntity == null)
+            {
+                return BaseResponse<bool>.ErrorResult("Igreja IASD Jardim Brasil não encontrada. Execute CreateChurchAsync primeiro");
+            }
+
+            // Criar o clube
+            var club = new Club
+            {
+                Code = "PAC",
+                Name = "Pássaro Celeste",
+                Description = "Clube Pássaro Celeste da IASD Jardim Brasil",
+                DistrictId = districtEntity.Id,
+                ChurchId = churchEntity.Id,
+                IsActive = true,
+                CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = DateTime.UtcNow
+            };
+
+            await _unitOfWork.Repository<Club>().AddAsync(club, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Clube Pássaro Celeste (PAC) criado com sucesso");
+            return BaseResponse<bool>.SuccessResult(true, "Clube criado com sucesso");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao criar clube Pássaro Celeste");
+            return BaseResponse<bool>.ErrorResult("Erro ao criar clube");
+        }
+    }
+
+    /// <summary>
     /// Executa todos os seeds necessários para o MVP0
     /// </summary>
     /// <param name="cancellationToken">Token de cancelamento</param>
@@ -388,8 +524,10 @@ public class SeedService : ISeedService
             var hasSystemAdmin = await HasSystemAdminAsync(cancellationToken);
             var hasHierarchy = await HasInitialHierarchyAsync(cancellationToken);
             var hasHananUser = await HasHananUserAsync(cancellationToken);
+            var hasChurch = await HasChurchAsync(cancellationToken);
+            var hasClub = await HasClubAsync(cancellationToken);
 
-            if (hasSystemAdmin && hasHierarchy && hasHananUser)
+            if (hasSystemAdmin && hasHierarchy && hasHananUser && hasChurch && hasClub)
             {
                 _logger.LogInformation("Todos os seeds já foram executados anteriormente");
                 return BaseResponse<bool>.SuccessResult(true, "Todos os seeds já foram executados anteriormente");
@@ -425,6 +563,26 @@ public class SeedService : ISeedService
                 }
             }
 
+            // 4. Criar igreja (se não existir)
+            if (!hasChurch)
+            {
+                var churchResult = await CreateChurchAsync(cancellationToken);
+                if (!churchResult.IsSuccess)
+                {
+                    return churchResult;
+                }
+            }
+
+            // 5. Criar clube (se não existir)
+            if (!hasClub)
+            {
+                var clubResult = await CreateClubAsync(cancellationToken);
+                if (!clubResult.IsSuccess)
+                {
+                    return clubResult;
+                }
+            }
+
             _logger.LogInformation("Seeds executados com sucesso");
             return BaseResponse<bool>.SuccessResult(true, "Seeds executados com sucesso");
         }
@@ -452,9 +610,9 @@ public class SeedService : ISeedService
     /// </summary>
     private async Task<bool> HasInitialHierarchyAsync(CancellationToken cancellationToken)
     {
-        var division = await _unitOfWork.Repository<Division>()
-            .GetAsync(d => d.Code == "DIV01", cancellationToken);
-        return division.Any();
+        var district = await _unitOfWork.Repository<District>()
+            .GetAsync(d => d.Code == "DVM", cancellationToken);
+        return district.Any();
     }
 
     /// <summary>
@@ -476,6 +634,26 @@ public class SeedService : ISeedService
             .GetAsync(m => m.FirstName == "Hanan" && m.LastName == "Del Chiaro", cancellationToken);
 
         return hananByName.Any();
+    }
+
+    /// <summary>
+    /// Verifica se já existe a igreja IASD Jardim Brasil
+    /// </summary>
+    private async Task<bool> HasChurchAsync(CancellationToken cancellationToken)
+    {
+        var church = await _unitOfWork.Repository<Church>()
+            .GetAsync(c => c.Name == "IASD Jardim Brasil", cancellationToken);
+        return church.Any();
+    }
+
+    /// <summary>
+    /// Verifica se já existe o clube Pássaro Celeste
+    /// </summary>
+    private async Task<bool> HasClubAsync(CancellationToken cancellationToken)
+    {
+        var club = await _unitOfWork.Repository<Club>()
+            .GetAsync(c => c.Code == "PAC", cancellationToken);
+        return club.Any();
     }
 
     /// <summary>

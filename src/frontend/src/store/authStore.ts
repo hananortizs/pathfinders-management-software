@@ -2,21 +2,24 @@
  * Store Zustand para gerenciamento de estado de autenticação
  */
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { User, LoginRequest, AuthState } from '../types/auth';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { UserInfo, LoginRequest, AuthState } from "../types/auth";
+import { authService } from "../services/authService";
 
 interface AuthStore extends AuthState {
   // Actions
   login: (credentials: LoginRequest) => Promise<void>;
   logout: () => void;
-  setUser: (user: User | null) => void;
+  setUser: (user: UserInfo | null) => void;
   setToken: (token: string | null) => void;
   setRefreshToken: (refreshToken: string | null) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
   refreshAuth: () => Promise<void>;
+  validateToken: () => Promise<boolean>;
+  initializeAuth: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -27,43 +30,51 @@ export const useAuthStore = create<AuthStore>()(
       token: null,
       refreshToken: null,
       isAuthenticated: false,
-      isLoading: false,
+      isLoading: true, // Iniciar como loading para verificar token
       error: null,
 
       // Actions
       login: async (credentials: LoginRequest) => {
         set({ isLoading: true, error: null });
-        
-        try {
-          // TODO: Implementar chamada real para API
-          // Por enquanto, simular login
-          const mockUser: User = {
-            id: '1',
-            email: credentials.email,
-            name: 'Usuário Teste',
-            role: 'admin' as any,
-            unitId: '1',
-            unitName: 'Clube Central',
-            isActive: true,
-            lastLoginAt: new Date(),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          };
 
-          const mockToken = 'mock-jwt-token';
-          const mockRefreshToken = 'mock-refresh-token';
+        try {
+          const response = await authService.login(credentials);
+
+          if (!response.isSuccess || !response.data) {
+            set({
+              error: response.message || "Erro ao fazer login",
+              isLoading: false,
+            });
+            return;
+          }
+
+          const { AccessToken } = response.data;
+          console.log("🔍 AccessToken recebido no login:", AccessToken ? "Token presente" : "Token vazio");
+          console.log("🔍 Tamanho do AccessToken:", AccessToken?.length || 0);
+
+          // Obter informações completas do usuário
+          const userInfoResponse = await authService.getUserInfo(AccessToken);
+
+          if (!userInfoResponse.isSuccess || !userInfoResponse.data) {
+            set({
+              error: "Erro ao obter informações do usuário",
+              isLoading: false,
+            });
+            return;
+          }
 
           set({
-            user: mockUser,
-            token: mockToken,
-            refreshToken: mockRefreshToken,
+            user: userInfoResponse.data,
+            token: AccessToken,
+            refreshToken: AccessToken, // O backend não usa refresh token separado
             isAuthenticated: true,
             isLoading: false,
             error: null,
           });
         } catch (error) {
           set({
-            error: error instanceof Error ? error.message : 'Erro ao fazer login',
+            error:
+              error instanceof Error ? error.message : "Erro ao fazer login",
             isLoading: false,
           });
         }
@@ -79,7 +90,7 @@ export const useAuthStore = create<AuthStore>()(
         });
       },
 
-      setUser: (user: User | null) => {
+      setUser: (user: UserInfo | null) => {
         set({ user });
       },
 
@@ -104,9 +115,9 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       refreshAuth: async () => {
-        const { refreshToken } = get();
-        
-        if (!refreshToken) {
+        const { token } = get();
+
+        if (!token) {
           set({ isAuthenticated: false });
           return;
         }
@@ -114,20 +125,127 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true });
 
         try {
-          // TODO: Implementar refresh token real
-          // Por enquanto, apenas simular sucesso
-          set({ isLoading: false });
-        } catch (error) {
+          const response = await authService.refreshToken(token);
+
+          if (!response.isSuccess || !response.data) {
+            set({
+              error: "Erro ao renovar autenticação",
+              isLoading: false,
+              isAuthenticated: false,
+            });
+            return;
+          }
+
+          const { accessToken } = response.data;
+
+          // Obter informações atualizadas do usuário
+          const userInfoResponse = await authService.getUserInfo(accessToken);
+
+          if (!userInfoResponse.isSuccess || !userInfoResponse.data) {
+            set({
+              error: "Erro ao obter informações do usuário",
+              isLoading: false,
+              isAuthenticated: false,
+            });
+            return;
+          }
+
           set({
-            error: 'Erro ao renovar autenticação',
+            user: userInfoResponse.data,
+            token: accessToken,
+            refreshToken: accessToken,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+          });
+        } catch {
+          set({
+            error: "Erro ao renovar autenticação",
             isLoading: false,
             isAuthenticated: false,
           });
         }
       },
+
+      validateToken: async () => {
+        const { token } = get();
+
+        if (!token) {
+          set({ isAuthenticated: false });
+          return false;
+        }
+
+        try {
+          const response = await authService.validateToken(token);
+
+          if (!response.isSuccess) {
+            set({ isAuthenticated: false });
+            return false;
+          }
+
+          return true;
+        } catch {
+          set({ isAuthenticated: false });
+          return false;
+        }
+      },
+
+      initializeAuth: async () => {
+        const { token } = get();
+        
+        if (!token) {
+          set({ isLoading: false, isAuthenticated: false });
+          return;
+        }
+
+        try {
+          const isValid = await get().validateToken();
+          
+          if (isValid) {
+            // Token válido, obter informações do usuário
+            const userInfoResponse = await authService.getUserInfo(token);
+            
+            if (userInfoResponse.isSuccess && userInfoResponse.data) {
+              set({
+                user: userInfoResponse.data,
+                isAuthenticated: true,
+                isLoading: false,
+                error: null,
+              });
+            } else {
+              set({
+                user: null,
+                token: null,
+                refreshToken: null,
+                isAuthenticated: false,
+                isLoading: false,
+                error: null,
+              });
+            }
+          } else {
+            set({
+              user: null,
+              token: null,
+              refreshToken: null,
+              isAuthenticated: false,
+              isLoading: false,
+              error: null,
+            });
+          }
+        } catch {
+          set({
+            user: null,
+            token: null,
+            refreshToken: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null,
+          });
+        }
+      },
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage",
       partialize: (state) => ({
         user: state.user,
         token: state.token,

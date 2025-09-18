@@ -111,12 +111,14 @@ public class AuthService : IAuthService
                 return BaseResponse<LoginResponseDto>.UnauthorizedResult("E-mail ou senha inválidos");
             }
 
-            // Buscar papéis e escopos do usuário
+            // Buscar papéis e escopos do usuário com RoleCatalog incluído
             var assignments = await _unitOfWork.Repository<Assignment>()
-                .GetAsync(a => a.MemberId == member.Id && a.IsActive, cancellationToken);
+                .GetWithIncludesAsync(a => a.MemberId == member.Id && a.IsActive, 
+                                     cancellationToken, 
+                                     a => a.RoleCatalog);
 
-            // Usar o campo Role diretamente em vez de RoleCatalog.Name
-            var roles = assignments.Select(a => a.Role).ToList();
+            // Usar o nome da role do RoleCatalog
+            var roles = assignments.Select(a => a.RoleCatalog.Name).ToList();
             var scopes = assignments.Select(a => $"{a.ScopeType}:{a.ScopeId}").ToList();
 
             // Criar informações do usuário

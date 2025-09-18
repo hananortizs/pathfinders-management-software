@@ -1,181 +1,291 @@
 /**
- * Serviço de autenticação para comunicação com a API
+ * Serviço de Autenticação
+ *
+ * Gerencia todas as operações de autenticação com o backend
  */
 
-import type { LoginRequest, LoginResponse, User, ApiResponse } from '../types';
+import type {
+  LoginRequest,
+  LoginResponse,
+  UserInfo,
+  ApiResponse,
+  ChangePasswordRequest,
+  ResetPasswordRequest,
+  ResetPasswordConfirm,
+  InviteMemberRequest,
+} from "../types/auth";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+// Importação temporária para evitar erro
+interface ActivateMemberRequest {
+  token: string;
+  password: string;
+  confirmPassword: string;
+  memberInfo?: unknown;
+}
+import { apiClient } from "./apiClient";
 
 class AuthService {
-  private baseUrl: string;
-
-  constructor() {
-    this.baseUrl = `${API_BASE_URL}/auth`;
-  }
-
   /**
    * Realiza login do usuário
    * @param credentials - Credenciais de login
-   * @returns Promise com dados de autenticação
+   * @returns Resposta com token JWT e informações do usuário
    */
-  async login(credentials: LoginRequest): Promise<LoginResponse> {
+  async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse>> {
     try {
-      // TODO: Remover quando backend estiver funcionando
-      // Por enquanto, usar dados mockados para desenvolvimento
-      console.log('🔧 Usando dados mockados - Backend não está rodando');
-      
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Dados mockados para desenvolvimento
-      const mockResponse: LoginResponse = {
-        user: {
-          id: '1',
-          email: credentials.email,
-          name: 'Usuário Teste',
-          role: 'admin' as any,
-          unitId: '1',
-          unitName: 'Clube Central',
-          isActive: true,
-          lastLoginAt: new Date(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        token: 'mock-jwt-token-' + Date.now(),
-        refreshToken: 'mock-refresh-token-' + Date.now(),
-        expiresIn: 3600, // 1 hora
+      const data = await apiClient.post<ApiResponse<LoginResponse>>(
+        "/auth/login",
+        credentials
+      );
+      return data;
+    } catch (error) {
+      console.error("Erro no login:", error);
+      return {
+        isSuccess: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Erro de conexão. Tente novamente.",
+        statusCode: 500,
+        errors: ["Erro de rede"],
       };
-
-      return mockResponse;
-
-      // Código original para quando backend estiver funcionando:
-      /*
-      const response = await fetch(`${this.baseUrl}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao fazer login');
-      }
-
-      const data: ApiResponse<LoginResponse> = await response.json();
-      return data.data;
-      */
-    } catch (error) {
-      console.error('Erro no serviço de login:', error);
-      throw error;
     }
   }
 
   /**
-   * Realiza logout do usuário
+   * Valida um token JWT
+   * @param token - Token JWT
+   * @returns Status da validação
    */
-  async logout(): Promise<void> {
+  async validateToken(
+    token: string
+  ): Promise<ApiResponse<{ isValid: boolean; user?: UserInfo }>> {
     try {
-      // TODO: Implementar logout real quando backend estiver funcionando
-      console.log('🔧 Logout mockado - Backend não está rodando');
-      
-      // Simular delay de rede
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Código original para quando backend estiver funcionando:
-      /*
-      const token = localStorage.getItem('auth-token');
-      
-      if (token) {
-        await fetch(`${this.baseUrl}/logout`, {
-          method: 'POST',
+      const data = await apiClient.post<
+        ApiResponse<{ isValid: boolean; user?: UserInfo }>
+      >("/auth/validate", token);
+      return data;
+    } catch (error) {
+      console.error("Erro na validação do token:", error);
+      return {
+        isSuccess: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Erro de conexão. Tente novamente.",
+        statusCode: 500,
+        errors: ["Erro de rede"],
+      };
+    }
+  }
+
+  /**
+   * Atualiza um token JWT
+   * @param token - Token atual
+   * @returns Novo token JWT
+   */
+  async refreshToken(token: string): Promise<ApiResponse<LoginResponse>> {
+    try {
+      const data = await apiClient.post<ApiResponse<LoginResponse>>(
+        "/auth/refresh",
+        token
+      );
+      return data;
+    } catch (error) {
+      console.error("Erro ao atualizar token:", error);
+      return {
+        isSuccess: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Erro de conexão. Tente novamente.",
+        statusCode: 500,
+        errors: ["Erro de rede"],
+      };
+    }
+  }
+
+  /**
+   * Obtém informações do usuário a partir do token
+   * @param token - Token JWT
+   * @returns Informações do usuário
+   */
+  async getUserInfo(token: string): Promise<ApiResponse<UserInfo>> {
+    try {
+      console.log(
+        "🔍 Token sendo enviado para user-info:",
+        token ? "Token presente" : "Token vazio"
+      );
+      console.log("🔍 Tamanho do token:", token?.length || 0);
+
+      // Fazer requisição direta sem usar apiClient (que pega token do store)
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/pms-loc"
+        }/auth/user-info`,
+        {
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
-        });
-      }
-      */
-    } catch (error) {
-      console.error('Erro no serviço de logout:', error);
-      // Não relançar erro para logout, pois é uma operação de limpeza
-    }
-  }
-
-  /**
-   * Renova o token de autenticação
-   * @param refreshToken - Token de renovação
-   * @returns Promise com novo token
-   */
-  async refreshToken(refreshToken: string): Promise<LoginResponse> {
-    try {
-      const response = await fetch(`${this.baseUrl}/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ refreshToken }),
-      });
+          body: JSON.stringify({ token }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Erro ao renovar token');
+        throw new Error(`Erro ${response.status}: ${response.statusText}`);
       }
 
-      const data: ApiResponse<LoginResponse> = await response.json();
-      return data.data;
+      const data = await response.json();
+      return data;
     } catch (error) {
-      console.error('Erro no serviço de refresh token:', error);
-      throw error;
+      console.error("Erro ao obter informações do usuário:", error);
+      return {
+        isSuccess: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Erro de conexão. Tente novamente.",
+        statusCode: 500,
+        errors: ["Erro de rede"],
+      };
     }
   }
 
   /**
-   * Obtém dados do usuário atual
-   * @param token - Token de autenticação
-   * @returns Promise com dados do usuário
+   * Altera a senha do usuário
+   * @param request - Dados para alteração de senha
+   * @returns Resultado da operação
    */
-  async getCurrentUser(token: string): Promise<User> {
+  async changePassword(
+    request: ChangePasswordRequest
+  ): Promise<ApiResponse<void>> {
     try {
-      const response = await fetch(`${this.baseUrl}/me`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao obter dados do usuário');
-      }
-
-      const data: ApiResponse<User> = await response.json();
-      return data.data;
+      const data = await apiClient.post<ApiResponse<void>>(
+        "/auth/change-password",
+        request
+      );
+      return data;
     } catch (error) {
-      console.error('Erro no serviço de usuário atual:', error);
-      throw error;
+      console.error("Erro ao alterar senha:", error);
+      return {
+        isSuccess: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Erro de conexão. Tente novamente.",
+        statusCode: 500,
+        errors: ["Erro de rede"],
+      };
     }
   }
 
   /**
-   * Verifica se o token é válido
-   * @param token - Token para verificar
-   * @returns Promise com status de validade
+   * Solicita reset de senha
+   * @param request - Dados para reset de senha
+   * @returns Resultado da operação
    */
-  async validateToken(token: string): Promise<boolean> {
+  async resetPassword(
+    request: ResetPasswordRequest
+  ): Promise<ApiResponse<void>> {
     try {
-      const response = await fetch(`${this.baseUrl}/validate`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      return response.ok;
+      const data = await apiClient.post<ApiResponse<void>>(
+        "/auth/reset-password",
+        request
+      );
+      return data;
     } catch (error) {
-      console.error('Erro na validação do token:', error);
-      return false;
+      console.error("Erro ao solicitar reset de senha:", error);
+      return {
+        isSuccess: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Erro de conexão. Tente novamente.",
+        statusCode: 500,
+        errors: ["Erro de rede"],
+      };
+    }
+  }
+
+  /**
+   * Confirma reset de senha
+   * @param request - Dados para confirmação de reset
+   * @returns Resultado da operação
+   */
+  async confirmResetPassword(
+    request: ResetPasswordConfirm
+  ): Promise<ApiResponse<void>> {
+    try {
+      const data = await apiClient.post<ApiResponse<void>>(
+        "/auth/reset-password-confirm",
+        request
+      );
+      return data;
+    } catch (error) {
+      console.error("Erro ao confirmar reset de senha:", error);
+      return {
+        isSuccess: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Erro de conexão. Tente novamente.",
+        statusCode: 500,
+        errors: ["Erro de rede"],
+      };
+    }
+  }
+
+  /**
+   * Convida um novo membro
+   * @param request - Dados do convite
+   * @returns Resultado da operação
+   */
+  async inviteMember(request: InviteMemberRequest): Promise<ApiResponse<void>> {
+    try {
+      const data = await apiClient.post<ApiResponse<void>>(
+        "/auth/invite-member",
+        request
+      );
+      return data;
+    } catch (error) {
+      console.error("Erro ao convidar membro:", error);
+      return {
+        isSuccess: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Erro de conexão. Tente novamente.",
+        statusCode: 500,
+        errors: ["Erro de rede"],
+      };
+    }
+  }
+
+  /**
+   * Ativa um membro convidado
+   * @param request - Dados para ativação
+   * @returns Resultado da operação
+   */
+  async activateMember(
+    request: ActivateMemberRequest
+  ): Promise<ApiResponse<LoginResponse>> {
+    try {
+      const data = await apiClient.post<ApiResponse<LoginResponse>>(
+        "/auth/activate-member",
+        request
+      );
+      return data;
+    } catch (error) {
+      console.error("Erro ao ativar membro:", error);
+      return {
+        isSuccess: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Erro de conexão. Tente novamente.",
+        statusCode: 500,
+        errors: ["Erro de rede"],
+      };
     }
   }
 }

@@ -80,15 +80,18 @@ public class AuthController : BaseController
     /// <summary>
     /// Obtém informações do usuário a partir do token
     /// </summary>
-    /// <param name="token">Token JWT</param>
+    /// <param name="request">Objeto contendo o token JWT</param>
     /// <returns>Informações do usuário</returns>
     [HttpPost("user-info")]
     [ProducesResponseType(typeof(UserInfoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public IActionResult GetUserInfo([FromBody] string token)
+    public IActionResult GetUserInfo([FromBody] TokenRequestDto request)
     {
-        var result = _authService.GetUserInfoFromToken(token);
+        _logger.LogInformation("Token recebido no user-info: {TokenPresent}", !string.IsNullOrEmpty(request.Token));
+        _logger.LogInformation("Tamanho do token: {TokenLength}", request.Token?.Length ?? 0);
+
+        var result = _authService.GetUserInfoFromToken(request.Token);
         return ProcessResponse(result);
     }
 

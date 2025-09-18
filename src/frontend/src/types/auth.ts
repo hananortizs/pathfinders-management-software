@@ -1,46 +1,62 @@
 /**
- * Tipos relacionados à autenticação e autorização
+ * Tipos TypeScript para autenticação
+ * Baseados nos DTOs do backend
  */
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-  unitId?: string;
-  unitName?: string;
-  isActive: boolean;
-  lastLoginAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export const UserRole = {
-  ADMIN: 'admin',
-  DIRECTOR: 'director',
-  COUNSELOR: 'counselor',
-  SECRETARY: 'secretary',
-  TREASURER: 'treasurer',
-  MEMBER: 'member'
-} as const;
-
-export type UserRole = typeof UserRole[keyof typeof UserRole];
 
 export interface LoginRequest {
   email: string;
   password: string;
-  rememberMe?: boolean;
 }
 
 export interface LoginResponse {
-  user: User;
-  token: string;
-  refreshToken: string;
+  accessToken: string;
+  tokenType: string;
   expiresIn: number;
+  member: MemberBasicInfo;
+  pending?: PendingData;
+}
+
+export interface MemberBasicInfo {
+  id: string;
+  status: string;
+}
+
+export interface PendingData {
+  activationRequired: string[];
+  operationRequired: string[];
+  optional: string[];
+  blockingWrites: boolean;
+}
+
+export interface UserInfo {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  roles: string[];
+  scopes: string[];
+  isActive: boolean;
+  createdAtUtc: string;
+  updatedAtUtc: string;
+}
+
+// Interface para compatibilidade com o store existente
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  unitId: string;
+  unitName: string;
+  isActive: boolean;
+  lastLoginAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface AuthState {
-  user: User | null;
+  user: UserInfo | null;
   token: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
@@ -48,21 +64,71 @@ export interface AuthState {
   error: string | null;
 }
 
-export interface AuthContextType extends AuthState {
-  login: (credentials: LoginRequest) => Promise<void>;
-  logout: () => void;
-  refreshAuth: () => Promise<void>;
-  clearError: () => void;
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
-export interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requiredRole?: UserRole;
-  fallback?: React.ReactNode;
+export interface ResetPasswordRequest {
+  email: string;
 }
 
-export interface AuthError {
+export interface ResetPasswordConfirm {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface InviteMemberRequest {
+  email: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender: string;
+  phone?: string;
+  clubId: string;
+}
+
+export interface ActivateMemberRequest {
+  token: string;
+  password: string;
+  confirmPassword: string;
+  memberInfo?: CompleteMemberInfo;
+}
+
+export interface CompleteMemberInfo {
+  cpf?: string;
+  rg?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  emergencyContactRelationship?: string;
+  medicalInfo?: string;
+  allergies?: string;
+  medications?: string;
+  baptismDate?: string;
+  baptismChurch?: string;
+  baptismPastor?: string;
+  scarfDate?: string;
+  scarfChurch?: string;
+  scarfPastor?: string;
+}
+
+// Tipos para resposta da API
+export interface ApiResponse<T> {
+  isSuccess: boolean;
   message: string;
-  code: string;
-  details?: Record<string, unknown>;
+  data?: T;
+  statusCode: number;
+  errors?: string[];
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
 }

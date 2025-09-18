@@ -16,6 +16,7 @@ import { Suspense, lazy } from "react";
 import { ThemeProvider } from "./theme";
 import MainLayout from "./components/layout/MainLayout";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import AuthInitializer from "./components/auth/AuthInitializer";
 
 // Lazy loading para otimizar bundle size
 const LoginPage = lazy(() => import("./pages/LoginPage"));
@@ -36,53 +37,58 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Router>
-          <Suspense
-            fallback={
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  height: "100vh",
-                }}
-              >
-                <div>Carregando...</div>
-              </div>
-            }
-          >
-            <Routes>
-              {/* Rota de Login */}
-              <Route path="/login" element={<LoginPage />} />
+        <AuthInitializer>
+          <Router>
+            <Suspense
+              fallback={
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100vh",
+                  }}
+                >
+                  <div>Carregando...</div>
+                </div>
+              }
+            >
+              <Routes>
+                {/* Rota de Login */}
+                <Route path="/login" element={<LoginPage />} />
 
-              {/* Rotas Protegidas */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <MainLayout>
-                      <Navigate to="/dashboard" replace />
-                    </MainLayout>
-                  </ProtectedRoute>
-                }
-              />
+                {/* Rotas Protegidas */}
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <MainLayout>
+                        <Navigate to="/dashboard" replace />
+                      </MainLayout>
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <MainLayout>
-                      <DashboardPage />
-                    </MainLayout>
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <MainLayout>
+                        <DashboardPage />
+                      </MainLayout>
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Rota de fallback */}
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Routes>
-          </Suspense>
-        </Router>
+                {/* Rota de fallback */}
+                <Route
+                  path="*"
+                  element={<Navigate to="/dashboard" replace />}
+                />
+              </Routes>
+            </Suspense>
+          </Router>
+        </AuthInitializer>
       </ThemeProvider>
 
       {/* DevTools do React Query (apenas em desenvolvimento) */}
