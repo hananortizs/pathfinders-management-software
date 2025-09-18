@@ -47,6 +47,8 @@ Todas as decisões devem considerar MVPs (MVP0, MVP1, MVP2+) e seguir as diretri
 - Cada membro pertence a 1 clube e 1 unidade.
 - Diretor/Secretário só gerenciam membros do próprio clube.
 - Dados sensíveis (CPF, telefone, email não verificado, endereço, nascimento, médicos) sempre mascarados, nunca persistidos localmente.
+- **Sistema de Eventos**: CRUD completo com regras opcionais (idade, info médica, lenço)
+- **Timeline Visual**: Exibição interativa de atividades recentes por nível hierárquico
 - UX Safety Rails:
   - useConfirm global para excluir/convites.
   - Guardas de formulário sujo ("alterações não salvas").
@@ -54,6 +56,37 @@ Todas as decisões devem considerar MVPs (MVP0, MVP1, MVP2+) e seguir as diretri
   - Toasts/snackbars padronizados.
 - Dark mode + mobile-first obrigatórios.
 - Paginação simples.
+
+### 🎉 Sistema de Eventos - Frontend
+
+#### Componentes de Eventos
+
+- **EventCard**: Exibição de evento com métricas (RegisteredCount, Capacity, etc.)
+- **EventForm**: Criação/edição com validações de regras opcionais
+- **EventFilters**: Filtros por visibilidade, audiência, data, regras
+- **EventParticipation**: Inscrição/desinscrição com validações
+- **EventMetrics**: Dashboard de métricas em tempo real
+
+#### Regras de Validação Frontend
+
+- **Idade**: Validação em tempo real baseada na data de início (BRT)
+- **Info Médica**: Bloqueio visual quando `RequiresMedicalInfo=true`
+- **Lenço**: Indicador visual quando `RequiresScarfInvested=true`
+- **Audiência**: Exibição clara de quem pode ver vs. quem pode se inscrever
+
+#### Estados de Inscrição
+
+- **Disponível**: Botão "Inscrever-se" ativo
+- **Lista de Espera**: Botão "Entrar na Lista" quando capacidade esgotada
+- **Bloqueado**: Botão desabilitado com tooltip explicativo
+- **Inscrito**: Botão "Cancelar Inscrição" com confirmação
+
+#### Mudanças de Audiência
+
+- **Dry-run**: Modal de pré-visualização antes de aplicar mudanças
+- **Warnings**: Alertas visuais para mudanças restritivas
+- **News Feed**: Exibição de notificações de mudanças de audiência
+- **Tasks**: Lista de tarefas pendentes para revisão
 
 ### MVP1 (Intermediário)
 
@@ -563,6 +596,82 @@ Todas as decisões devem considerar MVPs (MVP0, MVP1, MVP2+) e seguir as diretri
 
 - **Relatórios CSV (MVP0):** **apenas Diretor do Clube**; Distrital/Regional veem **agregados na UI** (sem dados sensíveis individuais).
 - **Datas/Timezone:** persistir em **UTC**; exibir em **America/Sao_Paulo**; formato `dd/MM/yyyy` (e `HH:mm` quando aplicável).
+
+---
+
+---
+
+## 🎯 Metodologia Estratégica de Desenvolvimento
+
+### Abordagem Híbrida: Admin → Revisar por Nível
+
+**Para este projeto específico, seguimos a metodologia híbrida que prioriza velocidade de desenvolvimento inicial com arquitetura flexível para escalabilidade posterior.**
+
+#### 1. **Fase 1: Desenvolvimento Admin-First (MVP0)**
+- **Foco**: Implementar funcionalidades completas para usuário **Administrador**
+- **Objetivo**: MVP funcional rapidamente
+- **Estratégia**: Desenvolver com arquitetura flexível desde o início
+
+#### 2. **Fase 2: Refatoração Multi-Nível (MVP1+)**
+- **Foco**: Adaptar funcionalidades para diferentes níveis de usuário
+- **Objetivo**: Escalabilidade e reutilização de código
+- **Estratégia**: Aproveitar arquitetura flexível criada na Fase 1
+
+### **Por que esta abordagem para este projeto?**
+
+#### ✅ **Vantagens Contextuais**
+- **Sistema hierárquico complexo**: 8 níveis (Divisão → União → Região → Associação → Distrito → Clube → Unidade → Membro)
+- **MVP0 focado**: Administrador como usuário principal inicial
+- **Desenvolvimento ágil**: Funcionalidade básica primeiro, refinamento depois
+- **Arquitetura pensada**: Código flexível desde o início
+
+#### 🏗️ **Implementação Inteligente**
+
+**Estrutura de código flexível:**
+```typescript
+// Hook flexível para diferentes níveis
+const useMembersList = (userLevel: UserLevel) => {
+  // Lógica base + customizações por nível
+}
+
+// Componente base reutilizável
+const MembersList = ({ userLevel, groupingStrategy }) => {
+  // Renderização base + customizações
+}
+
+// Context para gerenciar nível do usuário
+const UserLevelContext = createContext<UserLevel>('admin')
+```
+
+**Padrões de desenvolvimento:**
+- **Hooks customizados** com parâmetros de nível
+- **Componentes base** com props de customização
+- **Contextos** para gerenciar estado de usuário
+- **Estratégias** para diferentes comportamentos por nível
+
+#### 📋 **Cronograma de Implementação**
+
+**MVP0 (Admin-First):**
+1. ✅ Sistema de autenticação
+2. ✅ Dashboard com dados mockados
+3. 🔄 **CRUDs completos para Admin** (em andamento)
+4. ⏳ Integração com APIs reais
+5. ⏳ Testes end-to-end
+
+**MVP1 (Multi-Nível):**
+1. Refatoração para diferentes níveis de usuário
+2. Customizações específicas por nível
+3. Testes de permissões e escopo
+4. Otimizações de performance
+
+#### 🎯 **Benefícios da Abordagem**
+
+- **Desenvolvimento mais rápido** inicialmente
+- **Arquitetura escalável** desde o início
+- **Menos refatoração** posterior
+- **Foco em uma persona** por vez
+- **MVP funcional** mais rapidamente
+- **Código reutilizável** e bem estruturado
 
 ---
 

@@ -136,10 +136,10 @@ export const useAuthStore = create<AuthStore>()(
             return;
           }
 
-          const { accessToken } = response.data;
+          const { AccessToken } = response.data;
 
           // Obter informações atualizadas do usuário
-          const userInfoResponse = await authService.getUserInfo(accessToken);
+          const userInfoResponse = await authService.getUserInfo(AccessToken);
 
           if (!userInfoResponse.isSuccess || !userInfoResponse.data) {
             set({
@@ -152,8 +152,8 @@ export const useAuthStore = create<AuthStore>()(
 
           set({
             user: userInfoResponse.data,
-            token: accessToken,
-            refreshToken: accessToken,
+            token: AccessToken,
+            refreshToken: AccessToken,
             isAuthenticated: true,
             isLoading: false,
             error: null,

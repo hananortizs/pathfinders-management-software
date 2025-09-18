@@ -50,6 +50,11 @@ public class Member : BaseEntity
     /// </summary>
     public DateTime DateOfBirth { get; set; }
 
+    /// <summary>
+    /// Alias for DateOfBirth for compatibility
+    /// </summary>
+    public DateTime BirthDate => DateOfBirth;
+
     // Address fields removed - now using centralized Address entity
 
     /// <summary>

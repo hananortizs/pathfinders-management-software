@@ -1,319 +1,388 @@
 using System.ComponentModel.DataAnnotations;
-using Pms.Backend.Domain.Entities;
 
 namespace Pms.Backend.Application.DTOs.Events;
 
 /// <summary>
-/// Data Transfer Object for OfficialEvent entity
+/// DTO para exibição de evento
 /// </summary>
 public class EventDto
 {
     /// <summary>
-    /// Event ID
+    /// ID do evento
     /// </summary>
+    [Required]
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Name of the event
+    /// Nome do evento
     /// </summary>
+    [Required]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Description of the event
+    /// Descrição do evento
     /// </summary>
     public string? Description { get; set; }
 
     /// <summary>
-    /// When the event starts
+    /// Data de início do evento (UTC)
     /// </summary>
+    [Required]
     public DateTime StartDate { get; set; }
 
     /// <summary>
-    /// When the event ends
+    /// Data de fim do evento (UTC)
     /// </summary>
+    [Required]
     public DateTime EndDate { get; set; }
 
     /// <summary>
-    /// Where the event takes place
+    /// Local do evento
     /// </summary>
     public string? Location { get; set; }
 
     /// <summary>
-    /// Level of the organizer
+    /// Nível do organizador
     /// </summary>
-    public OrganizerLevel OrganizerLevel { get; set; }
+    [Required]
+    public string OrganizerLevel { get; set; } = string.Empty;
 
     /// <summary>
-    /// ID of the organizing entity
+    /// ID da entidade organizadora
     /// </summary>
+    [Required]
     public Guid OrganizerId { get; set; }
 
     /// <summary>
-    /// Name of the organizing entity
+    /// Nome da entidade organizadora
     /// </summary>
-    public string OrganizerName { get; set; } = string.Empty;
+    public string? OrganizerName { get; set; }
 
     /// <summary>
-    /// Fee amount for the event (null = free)
+    /// Valor da taxa (null = gratuito)
     /// </summary>
     public decimal? FeeAmount { get; set; }
 
     /// <summary>
-    /// Currency for the fee (default: BRL)
+    /// Moeda da taxa
     /// </summary>
     public string FeeCurrency { get; set; } = "BRL";
 
     /// <summary>
-    /// Indicates if the event is active
+    /// Indica se o evento está ativo
     /// </summary>
     public bool IsActive { get; set; }
 
     /// <summary>
-    /// Number of registered participants
+    /// Idade mínima para participação
     /// </summary>
-    public int ParticipantCount { get; set; }
+    public int? MinAge { get; set; }
 
     /// <summary>
-    /// Checks if the event is currently happening
+    /// Idade máxima para participação
+    /// </summary>
+    public int? MaxAge { get; set; }
+
+    /// <summary>
+    /// Indica se informações médicas são obrigatórias
+    /// </summary>
+    public bool RequiresMedicalInfo { get; set; }
+
+    /// <summary>
+    /// Indica se investidura de lenço é obrigatória
+    /// </summary>
+    public bool RequiresScarfInvested { get; set; }
+
+    /// <summary>
+    /// Nível de visibilidade do evento
+    /// </summary>
+    [Required]
+    public string Visibility { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Modo de audiência para elegibilidade
+    /// </summary>
+    [Required]
+    public string AudienceMode { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Permite líderes acima do nível do host
+    /// </summary>
+    public bool AllowLeadersAboveHost { get; set; }
+
+    /// <summary>
+    /// Lista de permissão customizada
+    /// </summary>
+    public string? AllowList { get; set; }
+
+    /// <summary>
+    /// Quando as inscrições abrem (UTC)
+    /// </summary>
+    public DateTime? RegistrationOpenAtUtc { get; set; }
+
+    /// <summary>
+    /// Quando as inscrições fecham (UTC)
+    /// </summary>
+    public DateTime? RegistrationCloseAtUtc { get; set; }
+
+    /// <summary>
+    /// Capacidade máxima do evento
+    /// </summary>
+    public int? Capacity { get; set; }
+
+    /// <summary>
+    /// Número atual de participantes registrados
+    /// </summary>
+    public int RegisteredCount { get; set; }
+
+    /// <summary>
+    /// Contagem total de participantes (alias para RegisteredCount)
+    /// </summary>
+    public int ParticipantCount => RegisteredCount;
+
+    /// <summary>
+    /// Número atual de participantes na lista de espera
+    /// </summary>
+    public int WaitlistedCount { get; set; }
+
+    /// <summary>
+    /// Número atual de participantes que fizeram check-in
+    /// </summary>
+    public int CheckedInCount { get; set; }
+
+    /// <summary>
+    /// Capacidade restante
+    /// </summary>
+    public int? CapacityRemaining { get; set; }
+
+    /// <summary>
+    /// Indica se o evento está na capacidade máxima
+    /// </summary>
+    public bool IsAtCapacity { get; set; }
+
+    /// <summary>
+    /// Indica se as inscrições estão abertas
+    /// </summary>
+    public bool IsRegistrationOpen { get; set; }
+
+    /// <summary>
+    /// Indica se o evento está acontecendo agora
     /// </summary>
     public bool IsCurrentlyHappening { get; set; }
 
     /// <summary>
-    /// Checks if the event has ended
+    /// Indica se o evento já terminou
     /// </summary>
     public bool HasEnded { get; set; }
 
     /// <summary>
-    /// Creation date
+    /// Co-organizadores do evento
     /// </summary>
-    public DateTime CreatedAtUtc { get; set; }
+    public List<EventCoHostDto> CoHosts { get; set; } = new List<EventCoHostDto>();
 
     /// <summary>
-    /// Last update date
+    /// Data de criação
     /// </summary>
-    public DateTime UpdatedAtUtc { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    /// <summary>
+    /// Data da última atualização
+    /// </summary>
+    public DateTime UpdatedAt { get; set; }
 }
 
 /// <summary>
-/// Data Transfer Object for creating a new event
-/// </summary>
-public class CreateEventDto
-{
-    /// <summary>
-    /// Name of the event
-    /// </summary>
-    [Required(ErrorMessage = "Event name is required")]
-    [StringLength(200, MinimumLength = 3, ErrorMessage = "Event name must be between 3 and 200 characters")]
-    public string Name { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Description of the event
-    /// </summary>
-    [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
-    public string? Description { get; set; }
-
-    /// <summary>
-    /// When the event starts
-    /// </summary>
-    [Required(ErrorMessage = "Start date is required")]
-    public DateTime StartDate { get; set; }
-
-    /// <summary>
-    /// When the event ends
-    /// </summary>
-    [Required(ErrorMessage = "End date is required")]
-    public DateTime EndDate { get; set; }
-
-    /// <summary>
-    /// Where the event takes place
-    /// </summary>
-    [StringLength(300, ErrorMessage = "Location cannot exceed 300 characters")]
-    public string? Location { get; set; }
-
-    /// <summary>
-    /// Level of the organizer
-    /// </summary>
-    [Required(ErrorMessage = "Organizer level is required")]
-    public OrganizerLevel OrganizerLevel { get; set; }
-
-    /// <summary>
-    /// ID of the organizing entity
-    /// </summary>
-    [Required(ErrorMessage = "Organizer ID is required")]
-    public Guid OrganizerId { get; set; }
-
-    /// <summary>
-    /// Fee amount for the event (null = free)
-    /// </summary>
-    public decimal? FeeAmount { get; set; }
-
-    /// <summary>
-    /// Currency for the fee (default: BRL)
-    /// </summary>
-    [StringLength(3, MinimumLength = 3, ErrorMessage = "Currency must be exactly 3 characters")]
-    public string FeeCurrency { get; set; } = "BRL";
-}
-
-/// <summary>
-/// Data Transfer Object for updating an event
+/// DTO para atualização de evento
 /// </summary>
 public class UpdateEventDto
 {
     /// <summary>
-    /// Name of the event
+    /// Nome do evento
     /// </summary>
-    [StringLength(200, MinimumLength = 3, ErrorMessage = "Event name must be between 3 and 200 characters")]
+    [StringLength(200, ErrorMessage = "Nome deve ter no máximo 200 caracteres")]
     public string? Name { get; set; }
 
     /// <summary>
-    /// Description of the event
+    /// Descrição do evento
     /// </summary>
-    [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
+    [StringLength(1000, ErrorMessage = "Descrição deve ter no máximo 1000 caracteres")]
     public string? Description { get; set; }
 
     /// <summary>
-    /// When the event starts
+    /// Data de início do evento (UTC)
     /// </summary>
     public DateTime? StartDate { get; set; }
 
     /// <summary>
-    /// When the event ends
+    /// Data de fim do evento (UTC)
     /// </summary>
     public DateTime? EndDate { get; set; }
 
     /// <summary>
-    /// Where the event takes place
+    /// Local do evento
     /// </summary>
-    [StringLength(300, ErrorMessage = "Location cannot exceed 300 characters")]
+    [StringLength(200, ErrorMessage = "Local deve ter no máximo 200 caracteres")]
     public string? Location { get; set; }
 
     /// <summary>
-    /// Fee amount for the event (null = free)
+    /// Valor da taxa (null = gratuito)
     /// </summary>
+    [Range(0, double.MaxValue, ErrorMessage = "Valor da taxa deve ser positivo")]
     public decimal? FeeAmount { get; set; }
 
     /// <summary>
-    /// Currency for the fee
+    /// Moeda da taxa
     /// </summary>
-    [StringLength(3, MinimumLength = 3, ErrorMessage = "Currency must be exactly 3 characters")]
+    [StringLength(3, ErrorMessage = "Moeda deve ter 3 caracteres")]
     public string? FeeCurrency { get; set; }
 
     /// <summary>
-    /// Indicates if the event is active
+    /// Indica se o evento está ativo
     /// </summary>
     public bool? IsActive { get; set; }
+
+    /// <summary>
+    /// Idade mínima para participação
+    /// </summary>
+    [Range(0, 100, ErrorMessage = "Idade mínima deve estar entre 0 e 100")]
+    public int? MinAge { get; set; }
+
+    /// <summary>
+    /// Idade máxima para participação
+    /// </summary>
+    [Range(0, 100, ErrorMessage = "Idade máxima deve estar entre 0 e 100")]
+    public int? MaxAge { get; set; }
+
+    /// <summary>
+    /// Indica se informações médicas são obrigatórias
+    /// </summary>
+    public bool? RequiresMedicalInfo { get; set; }
+
+    /// <summary>
+    /// Indica se investidura de lenço é obrigatória
+    /// </summary>
+    public bool? RequiresScarfInvested { get; set; }
+
+    /// <summary>
+    /// Nível de visibilidade do evento
+    /// </summary>
+    public string? Visibility { get; set; }
+
+    /// <summary>
+    /// Capacidade máxima do evento
+    /// </summary>
+    [Range(1, int.MaxValue, ErrorMessage = "Capacidade deve ser positiva")]
+    public int? Capacity { get; set; }
+
+    /// <summary>
+    /// Quando as inscrições abrem (UTC)
+    /// </summary>
+    public DateTime? RegistrationOpenAtUtc { get; set; }
+
+    /// <summary>
+    /// Quando as inscrições fecham (UTC)
+    /// </summary>
+    public DateTime? RegistrationCloseAtUtc { get; set; }
 }
 
 /// <summary>
-/// Data Transfer Object for event participation
+/// DTO para busca de eventos
 /// </summary>
-public class EventParticipationDto
+public class SearchEventsDto
 {
     /// <summary>
-    /// Participation ID
+    /// Termo de busca
     /// </summary>
-    public Guid Id { get; set; }
+    public string? SearchTerm { get; set; }
 
     /// <summary>
-    /// Member ID
+    /// Filtro por organizador
     /// </summary>
-    public Guid MemberId { get; set; }
+    public Guid? OrganizerId { get; set; }
 
     /// <summary>
-    /// Member name
+    /// Filtro por nível do organizador
     /// </summary>
-    public string MemberName { get; set; } = string.Empty;
+    public string? OrganizerLevel { get; set; }
 
     /// <summary>
-    /// Event ID
+    /// Filtro por visibilidade
     /// </summary>
-    public Guid EventId { get; set; }
+    public string? Visibility { get; set; }
 
     /// <summary>
-    /// Event name
+    /// Filtro por data de início (a partir de)
     /// </summary>
-    public string EventName { get; set; } = string.Empty;
+    public DateTime? StartDateFrom { get; set; }
 
     /// <summary>
-    /// When the participation was registered
+    /// Filtro por data de início (até)
     /// </summary>
-    public DateTime RegisteredAtUtc { get; set; }
+    public DateTime? StartDateTo { get; set; }
 
     /// <summary>
-    /// Status of the participation
+    /// Filtro por status de inscrição
     /// </summary>
-    public ParticipationStatus Status { get; set; }
+    public string? RegistrationStatus { get; set; }
 
     /// <summary>
-    /// Fee paid for the event (if any)
+    /// Filtro por capacidade
     /// </summary>
-    public decimal? FeePaid { get; set; }
+    public bool? HasCapacity { get; set; }
 
     /// <summary>
-    /// Currency of the fee paid
+    /// Filtro por taxa
     /// </summary>
-    public string? FeeCurrency { get; set; }
+    public bool? IsFree { get; set; }
 
     /// <summary>
-    /// When the fee was paid
+    /// Página atual
     /// </summary>
-    public DateTime? FeePaidAtUtc { get; set; }
+    public int Page { get; set; } = 1;
 
     /// <summary>
-    /// Notes about the participation
+    /// Tamanho da página
     /// </summary>
-    public string? Notes { get; set; }
+    public int PageSize { get; set; } = 10;
+
+    /// <summary>
+    /// Campo para ordenação
+    /// </summary>
+    public string? SortBy { get; set; }
+
+    /// <summary>
+    /// Direção da ordenação (asc/desc)
+    /// </summary>
+    public string? SortDirection { get; set; } = "asc";
 }
 
 /// <summary>
-/// Data Transfer Object for creating event participation
+/// DTO para resultado de busca de eventos
 /// </summary>
-public class CreateEventParticipationDto
+public class SearchEventsResultDto
 {
     /// <summary>
-    /// Member ID
+    /// Lista de eventos
     /// </summary>
-    [Required(ErrorMessage = "Member ID is required")]
-    public Guid MemberId { get; set; }
+    public List<EventDto> Events { get; set; } = new List<EventDto>();
 
     /// <summary>
-    /// Event ID
+    /// Total de registros
     /// </summary>
-    [Required(ErrorMessage = "Event ID is required")]
-    public Guid EventId { get; set; }
+    public int TotalCount { get; set; }
 
     /// <summary>
-    /// Notes about the participation
+    /// Página atual
     /// </summary>
-    [StringLength(500, ErrorMessage = "Notes cannot exceed 500 characters")]
-    public string? Notes { get; set; }
-}
-
-/// <summary>
-/// Data Transfer Object for updating event participation
-/// </summary>
-public class UpdateEventParticipationDto
-{
-    /// <summary>
-    /// Status of the participation
-    /// </summary>
-    public ParticipationStatus? Status { get; set; }
+    public int Page { get; set; }
 
     /// <summary>
-    /// Fee paid for the event (if any)
+    /// Tamanho da página
     /// </summary>
-    [Range(0, double.MaxValue, ErrorMessage = "Fee paid must be positive")]
-    public decimal? FeePaid { get; set; }
+    public int PageSize { get; set; }
 
     /// <summary>
-    /// Currency of the fee paid
+    /// Total de páginas
     /// </summary>
-    [StringLength(3, MinimumLength = 3, ErrorMessage = "Currency must be exactly 3 characters")]
-    public string? FeeCurrency { get; set; }
-
-    /// <summary>
-    /// Notes about the participation
-    /// </summary>
-    [StringLength(500, ErrorMessage = "Notes cannot exceed 500 characters")]
-    public string? Notes { get; set; }
+    public int TotalPages { get; set; }
 }

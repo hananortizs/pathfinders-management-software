@@ -56,6 +56,11 @@ public class MemberEventParticipation : BaseEntity
     public string? Notes { get; set; }
 
     /// <summary>
+    /// When the member checked in at the event
+    /// </summary>
+    public DateTime? CheckedInAtUtc { get; set; }
+
+    /// <summary>
     /// Navigation property to timeline entries
     /// </summary>
     public ICollection<TimelineEntry> TimelineEntries { get; set; } = new List<TimelineEntry>();
@@ -89,5 +94,15 @@ public enum ParticipationStatus
     /// <summary>
     /// No-show (registered but didn't attend)
     /// </summary>
-    NoShow
+    NoShow,
+
+    /// <summary>
+    /// On waitlist for the event
+    /// </summary>
+    Waitlisted,
+
+    /// <summary>
+    /// Checked in at the event
+    /// </summary>
+    CheckedIn
 }

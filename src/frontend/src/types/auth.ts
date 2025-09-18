@@ -9,11 +9,11 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  accessToken: string;
-  tokenType: string;
-  expiresIn: number;
-  member: MemberBasicInfo;
-  pending?: PendingData;
+  AccessToken: string;
+  TokenType: string;
+  ExpiresIn: number;
+  Member: MemberBasicInfo;
+  Pending?: PendingData;
 }
 
 export interface MemberBasicInfo {

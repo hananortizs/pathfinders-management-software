@@ -136,6 +136,23 @@ builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IEventService, Pms
 // Add Auth Service
 builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IAuthService, Pms.Backend.Application.Services.Auth.AuthService>();
 
+// Add Dashboard Service
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.IDashboardService, Pms.Backend.Application.Services.DashboardService>();
+
+// Add Activities Services
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.Activities.IRecentActivitiesService, Pms.Backend.Infrastructure.Services.Activities.RecentActivitiesService>();
+
+// Add Event Services
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.Events.IEventService, Pms.Backend.Infrastructure.Services.Events.EventService>();
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.Events.IEventParticipationService, Pms.Backend.Infrastructure.Services.Events.EventParticipationService>();
+
+// Add Timeline Services
+builder.Services.AddScoped<Pms.Backend.Application.Interfaces.Timeline.ITimelineService, Pms.Backend.Infrastructure.Services.Timeline.TimelineService>();
+
+// Add Controllers
+builder.Services.AddScoped<Pms.Backend.Api.Controllers.EventController>();
+builder.Services.AddScoped<Pms.Backend.Api.Controllers.TimelineController>();
+
 // Registrar validadores FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<Pms.Backend.Application.Validators.ApprovalDelegate.CreateApprovalDelegateDtoValidator>();
 

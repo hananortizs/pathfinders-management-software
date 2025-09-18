@@ -464,9 +464,71 @@ InvestitureWitness {
 - Clubes/unidades/membership
 - Cargos/sem acúmulo
 - Delegado
-- Eventos (eligibilidade multi-dia)
+- Eventos (eligibilidade multi-dia + regras opcionais)
 - Timeline básica
 - CSV Director
+
+### 🎉 Sistema de Eventos - Regras Detalhadas
+
+#### CO-ORGANIZADORES (MVP-2)
+- **OfficialEvent.CoHosts[]** (opcional; apenas leitura no MVP):
+  - Item: `{ Level: EventLevel, Id: Guid }` // ex.: `{ Level:"Club", Id:"<CLUB_ID>" }`
+  - Host continua sendo `OrganizerLevel/OrganizerId` (fonte de verdade)
+  - CoHosts ampliam o crédito de organização (exibição, relatórios), NÃO alteram elegibilidade por si só
+- Visibilidade/inscrição continuam sendo definidas por `AudienceMode/AllowList/Visibility`
+- DTO inclui `CoHosts[]` quando a feature estiver ativa (flag futura)
+
+#### REGRAS OPCIONAIS POR EVENTO (MVP-ready, porém desativáveis por flag)
+- **OfficialEvent.MinAge?** (int) e **MaxAge?** (int)
+  - Avaliação em America/Sao_Paulo, idade calculada na DATA DE INÍCIO do evento
+  - Inclusivo nas bordas: `MinAge ≤ idade ≤ MaxAge`
+  - Falha de inscrição: `422 AgeNotEligible`
+- **OfficialEvent.RequiresMedicalInfo** (bool, default=false)
+  - Se true, bloquear inscrição se o membro não possuir os campos mínimos definidos do MedicalInfo
+  - Falha: `422 MedicalInfoRequired`
+- **OfficialEvent.RequiresScarfInvested** (bool, default=false)
+  - Se true, exigir investidura de lenço para inscrever (não ligado a progresso)
+  - Falha: `422 ScarfRequiredForEvent`
+- **Feature flags sugeridas**:
+  - `Events.MinMaxAge.Enabled` (default=false)
+  - `Events.MedicalInfo.Required.Enabled` (default=false)
+  - `Events.RequiresScarf.Enabled` (default=false)
+
+#### VISIBILIDADE × INSCRIÇÃO (clareza de papéis)
+- **Visibility** controla QUEM VÊ o evento no feed/busca:
+  - `Public | LeadersOnly | DirectorsOnly | CustomRoles`
+- **AudienceMode/AllowList** controla QUEM PODE SE INSCREVER:
+  - `AudienceMode`: `Subtree | HostOnly | CustomAllowList`
+  - `AllowLeadersAboveHost` (bool, default=true)
+  - `AllowList` por nível (`Clubs[]`, `Districts[]`, `Regions[]`, `Associations[]`, `Unions[]`, `Divisions[]`)
+
+#### MÉTRICAS (expostas nos DTOs e endpoints)
+- Campos no DTO de evento (e em `/events`, `/dashboard`, `/events/{id}/metrics`):
+  - `RegisteredCount`, `WaitlistedCount`, `CheckedInCount`, `Capacity`, `CapacityRemaining`
+- Atualização denormalizada em: create registration, cancel registration, promote waitlist, check-in (idempotente; transação)
+
+#### MUDANÇA DE AUDIÊNCIA (controle e comunicação)
+- Alterações em `AudienceMode/AllowList/AllowLeadersAboveHost` APÓS o início das inscrições:
+  - Exigir endpoint dedicado: `PATCH /events/{id}/audience` (com validações e "dry-run" opcional)
+  - Criar automaticamente:
+    - News de "AudienceUpdated" (reason + diff)
+    - Task "Revisar Mudança de Audiência" para responsáveis do escopo do Host
+  - Regra de convivência (default): inscrições existentes são preservadas ("grandfathered"); novas inscrições seguem as NOVAS regras
+  - Se a mudança RESTRINGIR e houver inscritos fora do novo público:
+    - Retornar WARNING no payload de PATCH (listagem amostral dos afetados)
+    - Oferecer parâmetro opcional `hardEnforce=true` (MVP-2) para bloqueio futuro e geração de Tasks de contato/cancelamento (sem auto-cancel no MVP)
+- Mudanças críticas (ex.: alternar Subtree↔HostOnly) antes do RegistrationOpenAtUtc: permitidas sem News/Task
+
+#### TESTES (adições)
+- Inscrição falha por `AgeNotEligible` quando MinAge/MaxAge ativos
+- `RequiresMedicalInfo=true` bloqueia inscrição quando faltar campos mínimos
+- `RequiresScarfInvested=true` bloqueia inscrição sem lenço
+- `PATCH /events/{id}/audience` com inscrições já abertas: gera News + Task e preserva inscrições existentes
+- CoHosts aparecem no DTO quando ativados; não alteram elegibilidade por si só
+
+#### NOTAS
+- Persistir todos os horários em UTC; validar/exibir em America/Sao_Paulo
+- MinAge/MaxAge consideram idade completa na data de início (BRT)
 
 ### 🎯 MVP-1: Programa/Aprovações/Investiduras
 

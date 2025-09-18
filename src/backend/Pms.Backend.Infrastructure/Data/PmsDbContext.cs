@@ -87,7 +87,11 @@ public class PmsDbContext : DbContext
     /// <summary>
     /// Official events
     /// </summary>
-    public DbSet<OfficialEvent> OfficialEvents { get; set; }
+    public DbSet<OfficialEvent> Events { get; set; }
+    /// <summary>
+    /// Event co-hosts
+    /// </summary>
+    public DbSet<EventCoHost> EventCoHosts { get; set; }
     /// <summary>
     /// Member event participations
     /// </summary>

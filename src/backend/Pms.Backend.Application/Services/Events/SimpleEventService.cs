@@ -61,7 +61,7 @@ public partial class SimpleEventService : IEventService
 
             var result = _mapper.Map<EventDto>(eventEntity);
             result.OrganizerName = "Organizer"; // Simplified for MVP0
-            result.ParticipantCount = 0;
+            result.RegisteredCount = 0;
 
             return BaseResponse<EventDto>.SuccessResult(result);
         }
@@ -89,7 +89,7 @@ public partial class SimpleEventService : IEventService
 
             var result = _mapper.Map<EventDto>(eventEntity);
             result.OrganizerName = "Organizer"; // Simplified for MVP0
-            result.ParticipantCount = await GetParticipantCountAsync(id, cancellationToken);
+            result.RegisteredCount = await GetParticipantCountAsync(id, cancellationToken);
 
             return BaseResponse<EventDto>.SuccessResult(result);
         }
@@ -120,7 +120,7 @@ public partial class SimpleEventService : IEventService
             {
                 var dto = _mapper.Map<EventDto>(eventEntity);
                 dto.OrganizerName = "Organizer"; // Simplified for MVP0
-                dto.ParticipantCount = await GetParticipantCountAsync(eventEntity.Id, cancellationToken);
+                dto.RegisteredCount = await GetParticipantCountAsync(eventEntity.Id, cancellationToken);
                 eventDtos.Add(dto);
             }
 
@@ -169,7 +169,7 @@ public partial class SimpleEventService : IEventService
 
             var result = _mapper.Map<EventDto>(eventEntity);
             result.OrganizerName = "Organizer"; // Simplified for MVP0
-            result.ParticipantCount = await GetParticipantCountAsync(id, cancellationToken);
+            result.RegisteredCount = await GetParticipantCountAsync(id, cancellationToken);
 
             return BaseResponse<EventDto>.SuccessResult(result);
         }
@@ -287,9 +287,9 @@ public partial class SimpleEventService : IEventService
             }
 
             // Update fields
-            if (request.Status.HasValue) participation.Status = request.Status.Value;
+            if (!string.IsNullOrEmpty(request.Status)) participation.Status = Enum.Parse<ParticipationStatus>(request.Status);
             if (request.FeePaid.HasValue) participation.FeePaid = request.FeePaid.Value;
-            if (request.FeeCurrency != null) participation.FeeCurrency = request.FeeCurrency;
+            if (!string.IsNullOrEmpty(request.FeeCurrency)) participation.FeeCurrency = request.FeeCurrency;
             if (request.Notes != null) participation.Notes = request.Notes;
 
             participation.UpdatedAtUtc = DateTime.UtcNow;
