@@ -46,5 +46,15 @@
     "react"
   ],
   "author": "Hanan Ortiz",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@mui/icons-material": "^7.3.2",
+    "@tanstack/react-query": "^5.89.0",
+    "@types/node": "^24.5.1",
+    "react-hook-form": "^7.62.0",
+    "react-router-dom": "^7.9.1",
+    "zod": "^4.1.9",
+    "zustand": "^5.0.8"
+  }
 }

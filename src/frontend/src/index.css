@@ -1,0 +1,105 @@
+/* Importação da fonte Roboto do Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600&display=swap");
+
+/* Reset básico e configurações globais */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f5f5f5;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Scrollbar customizada para navegadores WebKit */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Scrollbar para Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+/* Remover outline padrão e adicionar foco customizado */
+*:focus {
+  outline: none;
+}
+
+/* Garantir que elementos interativos tenham tamanho mínimo para acessibilidade */
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+a[role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Melhorar legibilidade de texto */
+p,
+span,
+div {
+  line-height: 1.5;
+}
+
+/* Remover estilos padrão de listas quando necessário */
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+}
+
+/* Garantir que imagens sejam responsivas */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Reset básico para responsividade */
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Garantir que o body não tenha scroll horizontal */
+body {
+  overflow-x: hidden;
+}
+
+/* Reset específico para MUI */
+.MuiCssBaseline-root {
+  font-size: 14px !important;
+}
