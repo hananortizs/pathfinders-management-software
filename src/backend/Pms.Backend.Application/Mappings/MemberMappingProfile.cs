@@ -43,6 +43,23 @@ public class MemberMappingProfile : Profile
             .ForMember(dest => dest.DeactivationReason, opt => opt.MapFrom(src => src.DeactivationReason))
             .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.Status == MemberStatus.Active));
 
+            // Member summary mapping for list views - using real data
+            CreateMap<Member, MemberSummaryDto>()
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}".Trim()))
+                .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}".Trim()))
+                .ForMember(dest => dest.Age, opt => opt.MapFrom(src => CalculateAge(src.DateOfBirth)))
+                .ForMember(dest => dest.Gender, opt => opt.MapFrom(src => src.Gender.ToString()))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
+                .ForMember(dest => dest.ClubName, opt => opt.MapFrom(src => GetClubName(src)))
+                .ForMember(dest => dest.UnitName, opt => opt.MapFrom(src => GetUnitName(src)))
+                .ForMember(dest => dest.CurrentRole, opt => opt.MapFrom(src => GetCurrentRole(src)))
+                .ForMember(dest => dest.AllRoles, opt => opt.MapFrom(src => GetAllActiveRoles(src)))
+                .ForMember(dest => dest.PrimaryEmail, opt => opt.MapFrom(src => GetPrimaryEmail(src)))
+                .ForMember(dest => dest.PrimaryPhone, opt => opt.MapFrom(src => GetPrimaryPhone(src)))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAtUtc))
+                .ForMember(dest => dest.HasScarfInvestiture, opt => opt.MapFrom(src => src.ScarfInvested))
+                .ForMember(dest => dest.HasValidBaptism, opt => opt.MapFrom(src => src.Baptized));
+
         // CreateMemberDto mapping removed - using CreateMemberCompleteDto only
 
         CreateMap<CreateMemberCompleteDto, Member>()
@@ -225,6 +242,106 @@ public class MemberMappingProfile : Profile
         }
 
         return primaryPhone;
+    }
+
+    /// <summary>
+    /// Calculates the age based on date of birth
+    /// </summary>
+    /// <param name="dateOfBirth">Date of birth</param>
+    /// <returns>Age in years</returns>
+    private static int CalculateAge(DateTime dateOfBirth)
+    {
+        var today = DateTime.Today;
+        var age = today.Year - dateOfBirth.Year;
+        if (dateOfBirth.Date > today.AddYears(-age)) age--;
+        return age;
+    }
+
+    /// <summary>
+    /// Gets the club name from member's active membership
+    /// </summary>
+    /// <param name="member">Member entity</param>
+    /// <returns>Club name or empty string</returns>
+    private static string GetClubName(Member member)
+    {
+        if (member.Memberships == null)
+            return string.Empty;
+
+        var activeMembership = member.Memberships
+            .FirstOrDefault(m => m.IsActive && !m.IsDeleted);
+
+        return activeMembership?.Club?.Name ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Gets the unit name from member's active membership
+    /// </summary>
+    /// <param name="member">Member entity</param>
+    /// <returns>Unit name or empty string</returns>
+    private static string GetUnitName(Member member)
+    {
+        if (member.Memberships == null)
+            return string.Empty;
+
+        var activeMembership = member.Memberships
+            .FirstOrDefault(m => m.IsActive && !m.IsDeleted);
+
+        return activeMembership?.Unit?.Name ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Gets the current role from member's active assignments
+    /// </summary>
+    /// <param name="member">Member entity</param>
+    /// <returns>Current role or empty string</returns>
+    private static string GetCurrentRole(Member member)
+    {
+        if (member.Assignments == null)
+            return string.Empty;
+
+        var activeAssignment = member.Assignments
+            .FirstOrDefault(a => a.IsActive && !a.IsDeleted);
+
+        return activeAssignment?.RoleCatalog?.Name ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Gets all active roles from member's assignments, ordered by hierarchy level (highest to lowest)
+    /// </summary>
+    /// <param name="member">Member entity</param>
+    /// <returns>All active roles separated by " | " or empty string</returns>
+    private static string GetAllActiveRoles(Member member)
+    {
+        if (member.Assignments == null)
+            return string.Empty;
+
+        var activeRoles = member.Assignments
+            .Where(a => a.IsActive && !a.IsDeleted && a.RoleCatalog != null)
+            .Select(a => a.RoleCatalog!.Name)
+            .Distinct()
+            .ToList();
+
+        if (!activeRoles.Any())
+            return string.Empty;
+
+        // Ordenar por nível hierárquico (maior para menor)
+        var roleHierarchy = new Dictionary<string, int>
+        {
+            { "SystemAdmin", 1 },
+            { "Division", 2 },
+            { "Union", 3 },
+            { "Association", 4 },
+            { "Region", 5 },
+            { "District", 6 },
+            { "Club", 7 },
+            { "Unit", 8 }
+        };
+
+        var sortedRoles = activeRoles
+            .OrderBy(role => roleHierarchy.GetValueOrDefault(role, 999))
+            .ToList();
+
+        return string.Join(" | ", sortedRoles);
     }
 }
 

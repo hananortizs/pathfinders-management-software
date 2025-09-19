@@ -1,11 +1,5 @@
 ---
-description: >
-  Regra de frontend para o projeto PathfinderManagementSoftware.
-  Define papel de desenvolvedor frontend sênior com foco em UI/UX,
-  regras de negócio, arquitetura base, paleta de cores, roadmap de MVPs
-  e guidelines de design. Deve ser sempre aplicada pelo Cursor AI.
-globs:
-  - "**/*"
+description: Regra de frontend para o projeto PathfinderManagementSoftware.   Define papel de desenvolvedor frontend sênior com foco em UI/UX,   regras de negócio, arquitetura base, paleta de cores, roadmap de MVPs   e guidelines de design. Deve ser sempre aplicada pelo Cursor AI.
 alwaysApply: true
 ---
 
@@ -608,11 +602,13 @@ Todas as decisões devem considerar MVPs (MVP0, MVP1, MVP2+) e seguir as diretri
 **Para este projeto específico, seguimos a metodologia híbrida que prioriza velocidade de desenvolvimento inicial com arquitetura flexível para escalabilidade posterior.**
 
 #### 1. **Fase 1: Desenvolvimento Admin-First (MVP0)**
+
 - **Foco**: Implementar funcionalidades completas para usuário **Administrador**
 - **Objetivo**: MVP funcional rapidamente
 - **Estratégia**: Desenvolver com arquitetura flexível desde o início
 
 #### 2. **Fase 2: Refatoração Multi-Nível (MVP1+)**
+
 - **Foco**: Adaptar funcionalidades para diferentes níveis de usuário
 - **Objetivo**: Escalabilidade e reutilização de código
 - **Estratégia**: Aproveitar arquitetura flexível criada na Fase 1
@@ -620,6 +616,7 @@ Todas as decisões devem considerar MVPs (MVP0, MVP1, MVP2+) e seguir as diretri
 ### **Por que esta abordagem para este projeto?**
 
 #### ✅ **Vantagens Contextuais**
+
 - **Sistema hierárquico complexo**: 8 níveis (Divisão → União → Região → Associação → Distrito → Clube → Unidade → Membro)
 - **MVP0 focado**: Administrador como usuário principal inicial
 - **Desenvolvimento ágil**: Funcionalidade básica primeiro, refinamento depois
@@ -628,22 +625,24 @@ Todas as decisões devem considerar MVPs (MVP0, MVP1, MVP2+) e seguir as diretri
 #### 🏗️ **Implementação Inteligente**
 
 **Estrutura de código flexível:**
+
 ```typescript
 // Hook flexível para diferentes níveis
 const useMembersList = (userLevel: UserLevel) => {
   // Lógica base + customizações por nível
-}
+};
 
 // Componente base reutilizável
 const MembersList = ({ userLevel, groupingStrategy }) => {
   // Renderização base + customizações
-}
+};
 
 // Context para gerenciar nível do usuário
-const UserLevelContext = createContext<UserLevel>('admin')
+const UserLevelContext = createContext<UserLevel>("admin");
 ```
 
 **Padrões de desenvolvimento:**
+
 - **Hooks customizados** com parâmetros de nível
 - **Componentes base** com props de customização
 - **Contextos** para gerenciar estado de usuário
@@ -652,6 +651,7 @@ const UserLevelContext = createContext<UserLevel>('admin')
 #### 📋 **Cronograma de Implementação**
 
 **MVP0 (Admin-First):**
+
 1. ✅ Sistema de autenticação
 2. ✅ Dashboard com dados mockados
 3. 🔄 **CRUDs completos para Admin** (em andamento)
@@ -659,6 +659,7 @@ const UserLevelContext = createContext<UserLevel>('admin')
 5. ⏳ Testes end-to-end
 
 **MVP1 (Multi-Nível):**
+
 1. Refatoração para diferentes níveis de usuário
 2. Customizações específicas por nível
 3. Testes de permissões e escopo
@@ -672,6 +673,110 @@ const UserLevelContext = createContext<UserLevel>('admin')
 - **Foco em uma persona** por vez
 - **MVP funcional** mais rapidamente
 - **Código reutilizável** e bem estruturado
+
+---
+
+## 👥 Sistema de Membros - Frontend MVP0
+
+### **Página Principal: MembersPage**
+
+- **Rota**: `/members` (protegida, apenas autenticados)
+- **Nível**: Admin (MVP0), futuramente adaptável para outros níveis
+- **Layout**: Full-width com sidebar de filtros e área principal de listagem
+
+### **Componentes Implementados**
+
+#### **1. MemberFilters**
+
+- **Busca textual**: Nome, CPF, email em tempo real
+- **Filtros avançados**: Status, gênero, faixa etária, hierarquia
+- **Filtros hierárquicos**: Divisão, União, Região, Associação, Distrito, Clube, Unidade
+- **Controle de estado**: Expandir/colapsar filtros avançados
+- **Contador de filtros ativos**: Badge visual com quantidade
+- **Limpeza de filtros**: Botão para resetar todos os filtros
+
+#### **2. MembersList**
+
+- **Agrupamento flexível**: Hierárquico, por clube, por unidade, lista simples
+- **Seleção múltipla**: Checkbox individual e "selecionar todos"
+- **Ações por membro**: Visualizar, editar, transferir, excluir
+- **Informações resumidas**: Nome, status, clube, unidade, idade, contato
+- **Estados visuais**: Loading, erro, lista vazia
+- **Expansão de grupos**: Collapse/expand para grupos hierárquicos
+
+#### **3. useMembersList Hook**
+
+- **Gerenciamento de estado**: Filtros, paginação, seleção, dados
+- **Cache inteligente**: React Query com staleTime e cacheTime
+- **Performance**: useMemo para cálculos pesados, useCallback para funções
+- **Flexibilidade**: Suporte a diferentes níveis de usuário e estratégias
+- **Estatísticas**: Cálculo em tempo real de métricas
+
+### **Funcionalidades Implementadas**
+
+#### **Agrupamento Hierárquico**
+
+- **Estratégias**: Hierárquico, Por Clube, Por Unidade, Lista Simples
+- **Visualização**: Cards expansíveis com contadores de membros
+- **Navegação**: Breadcrumb hierárquico (Divisão > União > Região...)
+- **Performance**: Lazy loading de grupos e membros
+
+#### **Filtros e Busca**
+
+- **Busca global**: Campo único para nome, CPF, email
+- **Filtros múltiplos**: Status, gênero, idade, hierarquia
+- **Filtros hierárquicos**: Dropdowns com contadores de membros
+- **Persistência**: Filtros mantidos durante navegação
+- **Reset**: Limpeza individual ou completa de filtros
+
+#### **Ações e Operações**
+
+- **CRUD completo**: Criar, visualizar, editar, excluir membros
+- **Ações em massa**: Exportar, excluir, transferir selecionados
+- **Transferência**: Mover membros entre clubes/unidades
+- **Validação**: CPF único, email único, campos obrigatórios
+- **Confirmação**: Dialogs para ações destrutivas
+
+#### **Interface e UX**
+
+- **Design responsivo**: Mobile-first, breakpoints Material-UI
+- **Estados de loading**: Skeleton, progress bars, spinners
+- **Feedback visual**: Snackbars, alerts, tooltips
+- **Acessibilidade**: ARIA labels, navegação por teclado
+- **Performance**: Memoização, lazy loading, virtualização
+
+### **Tipos e Interfaces**
+
+- **Member**: Entidade principal com todos os campos
+- **MemberFilters**: Interface para filtros com validação
+- **MemberGroup**: Estrutura para agrupamento hierárquico
+- **UserLevel**: Enum para diferentes níveis de usuário
+- **HierarchyLevel**: Enum para níveis hierárquicos
+- **ContactType**: Enum para tipos de contato
+
+### **Serviços e APIs**
+
+- **membersService**: Classe para comunicação com backend
+- **Endpoints completos**: CRUD, filtros, exportação, validação
+- **Tratamento de erros**: Try/catch com feedback visual
+- **Cache**: React Query para otimização de requests
+- **TypeScript**: Tipagem forte em todas as interfaces
+
+### **Performance e Otimização**
+
+- **React.memo**: Componentes de lista para evitar re-renders
+- **useMemo**: Cálculos pesados e dados estáticos
+- **useCallback**: Funções passadas como props
+- **Lazy loading**: Componentes carregados sob demanda
+- **Paginação**: 20 itens por página com navegação
+
+### **Próximos Passos (MVP1)**
+
+- **Adaptação multi-nível**: Hook flexível para diferentes usuários
+- **Formulários**: Criação e edição de membros
+- **Relatórios**: Dashboards específicos por nível
+- **Notificações**: Sistema de alertas e updates
+- **Mobile**: App nativo ou PWA
 
 ---
 

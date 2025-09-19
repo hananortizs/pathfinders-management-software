@@ -18,6 +18,12 @@ public class TimelineController : ControllerBase
     private readonly IAuthService _authService;
     private readonly ILogger<TimelineController> _logger;
 
+    /// <summary>
+    /// Inicializa uma nova instância da classe TimelineController
+    /// </summary>
+    /// <param name="timelineService">Serviço de timeline</param>
+    /// <param name="authService">Serviço de autenticação</param>
+    /// <param name="logger">Logger para registro de eventos</param>
     public TimelineController(
         ITimelineService timelineService,
         IAuthService authService,

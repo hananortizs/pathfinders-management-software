@@ -1,354 +1,164 @@
 using Microsoft.AspNetCore.Mvc;
-using Pms.Backend.Application.DTOs;
-using Pms.Backend.Application.DTOs.Auth;
 using Pms.Backend.Application.DTOs.Members;
 using Pms.Backend.Application.Interfaces;
+using Pms.Backend.Application.DTOs;
 
-namespace Pms.Backend.Api.Controllers;
-
-/// <summary>
-/// Controller for member management operations
-/// </summary>
-[ApiController]
-[Route("[controller]")]
-public partial class MemberController : BaseController
+namespace Pms.Backend.Api.Controllers
 {
-    private readonly IMemberService _memberService;
-
     /// <summary>
-    /// Initializes a new instance of the MemberController
+    /// Controller para gerenciamento de membros
     /// </summary>
-    /// <param name="memberService">Member service for business logic</param>
-    public MemberController(IMemberService memberService)
+    [ApiController]
+    [Route("pms-loc/members")]
+    public partial class MemberController : BaseController
     {
-        _memberService = memberService;
-    }
+        private readonly IMemberService _memberService;
+        private readonly IAuthService _authService;
+        private readonly ILogger<MemberController> _logger;
 
-    #region Member CRUD Operations
-
-    /// <summary>
-    /// Gets a specific member by ID
-    /// </summary>
-    /// <param name="id">Member ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Member information</returns>
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetMember(Guid id, CancellationToken cancellationToken = default)
-    {
-        var result = await _memberService.GetMemberAsync(id, cancellationToken);
-        return ProcessResponse(result);
-    }
-
-    /// <summary>
-    /// Gets a paginated list of members with optimized response structure (no repetitive fields)
-    /// </summary>
-    /// <param name="pageNumber">Page number (default: 1)</param>
-    /// <param name="pageSize">Page size (default: 10)</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Optimized paginated list of members</returns>
-    [HttpGet]
-    public async Task<IActionResult> GetMembers(
-        [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 10,
-        CancellationToken cancellationToken = default)
-    {
-        var result = await _memberService.GetMembersOptimizedAsync(pageNumber, pageSize, cancellationToken);
-        return ProcessResponse(result);
-    }
-
-
-    /// <summary>
-    /// Gets members by club ID
-    /// </summary>
-    /// <param name="clubId">Club ID</param>
-    /// <param name="pageNumber">Page number (default: 1)</param>
-    /// <param name="pageSize">Page size (default: 10)</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Paginated list of members in the club</returns>
-    [HttpGet("club/{clubId}")]
-    public async Task<IActionResult> GetMembersByClub(
-        Guid clubId,
-        [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 10,
-        CancellationToken cancellationToken = default)
-    {
-        var result = await _memberService.GetMembersByClubAsync(clubId, pageNumber, pageSize, cancellationToken);
-        return ProcessResponse(result);
-    }
-
-    /// <summary>
-    /// Cria um novo membro com informações completas incluindo endereço, informações médicas, contatos, etc.
-    /// </summary>
-    /// <remarks>
-    /// Este endpoint permite criar um membro com todas as informações necessárias:
-    ///
-    /// **Regras de Negócio:**
-    /// - Email é obrigatório: deve estar em `contactInfo` (tipo 3) OU em `loginInfo`
-    /// - Se não houver email em `contactInfo`, o sistema cria automaticamente um contato de email usando `loginInfo.email`
-    /// - CPF deve ser único no sistema (se fornecido)
-    /// - Membro deve ter pelo menos 10 anos de idade
-    /// - Senha deve ter pelo menos 10 caracteres (se fornecida)
-    ///
-    /// **Tipos de Contato:**
-    /// - 1: Mobile (Celular)
-    /// - 2: Landline (Telefone Fixo)
-    /// - 3: Email
-    /// - 4: WhatsApp
-    /// - 5-11: Redes Sociais (Facebook, Instagram, YouTube, etc.)
-    ///
-    /// **Exemplo de Payload:**
-    /// ```json
-    /// {
-    ///   "firstName": "João",
-    ///   "lastName": "Silva",
-    ///   "middleNames": "Santos",
-    ///   "socialName": "João Silva",
-    ///   "dateOfBirth": "1990-05-15T00:00:00.000Z",
-    ///   "gender": 1,
-    ///   "cpf": "12345678901",
-    ///   "rg": "123456789",
-    ///   "contactInfo": [
-    ///     {
-    ///       "type": 1,
-    ///       "value": "+5511999999999",
-    ///       "isPrimary": true,
-    ///       "description": "Telefone celular"
-    ///     }
-    ///   ],
-    ///   "loginInfo": {
-    ///     "email": "joao.silva@email.com",
-    ///     "password": "MinhaSenh@123",
-    ///     "confirmPassword": "MinhaSenh@123"
-    ///   },
-    ///   "address": {
-    ///     "postalCode": "01234567",
-    ///     "street": "Rua das Flores, 123",
-    ///     "neighborhood": "Centro",
-    ///     "city": "São Paulo",
-    ///     "state": "SP",
-    ///     "country": "Brasil",
-    ///     "isPrimary": true
-    ///   }
-    /// }
-    /// ```
-    /// </remarks>
-    /// <param name="dto">Dados completos para criação do membro</param>
-    /// <param name="cancellationToken">Token de cancelamento</param>
-    /// <returns>
-    /// **201 Created**: Membro criado com sucesso
-    ///
-    /// **400 Bad Request**: Dados inválidos ou regras de negócio violadas
-    /// - "Pelo menos um contato de email é obrigatório (forneça no contactInfo ou loginInfo)"
-    /// - "CPF já existe"
-    /// - "Email {email} já existe"
-    /// - "Membro deve ter pelo menos 10 anos de idade"
-    /// - "Senha deve ter pelo menos 10 caracteres"
-    ///
-    /// **401 Unauthorized**: Token JWT inválido ou expirado
-    ///
-    /// **500 Internal Server Error**: Erro interno do servidor
-    /// </returns>
-    [HttpPost]
-    [ProducesResponseType(typeof(BaseResponse<MemberDto>), 201)]
-    [ProducesResponseType(typeof(BaseResponse<object>), 400)]
-    [ProducesResponseType(typeof(BaseResponse<object>), 401)]
-    [ProducesResponseType(typeof(BaseResponse<object>), 500)]
-    public async Task<IActionResult> CreateMember([FromBody] CreateMemberCompleteDto dto, CancellationToken cancellationToken = default)
-    {
-        var result = await _memberService.CreateMemberCompleteAsync(dto, cancellationToken);
-        return ProcessResponseWithCreatedAtAction(result, nameof(GetMember), new { id = result.Data?.Id });
-    }
-
-
-    /// <summary>
-    /// Updates an existing member
-    /// </summary>
-    /// <param name="id">Member ID</param>
-    /// <param name="dto">Member update data</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Updated member information</returns>
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateMember(Guid id, [FromBody] UpdateMemberDto dto, CancellationToken cancellationToken = default)
-    {
-        var result = await _memberService.UpdateMemberAsync(id, dto, cancellationToken);
-        return ProcessResponse(result);
-    }
-
-    /// <summary>
-    /// Deletes a member (soft delete)
-    /// </summary>
-    /// <param name="id">Member ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Deletion result</returns>
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteMember(Guid id, CancellationToken cancellationToken = default)
-    {
-        var result = await _memberService.DeleteMemberAsync(id, cancellationToken);
-        return ProcessResponse(result);
-    }
-
-    /// <summary>
-    /// Hard deletes a member and all related data (permanent deletion)
-    /// </summary>
-    /// <param name="id">Member ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Hard deletion result</returns>
-    [HttpDelete("{id}/hard")]
-    public async Task<IActionResult> HardDeleteMember(Guid id, CancellationToken cancellationToken = default)
-    {
-        var result = await _memberService.HardDeleteMemberAsync(id, cancellationToken);
-        return ProcessResponse(result);
-    }
-
-    #endregion
-
-    #region Authentication Operations
-
-    /// <summary>
-    /// Changes user password
-    /// </summary>
-    /// <param name="memberId">Member ID</param>
-    /// <param name="request">Password change request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Password change result</returns>
-    [HttpPost("{memberId}/change-password")]
-    public async Task<IActionResult> ChangePassword(Guid memberId, [FromBody] ChangePasswordRequestDto request, CancellationToken cancellationToken = default)
-    {
-        var result = await _memberService.ChangePasswordAsync(memberId, request, cancellationToken);
-        return ProcessResponse(result);
-    }
-
-    /// <summary>
-    /// Initiates password reset
-    /// </summary>
-    /// <param name="request">Password reset request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Password reset initiation result</returns>
-    [HttpPost("reset-password")]
-    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request, CancellationToken cancellationToken = default)
-    {
-        var result = await _memberService.ResetPasswordAsync(request, cancellationToken);
-        return ProcessResponse(result);
-    }
-
-    /// <summary>
-    /// Confirms password reset
-    /// </summary>
-    /// <param name="request">Password reset confirmation request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Password reset confirmation result</returns>
-    [HttpPost("reset-password/confirm")]
-    public async Task<IActionResult> ResetPasswordConfirm([FromBody] ResetPasswordConfirmDto request, CancellationToken cancellationToken = default)
-    {
-        var result = await _memberService.ResetPasswordConfirmAsync(request, cancellationToken);
-        return ProcessResponse(result);
-    }
-
-    #endregion
-
-    #region Member Invitation and Activation
-
-    /// <summary>
-    /// Invites a new member
-    /// </summary>
-    /// <param name="request">Member invitation request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Invitation result</returns>
-    [HttpPost("invite")]
-    public async Task<IActionResult> InviteMember([FromBody] InviteMemberRequestDto request, CancellationToken cancellationToken = default)
-    {
-        var result = await _memberService.InviteMemberAsync(request, cancellationToken);
-        return ProcessResponse(result);
-    }
-
-    /// <summary>
-    /// Activates a member account
-    /// </summary>
-    /// <param name="request">Member activation request</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Activation result with JWT token</returns>
-    [HttpPost("activate")]
-    public async Task<IActionResult> ActivateMember([FromBody] ActivateMemberRequestDto request, CancellationToken cancellationToken = default)
-    {
-        var result = await _memberService.ActivateMemberAsync(request, cancellationToken);
-        return ProcessResponse(result);
-    }
-
-    /// <summary>
-    /// Resends activation email
-    /// </summary>
-    /// <param name="memberId">Member ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Resend result</returns>
-    [HttpPost("{memberId}/resend-activation")]
-    public async Task<IActionResult> ResendActivationEmail(Guid memberId, CancellationToken cancellationToken = default)
-    {
-        var result = await _memberService.ResendActivationEmailAsync(memberId, cancellationToken);
-        return ProcessResponse(result);
-    }
-
-    #endregion
-
-    #region Me Endpoints (Self Management)
-
-    /// <summary>
-    /// Gets the current member's own information
-    /// </summary>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Current member's information</returns>
-    [HttpGet("me")]
-    public async Task<IActionResult> GetMe(CancellationToken cancellationToken = default)
-    {
-        // Get member ID from JWT claims
-        var memberIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        if (memberIdClaim == null || !Guid.TryParse(memberIdClaim.Value, out var memberId))
+        /// <summary>
+        /// Inicializa uma nova instância da classe MemberController
+        /// </summary>
+        /// <param name="memberService">Serviço de membros</param>
+        /// <param name="authService">Serviço de autenticação</param>
+        /// <param name="logger">Logger para registro de eventos</param>
+        public MemberController(
+            IMemberService memberService,
+            IAuthService authService,
+            ILogger<MemberController> logger)
         {
-            return ProcessResponse(BaseResponse<MemberDto>.UnauthorizedResult("Usuário não autenticado"));
+            _memberService = memberService;
+            _authService = authService;
+            _logger = logger;
         }
 
-        var result = await _memberService.GetMemberAsync(memberId, cancellationToken);
-        return ProcessResponse(result);
-    }
-
-    /// <summary>
-    /// Updates the current member's own information
-    /// </summary>
-    /// <param name="request">Member update data</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Updated member information</returns>
-    [HttpPut("me")]
-    public async Task<IActionResult> UpdateMe([FromBody] UpdateMemberDto request, CancellationToken cancellationToken = default)
-    {
-        // Get member ID from JWT claims
-        var memberIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        if (memberIdClaim == null || !Guid.TryParse(memberIdClaim.Value, out var memberId))
+        /// <summary>
+        /// Lista membros com filtros e paginação (método GET para compatibilidade)
+        /// </summary>
+        /// <param name="userLevel">Nível do usuário</param>
+        /// <param name="groupingStrategy">Estratégia de agrupamento</param>
+        /// <param name="page">Página atual</param>
+        /// <param name="pageSize">Tamanho da página</param>
+        /// <param name="cancellationToken">Token de cancelamento</param>
+        /// <returns>Lista paginada de membros</returns>
+        [HttpGet]
+        [ProducesResponseType(typeof(BaseResponse<MemberListResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> GetMembers(
+            [FromQuery] string userLevel = "Admin",
+            [FromQuery] string groupingStrategy = "hierarchical",
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            CancellationToken cancellationToken = default)
         {
-            return ProcessResponse(BaseResponse<MemberDto>.UnauthorizedResult("Usuário não autenticado"));
+            _logger.LogInformation("Listando membros - UserLevel: {UserLevel}, Grouping: {GroupingStrategy}, Page: {Page}",
+                userLevel, groupingStrategy, page);
+
+            var request = new GetMembersRequestDto
+            {
+                UserLevel = userLevel,
+                GroupingStrategy = groupingStrategy,
+                Page = page,
+                PageSize = pageSize
+            };
+
+            var result = await _memberService.GetMembersAsync(request, cancellationToken);
+            return ProcessResponse(result);
         }
 
-        var result = await _memberService.UpdateMemberAsync(memberId, request, cancellationToken);
-        return ProcessResponse(result);
-    }
-
-    /// <summary>
-    /// Completes the current member's pending information
-    /// </summary>
-    /// <param name="request">Complete member information</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Updated member information</returns>
-    [HttpPut("me/complete")]
-    public async Task<IActionResult> CompleteMe([FromBody] CreateMemberCompleteDto request, CancellationToken cancellationToken = default)
-    {
-        // Get member ID from JWT claims
-        var memberIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-        if (memberIdClaim == null || !Guid.TryParse(memberIdClaim.Value, out var memberId))
+        /// <summary>
+        /// Busca membros com filtros avançados (método POST recomendado)
+        /// </summary>
+        /// <param name="request">Parâmetros de filtro e paginação</param>
+        /// <param name="cancellationToken">Token de cancelamento</param>
+        /// <returns>Lista paginada de membros</returns>
+        [HttpPost("search")]
+        [ProducesResponseType(typeof(BaseResponse<MemberListResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> SearchMembers(
+            [FromBody] GetMembersRequestDto request,
+            CancellationToken cancellationToken = default)
         {
-            return ProcessResponse(BaseResponse<MemberDto>.UnauthorizedResult("Usuário não autenticado"));
+            _logger.LogInformation("Buscando membros com filtros avançados: {Filters}", request);
+
+            var result = await _memberService.GetMembersAsync(request, cancellationToken);
+            return ProcessResponse(result);
         }
 
-        var result = await _memberService.CompleteMemberAsync(memberId, request, cancellationToken);
-        return ProcessResponse(result);
-    }
+        /// <summary>
+        /// Obtém detalhes de um membro específico
+        /// </summary>
+        /// <param name="id">ID do membro</param>
+        /// <param name="cancellationToken">Token de cancelamento</param>
+        /// <returns>Detalhes do membro</returns>
+        [HttpGet("{id:guid}")]
+        [ProducesResponseType(typeof(BaseResponse<MemberDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetMemberById(Guid id, CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Buscando membro {MemberId}", id);
 
-    #endregion
+            var result = await _memberService.GetMemberAsync(id, cancellationToken);
+            return ProcessResponse(result);
+        }
+
+        /// <summary>
+        /// Cria um novo membro
+        /// </summary>
+        /// <param name="request">Dados do novo membro</param>
+        /// <param name="cancellationToken">Token de cancelamento</param>
+        /// <returns>Membro criado</returns>
+        [HttpPost]
+        [ProducesResponseType(typeof(BaseResponse<MemberDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CreateMember(
+            [FromBody] CreateMemberCompleteDto request,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Criando novo membro");
+
+            var result = await _memberService.CreateMemberCompleteAsync(request, cancellationToken);
+            return ProcessResponseWithCreatedAtAction(result, nameof(GetMemberById), new { id = result.Data?.Id });
+        }
+
+        /// <summary>
+        /// Atualiza um membro existente
+        /// </summary>
+        /// <param name="id">ID do membro</param>
+        /// <param name="request">Dados atualizados</param>
+        /// <param name="cancellationToken">Token de cancelamento</param>
+        /// <returns>Membro atualizado</returns>
+        [HttpPut("{id:guid}")]
+        [ProducesResponseType(typeof(BaseResponse<MemberDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateMember(
+            Guid id,
+            [FromBody] UpdateMemberDto request,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Atualizando membro {MemberId}", id);
+
+            var result = await _memberService.UpdateMemberAsync(id, request, cancellationToken);
+            return ProcessResponse(result);
+        }
+
+        /// <summary>
+        /// Exclui um membro (soft delete)
+        /// </summary>
+        /// <param name="id">ID do membro</param>
+        /// <param name="cancellationToken">Token de cancelamento</param>
+        /// <returns>Confirmação da exclusão</returns>
+        [HttpDelete("{id:guid}")]
+        [ProducesResponseType(typeof(BaseResponse<bool>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteMember(Guid id, CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Excluindo membro {MemberId}", id);
+
+            var result = await _memberService.DeleteMemberAsync(id, cancellationToken);
+            return ProcessResponse(result);
+        }
+
+    }
 }

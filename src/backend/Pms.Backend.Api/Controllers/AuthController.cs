@@ -91,7 +91,7 @@ public class AuthController : BaseController
         _logger.LogInformation("Token recebido no user-info: {TokenPresent}", !string.IsNullOrEmpty(request.Token));
         _logger.LogInformation("Tamanho do token: {TokenLength}", request.Token?.Length ?? 0);
 
-        var result = _authService.GetUserInfoFromToken(request.Token);
+        var result = _authService.GetUserInfoFromToken(request.Token ?? string.Empty);
         return ProcessResponse(result);
     }
 

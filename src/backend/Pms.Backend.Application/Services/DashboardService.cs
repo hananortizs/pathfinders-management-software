@@ -13,6 +13,11 @@ public class DashboardService : IDashboardService
     private readonly ILogger<DashboardService> _logger;
     private readonly IRecentActivitiesService _recentActivitiesService;
 
+    /// <summary>
+    /// Inicializa uma nova instância da classe DashboardService
+    /// </summary>
+    /// <param name="logger">Logger para registro de eventos</param>
+    /// <param name="recentActivitiesService">Serviço para atividades recentes</param>
     public DashboardService(
         ILogger<DashboardService> logger,
         IRecentActivitiesService recentActivitiesService)
@@ -302,13 +307,13 @@ public class DashboardService : IDashboardService
     /// <summary>
     /// Obtém dados básicos da dashboard
     /// </summary>
-    private async Task<DashboardDataDto> GetBasicDashboardDataAsync()
+    private Task<DashboardDataDto> GetBasicDashboardDataAsync()
     {
         var stats = new DashboardStatsDto();
         var activities = new List<RecentActivityDto>();
         var events = new List<UpcomingEventDto>();
 
-        return new DashboardDataDto
+        return Task.FromResult(new DashboardDataDto
         {
             Stats = stats,
             RecentActivities = activities,
@@ -316,7 +321,7 @@ public class DashboardService : IDashboardService
             UserAccessLevel = "basic",
             UserScope = "unknown",
             LastUpdated = DateTime.UtcNow
-        };
+        });
     }
 
     /// <summary>

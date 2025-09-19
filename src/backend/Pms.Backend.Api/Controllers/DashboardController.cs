@@ -16,6 +16,12 @@ public class DashboardController : BaseController
     private readonly IAuthService _authService;
     private readonly ILogger<DashboardController> _logger;
 
+    /// <summary>
+    /// Inicializa uma nova instância da classe DashboardController
+    /// </summary>
+    /// <param name="dashboardService">Serviço de dashboard</param>
+    /// <param name="authService">Serviço de autenticação</param>
+    /// <param name="logger">Logger para registro de eventos</param>
     public DashboardController(
         IDashboardService dashboardService,
         IAuthService authService,

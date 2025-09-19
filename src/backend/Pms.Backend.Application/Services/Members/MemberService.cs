@@ -419,7 +419,7 @@ public partial class MemberService : IMemberService
             // 9. Carregar contatos manualmente para calcular PrimaryEmail e PrimaryPhone
             var contacts = await _unitOfWork.Repository<Contact>()
                 .GetAsync(c => c.EntityId == member.Id && c.EntityType == "Member" && !c.IsDeleted, cancellationToken);
-            
+
             // Debug: verificar contatos carregados
             Console.WriteLine($"DEBUG: Contatos carregados: {contacts.Count()}");
             foreach (var contact in contacts)
@@ -607,9 +607,351 @@ public partial class MemberService : IMemberService
         }
     }
 
+    /// <summary>
+    /// Retrieves a paginated list of Members with advanced filtering and grouping.
+    /// </summary>
+    /// <param name="request">The request containing filters, pagination, and grouping parameters.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A BaseResponse containing a MemberListResponseDto.</returns>
+    public async Task<BaseResponse<MemberListResponseDto>> GetMembersAsync(GetMembersRequestDto request, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Construir query base
+            var query = _unitOfWork.Repository<Member>().GetQueryable()
+                .Where(m => !m.IsDeleted);
+
+            // Aplicar filtros
+            if (request.Filters != null)
+            {
+                if (!string.IsNullOrEmpty(request.Filters.Search))
+                {
+                    var searchTerm = request.Filters.Search.ToLower();
+                    query = query.Where(m =>
+                        m.FirstName.ToLower().Contains(searchTerm) ||
+                        m.LastName.ToLower().Contains(searchTerm) ||
+                        (m.Cpf != null && m.Cpf.Contains(searchTerm)) ||
+                        m.Contacts.Any(c => c.Value.ToLower().Contains(searchTerm) && c.IsActive));
+                }
+
+                if (!string.IsNullOrEmpty(request.Filters.Status))
+                {
+                    if (Enum.TryParse<Domain.Entities.MemberStatus>(request.Filters.Status, out var status))
+                    {
+                        query = query.Where(m => m.Status == status);
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(request.Filters.Gender))
+                {
+                    if (Enum.TryParse<Domain.Entities.MemberGender>(request.Filters.Gender, out var gender))
+                    {
+                        query = query.Where(m => m.Gender == gender);
+                    }
+                }
+
+                if (request.Filters.MinAge.HasValue || request.Filters.MaxAge.HasValue)
+                {
+                    var today = DateTime.Today;
+                    if (request.Filters.MinAge.HasValue)
+                    {
+                        var minBirthDate = today.AddYears(-request.Filters.MinAge.Value);
+                        query = query.Where(m => m.DateOfBirth <= minBirthDate);
+                    }
+                    if (request.Filters.MaxAge.HasValue)
+                    {
+                        var maxBirthDate = today.AddYears(-request.Filters.MaxAge.Value);
+                        query = query.Where(m => m.DateOfBirth >= maxBirthDate);
+                    }
+                }
+
+                // Filtros hierárquicos
+                if (request.Filters.ClubId.HasValue)
+                {
+                    query = query.Where(m => m.Memberships.Any(mem => mem.ClubId == request.Filters.ClubId.Value && mem.IsActive));
+                }
+
+                if (request.Filters.UnitId.HasValue)
+                {
+                    query = query.Where(m => m.Memberships.Any(mem => mem.UnitId == request.Filters.UnitId.Value && mem.IsActive));
+                }
+            }
+
+            // Aplicar ordenação
+            if (!string.IsNullOrEmpty(request.SortBy))
+            {
+                switch (request.SortBy.ToLower())
+                {
+                    case "firstname":
+                        query = request.SortOrder?.ToLower() == "desc"
+                            ? query.OrderByDescending(m => m.FirstName)
+                            : query.OrderBy(m => m.FirstName);
+                        break;
+                    case "lastname":
+                        query = request.SortOrder?.ToLower() == "desc"
+                            ? query.OrderByDescending(m => m.LastName)
+                            : query.OrderBy(m => m.LastName);
+                        break;
+                    case "dateofbirth":
+                        query = request.SortOrder?.ToLower() == "desc"
+                            ? query.OrderByDescending(m => m.DateOfBirth)
+                            : query.OrderBy(m => m.DateOfBirth);
+                        break;
+                    case "createdatutc":
+                        query = request.SortOrder?.ToLower() == "desc"
+                            ? query.OrderByDescending(m => m.CreatedAtUtc)
+                            : query.OrderBy(m => m.CreatedAtUtc);
+                        break;
+                    default:
+                        query = query.OrderBy(m => m.FirstName);
+                        break;
+                }
+            }
+            else
+            {
+                query = query.OrderBy(m => m.FirstName);
+            }
+
+            // Contar total de registros
+            var totalCount = query.Count();
+
+            // Aplicar paginação
+            var members = query
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToList();
+
+            // Carregar dados relacionados para cada membro
+            foreach (var member in members)
+            {
+                // Carregar contatos
+                var contacts = await _unitOfWork.Repository<Contact>()
+                    .GetAsync(c => c.EntityId == member.Id && c.EntityType == "Member" && !c.IsDeleted, cancellationToken);
+                member.Contacts = contacts.ToList();
+
+                // Carregar memberships ativos
+                var memberships = await _unitOfWork.Repository<Domain.Entities.Membership>()
+                    .GetAsync(m => m.MemberId == member.Id && m.IsActive && !m.IsDeleted, cancellationToken);
+                member.Memberships = memberships.ToList();
+
+                // Carregar assignments ativos
+                var assignments = await _unitOfWork.Repository<Assignment>()
+                    .GetAsync(a => a.MemberId == member.Id && a.IsActive && !a.IsDeleted, cancellationToken);
+                member.Assignments = assignments.ToList();
+            }
+
+            // Mapear para DTOs
+            var memberDtos = _mapper.Map<List<MemberSummaryDto>>(members);
+
+            // Debug: Log dos dados mapeados
+            Console.WriteLine($"🔍 MemberService: Mapeados {memberDtos.Count} membros");
+            foreach (var member in memberDtos.Take(3))
+            {
+                Console.WriteLine($"  - {member.FullName} ({member.Status}) - {member.ClubName} > {member.UnitName}");
+            }
+
+            // Debug detalhado dos dados brutos do banco
+            Console.WriteLine($"🔍 MemberService: Dados brutos do banco - {members.Count} membros");
+            foreach (var member in members.Take(3))
+            {
+                Console.WriteLine($"  - Id: {member.Id}");
+                Console.WriteLine($"  - FirstName: '{member.FirstName}'");
+                Console.WriteLine($"  - LastName: '{member.LastName}'");
+                Console.WriteLine($"  - DateOfBirth: {member.DateOfBirth}");
+                Console.WriteLine($"  - Gender: {member.Gender}");
+                Console.WriteLine($"  - Status: {member.Status}");
+                Console.WriteLine($"  - CreatedAtUtc: {member.CreatedAtUtc}");
+                Console.WriteLine($"  - Memberships: {member.Memberships?.Count ?? 0}");
+                Console.WriteLine($"  - Contacts: {member.Contacts?.Count ?? 0}");
+                Console.WriteLine($"  - Assignments: {member.Assignments?.Count ?? 0}");
+                Console.WriteLine("  ---");
+            }
+
+            // Criar grupos baseado na estratégia de agrupamento
+            var groups = new List<MemberGroupDto>();
+
+            switch (request.GroupingStrategy?.ToLower())
+            {
+                case "hierarchical":
+                    groups = await CreateHierarchicalGroups(request, cancellationToken);
+                    break;
+                case "by_club":
+                    groups = await CreateClubGroups(request, cancellationToken);
+                    break;
+                case "by_unit":
+                    groups = await CreateUnitGroups(request, cancellationToken);
+                    break;
+                default:
+                    // Lista simples - sem agrupamento
+                    break;
+            }
+
+            // Calcular estatísticas
+            var stats = new MemberListStatsDto
+            {
+                ActiveCount = members.Count(m => m.Status == Domain.Entities.MemberStatus.Active),
+                PendingCount = members.Count(m => m.Status == Domain.Entities.MemberStatus.Pending),
+                InactiveCount = members.Count(m => m.Status == Domain.Entities.MemberStatus.Inactive),
+                SuspendedCount = members.Count(m => m.Status == Domain.Entities.MemberStatus.Suspended),
+                GenderDistribution = members.GroupBy(m => m.Gender.ToString())
+                    .ToDictionary(g => g.Key, g => g.Count()),
+                AgeDistribution = members.GroupBy(m => CalculateAge(m.DateOfBirth))
+                    .ToDictionary(g => g.Key.ToString(), g => g.Count()),
+                ClubDistribution = members.GroupBy(m => GetClubName(m))
+                    .Where(g => !string.IsNullOrEmpty(g.Key))
+                    .ToDictionary(g => g.Key, g => g.Count())
+            };
+
+            var response = new MemberListResponseDto
+            {
+                Members = memberDtos,
+                Groups = groups,
+                TotalCount = totalCount,
+                Page = request.Page,
+                PageSize = request.PageSize,
+                TotalPages = (int)Math.Ceiling((double)totalCount / request.PageSize),
+                HasNextPage = request.Page < (int)Math.Ceiling((double)totalCount / request.PageSize),
+                HasPreviousPage = request.Page > 1,
+                Stats = stats
+            };
+
+            // Debug: Log da resposta final
+            Console.WriteLine($"🔍 MemberService: Resposta final - {response.Members.Count} membros, {response.Groups.Count} grupos, Total: {response.TotalCount}");
+
+            // Debug detalhado do primeiro membro
+            if (response.Members.Count > 0)
+            {
+                var firstMember = response.Members[0];
+                Console.WriteLine($"🔍 MemberService: Primeiro membro detalhado:");
+                Console.WriteLine($"  - Id: {firstMember.Id}");
+                Console.WriteLine($"  - FullName: '{firstMember.FullName}'");
+                Console.WriteLine($"  - DisplayName: '{firstMember.DisplayName}'");
+                Console.WriteLine($"  - Age: {firstMember.Age}");
+                Console.WriteLine($"  - Gender: '{firstMember.Gender}'");
+                Console.WriteLine($"  - Status: '{firstMember.Status}'");
+                Console.WriteLine($"  - ClubName: '{firstMember.ClubName}'");
+                Console.WriteLine($"  - UnitName: '{firstMember.UnitName}'");
+                Console.WriteLine($"  - PrimaryEmail: '{firstMember.PrimaryEmail}'");
+                Console.WriteLine($"  - CreatedAt: {firstMember.CreatedAt}");
+                Console.WriteLine($"  - HasScarfInvestiture: {firstMember.HasScarfInvestiture}");
+                Console.WriteLine($"  - HasValidBaptism: {firstMember.HasValidBaptism}");
+            }
+
+            return BaseResponse<MemberListResponseDto>.SuccessResult(response);
+        }
+        catch (Exception ex)
+        {
+            return BaseResponse<MemberListResponseDto>.ErrorResult($"Erro ao listar membros: {ex.Message}");
+        }
+    }
+
     #endregion
 
     #region Helper Methods
+
+    /// <summary>
+    /// Creates hierarchical groups for member listing
+    /// </summary>
+    /// <param name="request">Request parameters</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of hierarchical groups</returns>
+    private async Task<List<MemberGroupDto>> CreateHierarchicalGroups(GetMembersRequestDto request, CancellationToken cancellationToken)
+    {
+        var groups = new List<MemberGroupDto>();
+
+        // Implementar agrupamento hierárquico baseado no escopo do usuário
+        // Por enquanto, retornar grupos simples por clube
+        var clubs = await _unitOfWork.Repository<Club>()
+            .GetAsync(c => !c.IsDeleted, cancellationToken);
+
+        foreach (var club in clubs)
+        {
+            var memberCount = _unitOfWork.Repository<Member>()
+                .GetQueryable()
+                .Count(m => m.Memberships.Any(mem => mem.ClubId == club.Id && mem.IsActive));
+
+            if (memberCount > 0)
+            {
+                groups.Add(new MemberGroupDto
+                {
+                    Id = club.Id,
+                    Name = club.Name,
+                    Type = "Club",
+                    MemberCount = memberCount,
+                    DirectMembers = new List<MemberSummaryDto>(), // Será preenchido pelo frontend se necessário
+                    SubGroups = new List<MemberGroupDto>()
+                });
+            }
+        }
+
+        return groups;
+    }
+
+    /// <summary>
+    /// Creates club groups for member listing
+    /// </summary>
+    /// <param name="request">Request parameters</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of club groups</returns>
+    private async Task<List<MemberGroupDto>> CreateClubGroups(GetMembersRequestDto request, CancellationToken cancellationToken)
+    {
+        var groups = new List<MemberGroupDto>();
+
+        var clubs = await _unitOfWork.Repository<Club>()
+            .GetAsync(c => !c.IsDeleted, cancellationToken);
+
+        foreach (var club in clubs)
+        {
+            var memberCount = _unitOfWork.Repository<Member>()
+                .GetQueryable()
+                .Count(m => m.Memberships.Any(mem => mem.ClubId == club.Id && mem.IsActive));
+
+            groups.Add(new MemberGroupDto
+            {
+                Id = club.Id,
+                Name = club.Name,
+                Type = "Club",
+                MemberCount = memberCount,
+                DirectMembers = new List<MemberSummaryDto>(),
+                SubGroups = new List<MemberGroupDto>()
+            });
+        }
+
+        return groups;
+    }
+
+    /// <summary>
+    /// Creates unit groups for member listing
+    /// </summary>
+    /// <param name="request">Request parameters</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of unit groups</returns>
+    private async Task<List<MemberGroupDto>> CreateUnitGroups(GetMembersRequestDto request, CancellationToken cancellationToken)
+    {
+        var groups = new List<MemberGroupDto>();
+
+        var units = await _unitOfWork.Repository<Unit>()
+            .GetAsync(u => !u.IsDeleted, cancellationToken);
+
+        foreach (var unit in units)
+        {
+            var memberCount = _unitOfWork.Repository<Member>()
+                .GetQueryable()
+                .Count(m => m.Memberships.Any(mem => mem.UnitId == unit.Id && mem.IsActive));
+
+            groups.Add(new MemberGroupDto
+            {
+                Id = unit.Id,
+                Name = unit.Name,
+                Type = "Unit",
+                MemberCount = memberCount,
+                DirectMembers = new List<MemberSummaryDto>(),
+                SubGroups = new List<MemberGroupDto>()
+            });
+        }
+
+        return groups;
+    }
 
     /// <summary>
     /// Calculates the age based on date of birth
@@ -1002,6 +1344,26 @@ public partial class MemberService : IMemberService
         {
             return BaseResponse<MemberDto>.InternalServerErrorResult($"Erro ao completar informações do membro: {ex.Message}", true);
         }
+    }
+
+    #endregion
+
+    #region Helper Methods for Statistics
+
+    /// <summary>
+    /// Gets the club name from member's active membership
+    /// </summary>
+    /// <param name="member">Member entity</param>
+    /// <returns>Club name or empty string</returns>
+    private static string GetClubName(Member member)
+    {
+        if (member.Memberships == null)
+            return string.Empty;
+
+        var activeMembership = member.Memberships
+            .FirstOrDefault(m => m.IsActive && !m.IsDeleted);
+
+        return activeMembership?.Club?.Name ?? string.Empty;
     }
 
     #endregion

@@ -19,6 +19,13 @@ public class EventController : ControllerBase
     private readonly IAuthService _authService;
     private readonly ILogger<EventController> _logger;
 
+    /// <summary>
+    /// Inicializa uma nova instância da classe EventController
+    /// </summary>
+    /// <param name="eventService">Serviço de eventos</param>
+    /// <param name="participationService">Serviço de participações em eventos</param>
+    /// <param name="authService">Serviço de autenticação</param>
+    /// <param name="logger">Logger para registro de eventos</param>
     public EventController(
         Pms.Backend.Application.Interfaces.Events.IEventService eventService,
         IEventParticipationService participationService,

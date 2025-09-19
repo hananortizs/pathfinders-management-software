@@ -48,6 +48,14 @@ public interface IMemberService
     Task<BaseResponse<OptimizedMemberListResponse>> GetMembersOptimizedAsync(int pageNumber = 1, int pageSize = 10, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Retrieves a paginated list of Members with advanced filtering and grouping.
+    /// </summary>
+    /// <param name="request">The request containing filters, pagination, and grouping parameters.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A BaseResponse containing a MemberListResponseDto.</returns>
+    Task<BaseResponse<MemberListResponseDto>> GetMembersAsync(GetMembersRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Creates a new Member with complete information including address, medical info, contacts, etc.
     /// Valida sub-objetos se preenchidos e faz inserção sequencial com rollback em caso de erro.
     /// </summary>

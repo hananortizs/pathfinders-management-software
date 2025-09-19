@@ -17,7 +17,6 @@ import {
   List,
   ListItem,
   ListItemAvatar,
-  ListItemText,
   Divider,
 } from "@mui/material";
 import {
@@ -55,34 +54,32 @@ const RecentActivitiesList = memo(({ activities }: { activities: any[] }) => (
               {getActivityIcon(activity.type)}
             </Avatar>
           </ListItemAvatar>
-          <ListItemText
-            primary={
-              <Typography
-                variant="body2"
-                sx={{
-                  fontSize: {
-                    xs: "0.7rem",
-                    sm: "0.75rem",
-                    md: "0.8rem",
-                  },
-                  lineHeight: 1.2,
-                }}
-              >
-                {activity.title}
-              </Typography>
-            }
-            secondary={
-              <Typography
-                variant="caption"
-                component="div"
-                sx={{
-                  fontSize: { xs: "0.6rem", sm: "0.65rem" },
-                }}
-              >
-                {activity.time}
-              </Typography>
-            }
-          />
+          <Box component="div" sx={{ flex: 1 }}>
+            <Typography
+              variant="body2"
+              component="div"
+              sx={{
+                fontSize: {
+                  xs: "0.7rem",
+                  sm: "0.75rem",
+                  md: "0.8rem",
+                },
+                lineHeight: 1.2,
+                mb: 0.5,
+              }}
+            >
+              {activity.title}
+            </Typography>
+            <Typography
+              variant="caption"
+              component="div"
+              sx={{
+                fontSize: { xs: "0.6rem", sm: "0.65rem" },
+              }}
+            >
+              {activity.time}
+            </Typography>
+          </Box>
         </ListItem>
         {index < activities.length - 1 && (
           <Divider variant="inset" component="li" sx={{ ml: 5 }} />
@@ -115,71 +112,66 @@ const UpcomingEventsList = memo(({ events }: { events: any[] }) => (
               <CalendarToday fontSize="small" />
             </Avatar>
           </ListItemAvatar>
-          <ListItemText
-            primary={
+          <Box component="div" sx={{ flex: 1 }}>
+            <Typography
+              variant="body2"
+              component="div"
+              sx={{
+                fontSize: {
+                  xs: "0.7rem",
+                  sm: "0.75rem",
+                  md: "0.8rem",
+                },
+                lineHeight: 1.2,
+                mb: 0.5,
+              }}
+            >
+              {event.title}
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              component="div"
+              sx={{
+                fontSize: { xs: "0.6rem", sm: "0.65rem" },
+                display: "block",
+                mb: 0.25,
+              }}
+            >
+              {event.date}
+            </Typography>
+            <Box
+              component="div"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.25,
+                flexWrap: "wrap",
+              }}
+            >
+              <LocationOn fontSize="small" color="action" />
               <Typography
-                variant="body2"
+                variant="caption"
+                color="text.secondary"
+                component="span"
                 sx={{
-                  fontSize: {
-                    xs: "0.7rem",
-                    sm: "0.75rem",
-                    md: "0.8rem",
-                  },
-                  lineHeight: 1.2,
-                  mb: 0.25,
+                  fontSize: { xs: "0.55rem", sm: "0.6rem" },
                 }}
               >
-                {event.title}
+                {event.location}
               </Typography>
-            }
-            secondary={
-              <Box component="div">
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  component="div"
-                  sx={{
-                    fontSize: { xs: "0.6rem", sm: "0.65rem" },
-                    display: "block",
-                    mb: 0.25,
-                  }}
-                >
-                  {event.date}
-                </Typography>
-                <Box
-                  component="div"
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 0.25,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <LocationOn fontSize="small" color="action" />
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    component="span"
-                    sx={{
-                      fontSize: { xs: "0.55rem", sm: "0.6rem" },
-                    }}
-                  >
-                    {event.location}
-                  </Typography>
-                  <Chip
-                    label={`${event.participants} participantes`}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                    sx={{
-                      fontSize: { xs: "0.5rem", sm: "0.55rem" },
-                      height: { xs: 16, sm: 18 },
-                    }}
-                  />
-                </Box>
-              </Box>
-            }
-          />
+              <Chip
+                label={`${event.participants} participantes`}
+                size="small"
+                color="primary"
+                variant="outlined"
+                sx={{
+                  fontSize: { xs: "0.5rem", sm: "0.55rem" },
+                  height: { xs: 16, sm: 18 },
+                }}
+              />
+            </Box>
+          </Box>
         </ListItem>
         {index < events.length - 1 && (
           <Divider variant="inset" component="li" sx={{ ml: 5 }} />

@@ -308,7 +308,7 @@ public class SeedService : ISeedService
             {
                 MemberId = hanan.Id,
                 Email = "hanan.ortiz.hnnrtz@gmail.com",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Hanan123!@"),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Qazzxc@001Kzixs@001"),
                 IsEmailVerified = true,
                 IsActive = true,
                 FailedLoginAttempts = 0,
