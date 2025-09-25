@@ -1,11 +1,8 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Box,
   Tabs,
   Tab,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Typography,
   useMediaQuery,
   useTheme,
@@ -19,10 +16,10 @@ import {
   Settings as PreferencesIcon,
   Security as SecurityIcon,
   History as AuditIcon,
-  ExpandMore as ExpandMoreIcon,
 } from "@mui/icons-material";
 import type { ProfileTabsProps } from "../../types/profile";
 import { PendencyIndicator } from "./PendencyIndicator";
+import { HorizontalCarousel } from "../common/HorizontalCarousel";
 
 /**
  * Componente de navegação por tabs/acordeão para seções do perfil
@@ -36,6 +33,18 @@ export const ProfileTabs: React.FC<ProfileTabsProps> = ({
 }) => {
   const theme = useTheme();
   const isXs = useMediaQuery(theme.breakpoints.down("sm"));
+  const activeSectionRef = useRef<HTMLDivElement>(null);
+
+
+  // Scroll suave para a seção ativa em mobile
+  useEffect(() => {
+    if (isMobile && activeSectionRef.current) {
+      activeSectionRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [activeTab, isMobile]);
 
   const sections = [
     {
@@ -97,66 +106,26 @@ export const ProfileTabs: React.FC<ProfileTabsProps> = ({
   ];
 
   if (isMobile || isXs) {
-    // Renderizar como acordeão em mobile
+    // Renderizar como carrossel horizontal em mobile
+    const carouselItems = sections.map((section) => ({
+      id: section.id,
+      label: section.label,
+      description: section.description,
+      icon: section.icon,
+      pendencyCount: section.pendencyCount,
+    }));
+
     return (
       <Box sx={{ mb: 3 }}>
-        {sections.map((section) => (
-          <Accordion
-            key={section.id}
-            expanded={activeTab === section.id}
-            onChange={() => onTabChange(section.id)}
-            sx={{
-              "&:before": {
-                display: "none",
-              },
-              "&.Mui-expanded": {
-                margin: 0,
-              },
-              mb: 1,
-            }}
-          >
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              sx={{
-                minHeight: 56,
-                "&.Mui-expanded": {
-                  minHeight: 56,
-                },
-                "& .MuiAccordionSummary-content": {
-                  margin: "12px 0",
-                  "&.Mui-expanded": {
-                    margin: "12px 0",
-                  },
-                },
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                  width: "100%",
-                }}
-              >
-                {section.icon}
-                <Box sx={{ flex: 1 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
-                      {section.label}
-                    </Typography>
-                    <PendencyIndicator count={section.pendencyCount} />
-                  </Box>
-                  <Typography variant="caption" color="text.secondary">
-                    {section.description}
-                  </Typography>
-                </Box>
-              </Box>
-            </AccordionSummary>
-            <AccordionDetails sx={{ pt: 0 }}>
-              {/* Conteúdo da seção será renderizado aqui */}
-            </AccordionDetails>
-          </Accordion>
-        ))}
+        <HorizontalCarousel
+          items={carouselItems}
+          activeItem={activeTab}
+          onItemChange={onTabChange}
+          itemWidth={isXs ? 260 : 280}
+          showArrows={true}
+          showDots={true}
+          onPendencyClick={() => {}}
+        />
       </Box>
     );
   }
@@ -175,51 +144,95 @@ export const ProfileTabs: React.FC<ProfileTabsProps> = ({
             textTransform: "none",
             fontSize: "0.875rem",
             fontWeight: 500,
+            "&.Mui-selected": {
+              color: theme.palette.primary.main,
+              backgroundColor: theme.palette.primary.light + "10",
+            },
+          },
+          "& .MuiTabs-indicator": {
+            backgroundColor: theme.palette.primary.main,
+            height: 3,
           },
         }}
       >
-        {sections.map((section) => (
-          <Tab
-            key={section.id}
-            value={section.id}
-            label={
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  width: "100%",
-                }}
-              >
-                {section.icon}
-                <Box sx={{ textAlign: "left", flex: 1 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: "inherit" }}>
-                      {section.label}
-                    </Typography>
-                    <PendencyIndicator
-                      count={section.pendencyCount}
-                      size="small"
-                    />
-                  </Box>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: "block", lineHeight: 1.2 }}
+        {sections.map((section) => {
+          const isActive = activeTab === section.id;
+          return (
+            <Tab
+              key={section.id}
+              value={section.id}
+              label={
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    width: "100%",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      color: isActive ? theme.palette.primary.main : "inherit",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
                   >
-                    {section.description}
-                  </Typography>
+                    {section.icon}
+                  </Box>
+                  <Box sx={{ textAlign: "left", flex: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: "inherit",
+                          color: isActive
+                            ? theme.palette.primary.main
+                            : "inherit",
+                        }}
+                      >
+                        {section.label}
+                      </Typography>
+                      <PendencyIndicator
+                        count={section.pendencyCount}
+                        size="small"
+                        showSuccess={true}
+                      />
+                    </Box>
+                    <Typography
+                      variant="caption"
+                      color={isActive ? "primary" : "text.secondary"}
+                      sx={{ display: "block", lineHeight: 1.2 }}
+                    >
+                      {section.description}
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
-            }
-            sx={{
-              minWidth: 200,
-              alignItems: "flex-start",
-              py: 2,
-            }}
-          />
-        ))}
+              }
+              sx={{
+                minWidth: 200,
+                alignItems: "flex-start",
+                py: 2,
+                ...(isActive && {
+                  backgroundColor: theme.palette.primary.light + "10",
+                }),
+              }}
+            />
+          );
+        })}
       </Tabs>
     </Box>
+  );
+};
+
+// Adicionar o modal de pendências no final do componente
+export const ProfileTabsWithModal: React.FC<
+  ProfileTabsProps & { profileData?: any }
+> = (props) => {
+
+
+  return (
+    <>
+      <ProfileTabs {...props} />
+    </>
   );
 };

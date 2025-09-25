@@ -305,7 +305,23 @@ public partial class MemberService : IMemberService
                 return BaseResponse<MemberDto>.ErrorResult("Pelo menos um contato de email é obrigatório (forneça no contactInfo ou loginInfo)");
             }
 
-            // 2.1. Validações de contatos se preenchidos
+            // 2.1. Validação de endereço obrigatório
+            if (dto.AddressInfo == null)
+            {
+                return BaseResponse<MemberDto>.ErrorResult("Endereço é obrigatório");
+            }
+
+            // Validar se o endereço tem todos os campos obrigatórios
+            if (string.IsNullOrEmpty(dto.AddressInfo.PostalCode) ||
+                string.IsNullOrEmpty(dto.AddressInfo.Street) ||
+                string.IsNullOrEmpty(dto.AddressInfo.Number) ||
+                string.IsNullOrEmpty(dto.AddressInfo.City) ||
+                string.IsNullOrEmpty(dto.AddressInfo.State))
+            {
+                return BaseResponse<MemberDto>.ErrorResult("O usuário deve ter pelo menos um endereço válido com CEP, rua, número, cidade e estado");
+            }
+
+            // 2.2. Validações de contatos se preenchidos
             if (dto.Contacts != null && dto.Contacts.Any())
             {
                 // Verificar emails duplicados nos contatos fornecidos
@@ -1515,7 +1531,7 @@ public partial class MemberService : IMemberService
 
             // Validar token e obter informações do usuário
             var userInfo = _authService.GetUserInfoFromToken(request.Token);
-            
+
             if (!userInfo.IsSuccess || userInfo.Data == null)
             {
                 return BaseResponse<IEnumerable<MemberContactDto>>.UnauthorizedResult("Token inválido ou expirado");

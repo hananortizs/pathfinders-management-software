@@ -55,10 +55,17 @@ export interface MedicalInfo {
 }
 
 export interface DocumentInfo {
+  id: string;
   cpf: string;
   rg?: string;
   rgIssuer?: string;
   rgIssueDate?: string;
+  passport?: string;
+  passportIssueDate?: string;
+  passportExpiryDate?: string;
+  voterId?: string;
+  workPermit?: string;
+  otherDocuments?: string[];
 }
 
 export interface Preferences {

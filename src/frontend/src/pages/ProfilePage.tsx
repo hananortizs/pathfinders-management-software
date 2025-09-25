@@ -22,7 +22,7 @@ import { useProfilePendencies } from "../hooks/useProfilePendencies";
 import { profileService } from "../services/profileService";
 import type { ProfileSections } from "../types/profile";
 import { ProfileHeader } from "../components/profile/ProfileHeader";
-import { ProfileTabs } from "../components/profile/ProfileTabs";
+import { ProfileTabsWithModal } from "../components/profile/ProfileTabs";
 import { PersonalDataSection } from "../components/profile/sections/PersonalDataSection";
 import { ContactsSection } from "../components/profile/sections/ContactsSection";
 import { AddressSection } from "../components/profile/sections/AddressSection";
@@ -39,6 +39,7 @@ const ProfilePage: React.FC = () => {
   const { user } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isXs = useMediaQuery(theme.breakpoints.down("xs"));
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -64,6 +65,21 @@ const ProfilePage: React.FC = () => {
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
+
+    // Scroll suave para a seção ativa apenas em desktop
+    if (!isMobile) {
+      setTimeout(() => {
+        const element = document.getElementById(tabId);
+        if (element) {
+          element.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      }, 100);
+    }
+
+    // Para mobile (carrossel), não fazer scroll automático
   };
 
   // Função para detectar campos incompletos e gerar pontos de atenção
@@ -387,7 +403,7 @@ const ProfilePage: React.FC = () => {
         return <ContactsSection data={profileData.contacts} {...commonProps} />;
       case "address":
         return (
-          <AddressSection data={profileData.address?.[0]} {...commonProps} />
+          <AddressSection data={profileData.address} {...commonProps} />
         );
       case "health":
         return <HealthSection data={profileData.medical} {...commonProps} />;
@@ -466,7 +482,13 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container
+      maxWidth="lg"
+      sx={{
+        py: isMobile ? 2 : 4,
+        px: isXs ? 1 : 2,
+      }}
+    >
       {/* Breadcrumb e Navegação */}
       <Box sx={{ mb: 3 }}>
         <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 2 }}>
@@ -479,30 +501,50 @@ const ProfilePage: React.FC = () => {
               alignItems: "center",
               gap: 0.5,
               textDecoration: "none",
+              fontSize: isXs ? "0.75rem" : "0.875rem",
               "&:hover": { textDecoration: "underline" },
             }}
           >
             <HomeIcon fontSize="small" />
             Dashboard
           </Link>
-          <Typography variant="body2" color="text.primary">
+          <Typography
+            variant="body2"
+            color="text.primary"
+            sx={{ fontSize: isXs ? "0.75rem" : "0.875rem" }}
+          >
             Meu Perfil
           </Typography>
         </Breadcrumbs>
 
         {/* Botão de Voltar */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: isMobile ? 1 : 2,
+            mb: 2,
+          }}
+        >
           <IconButton
             onClick={handleBackToDashboard}
+            size={isMobile ? "small" : "medium"}
             sx={{
               bgcolor: "primary.main",
               color: "white",
               "&:hover": { bgcolor: "primary.dark" },
             }}
           >
-            <ArrowBackIcon />
+            <ArrowBackIcon fontSize={isMobile ? "small" : "medium"} />
           </IconButton>
-          <Typography variant="h5" component="h1" sx={{ fontWeight: "bold" }}>
+          <Typography
+            variant={isMobile ? "h6" : "h5"}
+            component="h1"
+            sx={{
+              fontWeight: "bold",
+              fontSize: isXs ? "1.1rem" : isMobile ? "1.25rem" : "1.5rem",
+            }}
+          >
             Meu Perfil
           </Typography>
         </Box>
@@ -511,21 +553,35 @@ const ProfilePage: React.FC = () => {
         {profileData && getIncompleteFields(profileData).length > 0 && (
           <Alert
             severity="warning"
-            sx={{ mb: 2 }}
+            sx={{
+              mb: 2,
+              fontSize: isXs ? "0.75rem" : "0.875rem",
+            }}
             action={
               <Button
                 color="inherit"
-                size="small"
+                size={isMobile ? "small" : "medium"}
                 onClick={() => setActiveTab("personal")}
+                sx={{ fontSize: isXs ? "0.7rem" : "0.75rem" }}
               >
-                Completar Dados
+                {isMobile ? "Completar" : "Completar Dados"}
               </Button>
             }
           >
-            <Typography variant="body2" sx={{ fontWeight: "bold", mb: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: "bold",
+                mb: 1,
+                fontSize: isXs ? "0.75rem" : "0.875rem",
+              }}
+            >
               ⚠️ Informações incompletas detectadas:
             </Typography>
-            <Typography variant="body2">
+            <Typography
+              variant="body2"
+              sx={{ fontSize: isXs ? "0.75rem" : "0.875rem" }}
+            >
               {getIncompleteFields(profileData).join(", ")} - Complete estes
               campos para ativar todas as funcionalidades.
             </Typography>
@@ -542,16 +598,29 @@ const ProfilePage: React.FC = () => {
       />
 
       {/* Navegação por Tabs */}
-      <ProfileTabs
+      <ProfileTabsWithModal
         activeTab={activeTab}
         onTabChange={handleTabChange}
         isMobile={isMobile}
         pendencies={pendencies}
+        profileData={profileData}
       />
 
       {/* Conteúdo da Seção Ativa */}
-      <Box sx={{ mt: 3 }}>
-        <Box id={activeTab}>{renderActiveSection()}</Box>
+      <Box
+        sx={{
+          mt: 3,
+          minHeight: isMobile ? "50vh" : "auto",
+        }}
+      >
+        <Box
+          id={activeTab}
+          sx={{
+            scrollMarginTop: isMobile ? "80px" : "0px", // Espaço para scroll suave
+          }}
+        >
+          {renderActiveSection()}
+        </Box>
       </Box>
 
       {/* Snackbar para feedback */}

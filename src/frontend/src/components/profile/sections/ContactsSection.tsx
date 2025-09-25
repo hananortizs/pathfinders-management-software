@@ -4,7 +4,6 @@ import {
   Card,
   CardContent,
   Typography,
-  TextField,
   Button,
   Stack,
   Chip,
@@ -12,6 +11,8 @@ import {
   List,
   ListItem,
   Alert,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -27,6 +28,8 @@ import {
 import type { ProfileSectionProps, ContactInfo } from "../../../types/profile";
 import { SensitiveDataField } from "../SensitiveDataField";
 import { PhoneInputWithDDI } from "../../common/PhoneInputWithDDI";
+import { ResponsiveTextField } from "../../common/ResponsiveTextField";
+import { ResponsiveButton } from "../../common/ResponsiveButton";
 
 /**
  * Seção de Contatos do perfil
@@ -41,6 +44,9 @@ export const ContactsSection: React.FC<ProfileSectionProps> = ({
   isLoading,
   errors = {},
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [formData, setFormData] = useState<ContactInfo[]>(data || []);
   const [sensitiveFields, setSensitiveFields] = useState<
     Record<string, boolean>
@@ -231,28 +237,45 @@ export const ContactsSection: React.FC<ProfileSectionProps> = ({
                     minWidth: 0, // Permite que o conteúdo seja cortado se necessário
                   }}
                 >
+                  {/* Linha 1: Ícone, Tipo de Contato e Categoria */}
                   <Box
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      gap: { xs: 1, sm: 2 },
+                      gap: 1,
+                      mb: 1,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ fontSize: "1.2rem" }}>
+                      {getContactTypeIcon(contact.type)}
+                    </Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
+                      {getContactTypeLabel(contact.type)}
+                    </Typography>
+
+                    <Chip
+                      label={getCategoryLabel(contact.category)}
+                      color="info"
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                        height: { xs: 24, sm: 28 },
+                      }}
+                    />
+                  </Box>
+
+                  {/* Linha 2: Chips de Status (Primário e Verificação) */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: { xs: 0.5, sm: 1 },
                       mb: { xs: 2, sm: 1 },
                       flexWrap: "wrap",
                     }}
                   >
-                    <Typography
-                      variant="body2"
-                      sx={{ fontSize: "1.2rem", mr: 1 }}
-                    >
-                      {getContactTypeIcon(contact.type)}
-                    </Typography>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{ fontWeight: "bold", mr: 1 }}
-                    >
-                      {getContactTypeLabel(contact.type)}
-                    </Typography>
-
                     {contact.isPrimary && (
                       <Chip
                         label="Primário"
@@ -262,7 +285,6 @@ export const ContactsSection: React.FC<ProfileSectionProps> = ({
                         sx={{
                           fontSize: { xs: "0.7rem", sm: "0.75rem" },
                           height: { xs: 24, sm: 28 },
-                          mr: 0.5,
                         }}
                       />
                     )}
@@ -275,7 +297,6 @@ export const ContactsSection: React.FC<ProfileSectionProps> = ({
                         sx={{
                           fontSize: { xs: "0.6rem", sm: "0.7rem" },
                           height: { xs: 20, sm: 24 },
-                          mr: 0.5,
                         }}
                       />
                     )}
@@ -289,7 +310,6 @@ export const ContactsSection: React.FC<ProfileSectionProps> = ({
                         sx={{
                           fontSize: { xs: "0.7rem", sm: "0.75rem" },
                           height: { xs: 24, sm: 28 },
-                          mr: 0.5,
                         }}
                       />
                     ) : (
@@ -301,22 +321,9 @@ export const ContactsSection: React.FC<ProfileSectionProps> = ({
                         sx={{
                           fontSize: { xs: "0.7rem", sm: "0.75rem" },
                           height: { xs: 24, sm: 28 },
-                          mr: 0.5,
                         }}
                       />
                     )}
-
-                    <Chip
-                      label={getCategoryLabel(contact.category)}
-                      color="info"
-                      size="small"
-                      variant="outlined"
-                      sx={{
-                        fontSize: { xs: "0.7rem", sm: "0.75rem" },
-                        height: { xs: 24, sm: 28 },
-                        mr: 0.5,
-                      }}
-                    />
                   </Box>
 
                   {isEditing ? (
@@ -341,7 +348,7 @@ export const ContactsSection: React.FC<ProfileSectionProps> = ({
                             helperText={errors[`contact_${index}_value`]}
                           />
                         ) : (
-                          <TextField
+                          <ResponsiveTextField
                             fullWidth
                             label="Valor"
                             value={contact.value}
@@ -356,13 +363,7 @@ export const ContactsSection: React.FC<ProfileSectionProps> = ({
                             placeholder="exemplo@email.com"
                             error={!!errors[`contact_${index}_value`]}
                             helperText={errors[`contact_${index}_value`]}
-                            sx={{
-                              "& .MuiInputBase-input": {
-                                minHeight: { xs: 48, sm: 40 },
-                                fontSize: { xs: "16px", sm: "14px" },
-                                padding: { xs: "12px 14px", sm: "8px 14px" },
-                              },
-                            }}
+                            mobileOptimized={true}
                           />
                         )}
                       </Box>
@@ -377,9 +378,8 @@ export const ContactsSection: React.FC<ProfileSectionProps> = ({
                           mt: { xs: 2, sm: 1 },
                         }}
                       >
-                        <Button
+                        <ResponsiveButton
                           variant={contact.isPrimary ? "contained" : "outlined"}
-                          size="small"
                           startIcon={
                             contact.isPrimary ? (
                               <PrimaryIcon />
@@ -398,30 +398,23 @@ export const ContactsSection: React.FC<ProfileSectionProps> = ({
                               ? "Este contato é primário"
                               : "Tornar este contato primário"
                           }
-                          sx={{
-                            minWidth: { xs: "100%", sm: "auto" },
-                            minHeight: { xs: 44, sm: 36 },
-                            fontSize: { xs: "14px", sm: "13px" },
-                          }}
+                          fullWidthOnMobile={true}
+                          mobileOptimized={true}
                         >
                           {contact.isPrimary ? "Primário" : "Tornar Primário"}
-                        </Button>
+                        </ResponsiveButton>
 
-                        <Button
+                        <ResponsiveButton
                           variant="outlined"
                           color="error"
-                          size="small"
                           startIcon={<DeleteIcon />}
                           onClick={() => handleRemoveContact(index)}
                           disabled={contact.isPrimary}
-                          sx={{
-                            minWidth: { xs: "100%", sm: "auto" },
-                            minHeight: { xs: 44, sm: 36 },
-                            fontSize: { xs: "14px", sm: "13px" },
-                          }}
+                          fullWidthOnMobile={true}
+                          mobileOptimized={true}
                         >
                           Remover
-                        </Button>
+                        </ResponsiveButton>
                       </Box>
                     </Box>
                   ) : (
@@ -453,11 +446,12 @@ export const ContactsSection: React.FC<ProfileSectionProps> = ({
 
         {isEditing && (
           <Box sx={{ mt: 2 }}>
-            <Button
+            <ResponsiveButton
               variant="outlined"
               startIcon={<AddIcon />}
               onClick={handleAddContact}
               fullWidth
+              mobileOptimized={true}
               sx={{
                 border: "2px dashed",
                 borderColor: "primary.main",
@@ -469,7 +463,7 @@ export const ContactsSection: React.FC<ProfileSectionProps> = ({
               }}
             >
               Adicionar Novo Contato
-            </Button>
+            </ResponsiveButton>
           </Box>
         )}
 
@@ -477,23 +471,32 @@ export const ContactsSection: React.FC<ProfileSectionProps> = ({
         {isEditing && (
           <>
             <Divider sx={{ my: 3 }} />
-            <Stack direction="row" spacing={2} justifyContent="flex-end">
-              <Button
+            <Stack
+              direction={isMobile ? "column" : "row"}
+              spacing={2}
+              justifyContent="flex-end"
+              sx={{ width: "100%" }}
+            >
+              <ResponsiveButton
                 variant="outlined"
                 startIcon={<CancelIcon />}
                 onClick={handleCancel}
                 disabled={isLoading}
+                fullWidthOnMobile={true}
+                mobileOptimized={true}
               >
                 Cancelar
-              </Button>
-              <Button
+              </ResponsiveButton>
+              <ResponsiveButton
                 variant="contained"
                 startIcon={<SaveIcon />}
                 onClick={handleSave}
                 disabled={isLoading || formData.length === 0}
+                fullWidthOnMobile={true}
+                mobileOptimized={true}
               >
                 {isLoading ? "Salvando..." : "Salvar"}
-              </Button>
+              </ResponsiveButton>
             </Stack>
           </>
         )}

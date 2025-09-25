@@ -42,7 +42,10 @@ export const SensitiveDataField: React.FC<SensitiveFieldProps> = ({
         setLocalTimeRemaining((prev) => {
           if (prev <= 1) {
             // Usar setTimeout para evitar setState durante render
-            setTimeout(() => onHide(), 0);
+            setTimeout(() => {
+              onHide();
+              setLocalTimeRemaining(0);
+            }, 0);
             return 0;
           }
           return prev - 1;
@@ -58,11 +61,22 @@ export const SensitiveDataField: React.FC<SensitiveFieldProps> = ({
     setLocalTimeRemaining(timeRemaining);
   }, [timeRemaining]);
 
+  // Sincronizar estado local com prop isRevealed
+  useEffect(() => {
+    if (!isRevealed) {
+      setLocalTimeRemaining(0);
+    }
+  }, [isRevealed]);
+
   const handleReveal = async () => {
+    if (isRevealing) return; // Previne múltiplos cliques
+
     setIsRevealing(true);
     try {
       await onReveal();
       setLocalTimeRemaining(10); // Reset para 10 segundos
+    } catch (error) {
+      console.error("Erro ao revelar dados sensíveis:", error);
     } finally {
       setIsRevealing(false);
     }
@@ -106,13 +120,31 @@ export const SensitiveDataField: React.FC<SensitiveFieldProps> = ({
     if (type === "email") {
       const [localPart, domain] = value.split("@");
       if (localPart && domain) {
+        // Mascarar parte local do email
         const maskedLocal =
           localPart.length > 2
             ? `${localPart[0]}${"•".repeat(localPart.length - 2)}${
                 localPart[localPart.length - 1]
               }`
-            : "••";
-        return `${maskedLocal}@${domain}`;
+            : localPart.length === 2
+            ? `${localPart[0]}•`
+            : "•";
+
+        // Mascarar domínio mantendo a estrutura
+        const domainParts = domain.split(".");
+        const maskedDomain = domainParts
+          .map((part, index) => {
+            if (index === 0) {
+              // Primeira parte do domínio: exemplo -> ex•••••
+              return part.length > 2
+                ? `${part[0]}${part[1]}${"•".repeat(part.length - 2)}`
+                : part;
+            }
+            return part; // Extensões como .com, .org ficam visíveis
+          })
+          .join(".");
+
+        return `${maskedLocal}@${maskedDomain}`;
       }
       return "••••••••@••••••••";
     }
@@ -139,7 +171,8 @@ export const SensitiveDataField: React.FC<SensitiveFieldProps> = ({
   const displayValue = isRevealed ? formatValue(value) : getMaskedValue();
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
+    <Box sx={{ width: "100%" }}>
+      {/* Campo de input */}
       <TextField
         fullWidth
         type={isRevealed ? type : "text"}
@@ -157,50 +190,12 @@ export const SensitiveDataField: React.FC<SensitiveFieldProps> = ({
               }}
             />
           ),
-          endAdornment: (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              {isRevealed && localTimeRemaining > 0 && (
-                <Chip
-                  label={`${localTimeRemaining}s`}
-                  size="small"
-                  color="warning"
-                  variant="outlined"
-                  sx={{ fontSize: "0.75rem", height: 24 }}
-                />
-              )}
-
-              <Tooltip title={isRevealed ? "Ocultar dados" : "Revelar por 10s"}>
-                <span>
-                  <IconButton
-                    size="small"
-                    onClick={isRevealed ? handleHide : handleReveal}
-                    disabled={isRevealing}
-                    sx={{
-                      color: isRevealed ? "error.main" : "primary.main",
-                      "&:hover": {
-                        backgroundColor: isRevealed
-                          ? "error.light"
-                          : "primary.light",
-                      },
-                    }}
-                  >
-                    {isRevealing ? (
-                      <CircularProgress size={16} />
-                    ) : isRevealed ? (
-                      <VisibilityOffIcon fontSize="small" />
-                    ) : (
-                      <VisibilityIcon fontSize="small" />
-                    )}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
-          ),
         }}
         sx={{
           "& .MuiInputBase-input": {
             fontFamily: isRevealed ? "inherit" : "monospace",
             letterSpacing: isRevealed ? "normal" : "0.1em",
+            paddingRight: "16px", // Espaço padrão
           },
           "& .MuiInputBase-input:disabled": {
             color: "text.primary",
@@ -209,18 +204,73 @@ export const SensitiveDataField: React.FC<SensitiveFieldProps> = ({
         }}
       />
 
-      {!isRevealed && (
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{
-            whiteSpace: "nowrap",
-            fontSize: "0.75rem",
-          }}
-        >
-          Dados sensíveis
-        </Typography>
-      )}
+      {/* Controles fora do campo */}
+      <Box sx={{ 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "space-between",
+        mt: 1,
+        gap: 1,
+      }}>
+        {/* Timer e status */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {isRevealed && localTimeRemaining > 0 && (
+            <Chip
+              label={`${localTimeRemaining}s`}
+              size="small"
+              color="warning"
+              variant="outlined"
+              sx={{ 
+                fontSize: "0.7rem", 
+                height: 24,
+                minWidth: "auto",
+                px: 1,
+              }}
+            />
+          )}
+          
+          {!isRevealed && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                fontSize: "0.75rem",
+              }}
+            >
+              Dados sensíveis
+            </Typography>
+          )}
+        </Box>
+
+        {/* Botão de revelar/ocultar */}
+        <Tooltip title={isRevealed ? "Ocultar dados" : "Revelar por 10s"}>
+          <span>
+            <IconButton
+              size="small"
+              onClick={isRevealed ? handleHide : handleReveal}
+              disabled={isRevealing}
+              sx={{
+                color: isRevealed ? "error.main" : "primary.main",
+                width: 36,
+                height: 36,
+                "&:hover": {
+                  backgroundColor: isRevealed
+                    ? "error.light"
+                    : "primary.light",
+                },
+              }}
+            >
+              {isRevealing ? (
+                <CircularProgress size={16} />
+              ) : isRevealed ? (
+                <VisibilityOffIcon fontSize="small" />
+              ) : (
+                <VisibilityIcon fontSize="small" />
+              )}
+            </IconButton>
+          </span>
+        </Tooltip>
+      </Box>
     </Box>
   );
 };

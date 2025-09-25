@@ -123,7 +123,7 @@ export const appTheme = createTheme({
     values: {
       xs: 0,
       sm: 600,
-      md: 900,
+      md: 768, // Breakpoint customizado para tablet
       lg: 1200,
       xl: 1536,
     },

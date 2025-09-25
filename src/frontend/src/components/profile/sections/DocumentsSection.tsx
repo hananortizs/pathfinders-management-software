@@ -11,8 +11,6 @@ import {
   Chip,
   Divider,
   Alert,
-  IconButton,
-  Tooltip,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -39,16 +37,26 @@ export const DocumentsSection: React.FC<ProfileSectionProps> = ({
 }) => {
   const [formData, setFormData] = useState<DocumentInfo>(
     data || {
+      id: "1",
       cpf: "",
       rg: "",
       rgIssuer: "",
       rgIssueDate: "",
+      passport: "",
+      passportIssueDate: "",
+      passportExpiryDate: "",
+      voterId: "",
+      workPermit: "",
+      otherDocuments: [],
     }
   );
 
   const [sensitiveFields, setSensitiveFields] = useState({
     cpf: false,
     rg: false,
+    passport: false,
+    voterId: false,
+    workPermit: false,
   });
 
   const handleRevealSensitive = (fieldName: string) => {
@@ -59,7 +67,7 @@ export const DocumentsSection: React.FC<ProfileSectionProps> = ({
     setSensitiveFields((prev) => ({ ...prev, [fieldName]: false }));
   };
 
-  const handleFieldChange = (field: keyof DocumentInfo, value: string) => {
+  const handleFieldChange = (field: keyof DocumentInfo, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -179,34 +187,35 @@ export const DocumentsSection: React.FC<ProfileSectionProps> = ({
                 >
                   CPF
                 </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <SensitiveDataField
-                    value={formData.cpf}
-                    fieldName="cpf"
-                    isRevealed={sensitiveFields.cpf}
-                    onReveal={() => handleRevealSensitive("cpf")}
-                    onHide={() => handleHideSensitive("cpf")}
-                    timeRemaining={sensitiveFields.cpf ? 10 : 0}
-                    isEditable={false}
-                    type="text"
-                    mask="000.000.000-00"
-                    placeholder="•••.•••.•••-••"
-                  />
-                  <Tooltip title="CPF não pode ser alterado via interface">
-                    <span>
-                      <IconButton size="small" disabled>
-                        <WarningIcon color="warning" />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                </Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ mt: 1, display: "block" }}
+                <SensitiveDataField
+                  value={formData.cpf}
+                  fieldName="cpf"
+                  isRevealed={sensitiveFields.cpf}
+                  onReveal={() => handleRevealSensitive("cpf")}
+                  onHide={() => handleHideSensitive("cpf")}
+                  timeRemaining={sensitiveFields.cpf ? 10 : 0}
+                  isEditable={false}
+                  type="text"
+                  mask="000.000.000-00"
+                  placeholder="•••.•••.•••-••"
+                />
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 0.5,
+                    mt: 0.5,
+                  }}
                 >
-                  Para alterar CPF, contate a secretaria
-                </Typography>
+                  <WarningIcon color="warning" sx={{ fontSize: "0.875rem" }} />
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ fontSize: "0.75rem" }}
+                  >
+                    Para alterar CPF, contate a secretaria
+                  </Typography>
+                </Box>
               </Box>
             </Grid>
 
@@ -279,6 +288,108 @@ export const DocumentsSection: React.FC<ProfileSectionProps> = ({
                 }}
                 error={!!errors.rgIssueDate}
                 helperText={errors.rgIssueDate || "Opcional"}
+              />
+            </Grid>
+
+            {/* Passaporte */}
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                label="Passaporte"
+                value={formData.passport || ""}
+                onChange={(e) => handleFieldChange("passport", e.target.value)}
+                disabled={!isEditing}
+                placeholder="BR123456789"
+                error={!!errors.passport}
+                helperText={errors.passport || "Opcional"}
+                inputProps={{ maxLength: 20 }}
+              />
+            </Grid>
+
+            {/* Data de Emissão do Passaporte */}
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                label="Data de Emissão do Passaporte"
+                type="date"
+                value={formData.passportIssueDate || ""}
+                onChange={(e) =>
+                  handleFieldChange("passportIssueDate", e.target.value)
+                }
+                disabled={!isEditing}
+                InputLabelProps={{ shrink: true }}
+                error={!!errors.passportIssueDate}
+                helperText={errors.passportIssueDate || "Opcional"}
+              />
+            </Grid>
+
+            {/* Data de Vencimento do Passaporte */}
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                label="Data de Vencimento do Passaporte"
+                type="date"
+                value={formData.passportExpiryDate || ""}
+                onChange={(e) =>
+                  handleFieldChange("passportExpiryDate", e.target.value)
+                }
+                disabled={!isEditing}
+                InputLabelProps={{ shrink: true }}
+                error={!!errors.passportExpiryDate}
+                helperText={errors.passportExpiryDate || "Opcional"}
+              />
+            </Grid>
+
+            {/* Título de Eleitor */}
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                label="Título de Eleitor"
+                value={formData.voterId || ""}
+                onChange={(e) => handleFieldChange("voterId", e.target.value)}
+                disabled={!isEditing}
+                placeholder="000000000000"
+                error={!!errors.voterId}
+                helperText={errors.voterId || "Opcional"}
+                inputProps={{ maxLength: 12 }}
+              />
+            </Grid>
+
+            {/* Carteira de Trabalho */}
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                label="Carteira de Trabalho"
+                value={formData.workPermit || ""}
+                onChange={(e) =>
+                  handleFieldChange("workPermit", e.target.value)
+                }
+                disabled={!isEditing}
+                placeholder="WP-2024-001"
+                error={!!errors.workPermit}
+                helperText={errors.workPermit || "Opcional"}
+                inputProps={{ maxLength: 20 }}
+              />
+            </Grid>
+
+            {/* Outros Documentos */}
+            <Grid size={{ xs: 12 }}>
+              <TextField
+                fullWidth
+                label="Outros Documentos"
+                multiline
+                rows={2}
+                value={formData.otherDocuments?.join(", ") || ""}
+                onChange={(e) => {
+                  const values = e.target.value.split(", ").filter(Boolean);
+                  handleFieldChange("otherDocuments", values);
+                }}
+                disabled={!isEditing}
+                placeholder="CNH, Título de Eleitor, etc."
+                error={!!errors.otherDocuments}
+                helperText={
+                  errors.otherDocuments || "Opcional - Separe por vírgula"
+                }
               />
             </Grid>
 
