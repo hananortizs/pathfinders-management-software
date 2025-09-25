@@ -107,5 +107,11 @@ export const useAuth = () => {
     hasAnyRole,
     isAdmin,
     canAccess,
+    
+    // Computed properties for dashboard
+    name: user?.fullName || user?.firstName + ' ' + user?.lastName || 'Usuário',
+    email: user?.email || '',
+    role: user?.roles?.[0] || 'member',
+    id: user?.id || '',
   };
 };

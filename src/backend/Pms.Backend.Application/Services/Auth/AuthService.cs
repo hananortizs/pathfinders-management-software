@@ -113,8 +113,8 @@ public class AuthService : IAuthService
 
             // Buscar papéis e escopos do usuário com RoleCatalog incluído
             var assignments = await _unitOfWork.Repository<Assignment>()
-                .GetWithIncludesAsync(a => a.MemberId == member.Id && a.IsActive, 
-                                     cancellationToken, 
+                .GetWithIncludesAsync(a => a.MemberId == member.Id && a.IsActive,
+                                     cancellationToken,
                                      a => a.RoleCatalog);
 
             // Usar o nome da role do RoleCatalog
@@ -253,7 +253,7 @@ public class AuthService : IAuthService
             var createdAtClaim = jwtToken.Claims.FirstOrDefault(x => x.Type == "created_at");
             var updatedAtClaim = jwtToken.Claims.FirstOrDefault(x => x.Type == "updated_at");
 
-            return new UserInfoDto
+            var userInfo = new UserInfoDto
             {
                 Id = userId,
                 Email = emailClaim?.Value ?? string.Empty,
@@ -265,6 +265,11 @@ public class AuthService : IAuthService
                 CreatedAtUtc = DateTime.TryParse(createdAtClaim?.Value, out var createdAt) ? createdAt : DateTime.UtcNow,
                 UpdatedAtUtc = DateTime.TryParse(updatedAtClaim?.Value, out var updatedAt) ? updatedAt : DateTime.UtcNow
             };
+
+            _logger.LogInformation("🔍 UserInfo extraído do token - Email: {Email}, FirstName: {FirstName}, LastName: {LastName}",
+                userInfo.Email, userInfo.FirstName, userInfo.LastName);
+
+            return userInfo;
         }
         catch (Exception ex)
         {

@@ -234,5 +234,22 @@ public interface IMemberService
     /// <returns>A BaseResponse containing a boolean indicating if the CPF is available.</returns>
     Task<BaseResponse<bool>> IsCpfAvailableAsync(string cpf, Guid? excludeMemberId = null, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Updates contacts for a specific member.
+    /// </summary>
+    /// <param name="memberId">The unique identifier of the Member.</param>
+    /// <param name="contacts">The updated contacts data.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A BaseResponse containing the updated contacts if successful, or an error.</returns>
+    Task<BaseResponse<IEnumerable<MemberContactDto>>> UpdateMemberContactsAsync(Guid memberId, IEnumerable<MemberContactDto> contacts, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Updates contacts for the authenticated user (handles validation and authentication).
+    /// </summary>
+    /// <param name="request">The request containing token and contacts data.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A BaseResponse containing the updated contacts if successful, or an error.</returns>
+    Task<BaseResponse<IEnumerable<MemberContactDto>>> UpdateMyContactsAsync(UpdateMyContactsRequestDto request, CancellationToken cancellationToken = default);
+
     #endregion
 }

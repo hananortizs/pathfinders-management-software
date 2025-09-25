@@ -25,6 +25,7 @@ public partial class MemberService : IMemberService
     private readonly IConfiguration _configuration;
     private readonly IMemberValidationService _validationService;
     private readonly IScarfGatingService _scarfGatingService;
+    private readonly IAuthService _authService;
 
     /// <summary>
     /// Initializes a new instance of the MemberService
@@ -34,13 +35,15 @@ public partial class MemberService : IMemberService
     /// <param name="configuration">Configuration instance for JWT settings</param>
     /// <param name="validationService">Service for member data validation</param>
     /// <param name="scarfGatingService">Service for scarf gating validation</param>
-    public MemberService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IMemberValidationService validationService, IScarfGatingService scarfGatingService)
+    /// <param name="authService">Service for authentication</param>
+    public MemberService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IMemberValidationService validationService, IScarfGatingService scarfGatingService, IAuthService authService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _configuration = configuration;
         _validationService = validationService;
         _scarfGatingService = scarfGatingService;
+        _authService = authService;
     }
 
     #region Member CRUD Operations
@@ -65,6 +68,35 @@ public partial class MemberService : IMemberService
             var contacts = await _unitOfWork.Repository<Contact>()
                 .GetAsync(c => c.EntityId == member.Id && c.EntityType == "Member" && !c.IsDeleted, cancellationToken);
             member.Contacts = contacts.ToList();
+
+            // Carregar endereços
+            var addresses = await _unitOfWork.Repository<Domain.Entities.Address>()
+                .GetAsync(a => a.EntityId == member.Id && a.EntityType == "Member" && !a.IsDeleted, cancellationToken);
+            member.Addresses = addresses.ToList();
+
+            // Carregar Memberships ativas para obter Club e Unit
+            var activeMemberships = await _unitOfWork.Repository<Domain.Entities.Membership>()
+                .GetAsync(m => m.MemberId == member.Id && m.IsActive && !m.IsDeleted,
+                    cancellationToken);
+
+            if (activeMemberships.Any())
+            {
+                var activeMembership = activeMemberships.First();
+                // Carregar Club e Unit separadamente
+                var club = await _unitOfWork.Repository<Club>()
+                    .GetByIdAsync(activeMembership.ClubId, cancellationToken);
+                var unit = activeMembership.UnitId.HasValue ?
+                    await _unitOfWork.Repository<Unit>().GetByIdAsync(activeMembership.UnitId.Value, cancellationToken) :
+                    null;
+
+                Console.WriteLine($"  - Club: {club?.Name ?? "N/A"}");
+                Console.WriteLine($"  - Unit: {unit?.Name ?? "N/A"}");
+            }
+            else
+            {
+                Console.WriteLine($"  - Club: Nenhum clube ativo");
+                Console.WriteLine($"  - Unit: Nenhuma unidade ativa");
+            }
 
             // Debug: Log dos contatos carregados
             Console.WriteLine($"Member {member.FirstName} {member.LastName} - Contatos carregados: {member.Contacts.Count}");
@@ -729,14 +761,51 @@ public partial class MemberService : IMemberService
                     .GetAsync(c => c.EntityId == member.Id && c.EntityType == "Member" && !c.IsDeleted, cancellationToken);
                 member.Contacts = contacts.ToList();
 
-                // Carregar memberships ativos
+                // Carregar memberships ativos com Club e Unit
                 var memberships = await _unitOfWork.Repository<Domain.Entities.Membership>()
                     .GetAsync(m => m.MemberId == member.Id && m.IsActive && !m.IsDeleted, cancellationToken);
+
+                // Carregar Club e Unit para cada membership
+                foreach (var membership in memberships)
+                {
+                    if (membership.ClubId != Guid.Empty)
+                    {
+                        var club = await _unitOfWork.Repository<Club>()
+                            .GetByIdAsync(membership.ClubId, cancellationToken);
+                        if (club != null)
+                        {
+                            membership.Club = club;
+                        }
+                    }
+
+                    if (membership.UnitId.HasValue)
+                    {
+                        var unit = await _unitOfWork.Repository<Unit>()
+                            .GetByIdAsync(membership.UnitId.Value, cancellationToken);
+                        membership.Unit = unit;
+                    }
+                }
+
                 member.Memberships = memberships.ToList();
 
-                // Carregar assignments ativos
+                // Carregar assignments ativos com RoleCatalog
                 var assignments = await _unitOfWork.Repository<Assignment>()
                     .GetAsync(a => a.MemberId == member.Id && a.IsActive && !a.IsDeleted, cancellationToken);
+
+                // Carregar RoleCatalog para cada assignment
+                foreach (var assignment in assignments)
+                {
+                    if (assignment.RoleId != Guid.Empty)
+                    {
+                        var roleCatalog = await _unitOfWork.Repository<RoleCatalog>()
+                            .GetByIdAsync(assignment.RoleId, cancellationToken);
+                        if (roleCatalog != null)
+                        {
+                            assignment.RoleCatalog = roleCatalog;
+                        }
+                    }
+                }
+
                 member.Assignments = assignments.ToList();
             }
 
@@ -1364,6 +1433,156 @@ public partial class MemberService : IMemberService
             .FirstOrDefault(m => m.IsActive && !m.IsDeleted);
 
         return activeMembership?.Club?.Name ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Atualiza contatos de um membro
+    /// </summary>
+    /// <param name="memberId">ID do membro</param>
+    /// <param name="contacts">Lista de contatos atualizados</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Lista de contatos atualizados</returns>
+    public async Task<BaseResponse<IEnumerable<MemberContactDto>>> UpdateMemberContactsAsync(Guid memberId, IEnumerable<MemberContactDto> contacts, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Verificar se o membro existe
+            var member = await _unitOfWork.Repository<Member>()
+                .GetByIdAsync(memberId, cancellationToken);
+
+            if (member == null)
+            {
+                return BaseResponse<IEnumerable<MemberContactDto>>.ErrorResult("Membro não encontrado");
+            }
+
+            // Remover contatos existentes
+            var existingContacts = await _unitOfWork.Repository<Contact>()
+                .GetAsync(c => c.EntityId == memberId && c.EntityType == "Member", cancellationToken);
+
+            foreach (var contact in existingContacts)
+            {
+                await _unitOfWork.Repository<Contact>().DeleteAsync(contact.Id, cancellationToken);
+            }
+
+            // Adicionar novos contatos
+            foreach (var contactDto in contacts)
+            {
+                var newContact = new Contact
+                {
+                    EntityId = memberId,
+                    EntityType = "Member",
+                    Type = contactDto.Type,
+                    Value = contactDto.Value,
+                    IsPrimary = contactDto.IsPrimary,
+                    IsActive = true
+                };
+                await _unitOfWork.Repository<Contact>().AddAsync(newContact, cancellationToken);
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Mapear para DTOs de retorno
+            var contactDtos = contacts.ToList();
+
+            return BaseResponse<IEnumerable<MemberContactDto>>.SuccessResult(contactDtos);
+        }
+        catch (Exception ex)
+        {
+            return BaseResponse<IEnumerable<MemberContactDto>>.InternalServerErrorResult($"Erro ao atualizar contatos: {ex.Message}", true);
+        }
+    }
+
+    /// <summary>
+    /// Atualiza contatos do usuário autenticado (com validação e autenticação)
+    /// </summary>
+    /// <param name="request">Request contendo token e contatos</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Lista de contatos atualizados</returns>
+    public async Task<BaseResponse<IEnumerable<MemberContactDto>>> UpdateMyContactsAsync(UpdateMyContactsRequestDto request, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Validar dados de entrada
+            if (string.IsNullOrEmpty(request.Token))
+            {
+                return BaseResponse<IEnumerable<MemberContactDto>>.ErrorResult("Token é obrigatório", statusCode: 400);
+            }
+
+            if (request.Contacts == null || !request.Contacts.Any())
+            {
+                return BaseResponse<IEnumerable<MemberContactDto>>.ErrorResult("Lista de contatos não pode ser vazia", statusCode: 400);
+            }
+
+            // Validar token e obter informações do usuário
+            var userInfo = _authService.GetUserInfoFromToken(request.Token);
+            
+            if (!userInfo.IsSuccess || userInfo.Data == null)
+            {
+                return BaseResponse<IEnumerable<MemberContactDto>>.UnauthorizedResult("Token inválido ou expirado");
+            }
+
+            var userId = userInfo.Data.Id;
+
+            // Validar cada contato
+            foreach (var contact in request.Contacts)
+            {
+                if (string.IsNullOrWhiteSpace(contact.Value))
+                {
+                    return BaseResponse<IEnumerable<MemberContactDto>>.ErrorResult($"Valor do contato {contact.Type} não pode estar vazio", statusCode: 400);
+                }
+
+                if (contact.Value.Length < 3)
+                {
+                    return BaseResponse<IEnumerable<MemberContactDto>>.ErrorResult($"Valor do contato {contact.Type} deve ter pelo menos 3 caracteres", statusCode: 400);
+                }
+            }
+
+            // Verificar se o membro existe
+            var member = await _unitOfWork.Repository<Member>()
+                .GetByIdAsync(userId, cancellationToken);
+
+            if (member == null)
+            {
+                return BaseResponse<IEnumerable<MemberContactDto>>.NotFoundResult("Membro não encontrado");
+            }
+
+            // Remover contatos existentes
+            var existingContacts = await _unitOfWork.Repository<Contact>()
+                .GetAsync(c => c.EntityId == userId && c.EntityType == "Member", cancellationToken);
+
+            foreach (var contact in existingContacts)
+            {
+                await _unitOfWork.Repository<Contact>().DeleteAsync(contact.Id, cancellationToken);
+            }
+
+            // Adicionar novos contatos
+            foreach (var contactDto in request.Contacts)
+            {
+                var newContact = new Contact
+                {
+                    EntityId = userId,
+                    EntityType = "Member",
+                    Type = contactDto.Type,
+                    Value = contactDto.Value.Trim(),
+                    IsPrimary = contactDto.IsPrimary,
+                    IsActive = true,
+                    CreatedAtUtc = DateTime.UtcNow,
+                    UpdatedAtUtc = DateTime.UtcNow
+                };
+                await _unitOfWork.Repository<Contact>().AddAsync(newContact, cancellationToken);
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Mapear para DTOs de retorno
+            var contactDtos = request.Contacts.ToList();
+
+            return BaseResponse<IEnumerable<MemberContactDto>>.SuccessResult(contactDtos, "Contatos atualizados com sucesso");
+        }
+        catch (Exception ex)
+        {
+            return BaseResponse<IEnumerable<MemberContactDto>>.InternalServerErrorResult($"Erro ao atualizar contatos: {ex.Message}", true);
+        }
     }
 
     #endregion

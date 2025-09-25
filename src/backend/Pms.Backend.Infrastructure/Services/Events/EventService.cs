@@ -713,13 +713,13 @@ public class EventService : Pms.Backend.Application.Interfaces.Events.IEventServ
     /// <summary>
     /// Mapeia entidade para DTO
     /// </summary>
-    private async Task<EventDto> MapToEventDtoAsync(OfficialEvent eventEntity)
+    private Task<EventDto> MapToEventDtoAsync(OfficialEvent eventEntity)
     {
         // Buscar nome do organizador
         string? organizerName = null;
         // TODO: Implementar busca do nome do organizador baseado no nível e ID
 
-        return new EventDto
+        return Task.FromResult(new EventDto
         {
             Id = eventEntity.Id,
             Name = eventEntity.Name,
@@ -759,7 +759,7 @@ public class EventService : Pms.Backend.Application.Interfaces.Events.IEventServ
             }).ToList(),
                 CreatedAt = eventEntity.CreatedAtUtc,
                 UpdatedAt = eventEntity.UpdatedAtUtc
-        };
+        });
     }
 
     /// <summary>

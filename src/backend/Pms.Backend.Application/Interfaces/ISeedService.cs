@@ -29,6 +29,27 @@ public interface ISeedService
     Task<BaseResponse<bool>> CreateHananUserAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Cria a unidade Falcão para o clube Pássaro Celeste
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Resultado da operação</returns>
+    Task<BaseResponse<bool>> CreateFalconUnitAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Cria o membro Marcelo Martins como diretor do clube Pássaro Celeste
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Resultado da operação</returns>
+    Task<BaseResponse<bool>> CreateMarceloDirectorAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Cria o membro Ricardo Ferreira Ortiz Gonzaga e associa à unidade Falcão
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Resultado da operação</returns>
+    Task<BaseResponse<bool>> CreateRicardoMemberAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Executa todos os seeds necessários para o MVP0
     /// </summary>
     /// <param name="cancellationToken">Token de cancelamento</param>

@@ -258,6 +258,11 @@ public class Member : BaseEntity
     public ICollection<Contact> Contacts { get; set; } = new List<Contact>();
 
     /// <summary>
+    /// Navigation property to addresses
+    /// </summary>
+    public ICollection<Address> Addresses { get; set; } = new List<Address>();
+
+    /// <summary>
     /// Navigation property to baptism records
     /// </summary>
     public ICollection<BaptismRecord> BaptismRecords { get; set; } = new List<BaptismRecord>();

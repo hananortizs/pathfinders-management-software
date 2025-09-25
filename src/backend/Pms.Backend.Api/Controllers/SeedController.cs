@@ -161,4 +161,107 @@ public class SeedController : ControllerBase
             return StatusCode(500, BaseResponse<bool>.ErrorResult("Erro interno do servidor"));
         }
     }
+
+    /// <summary>
+    /// Cria a unidade Falcão para o clube Pássaro Celeste
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Resultado da operação</returns>
+    [HttpPost("falcon-unit")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CreateFalconUnit(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Criando unidade Falcão...");
+
+            var result = await _seedService.CreateFalconUnitAsync(cancellationToken);
+
+            if (!result.IsSuccess)
+            {
+                _logger.LogWarning("Falha ao criar unidade Falcão: {Error}", result.Message);
+                return BadRequest(result);
+            }
+
+            _logger.LogInformation("Unidade Falcão criada com sucesso");
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro inesperado ao criar unidade Falcão");
+            return StatusCode(500, BaseResponse<bool>.ErrorResult("Erro interno do servidor"));
+        }
+    }
+
+    /// <summary>
+    /// Cria o membro Marcelo Martins como diretor do clube Pássaro Celeste
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Resultado da operação</returns>
+    [HttpPost("marcelo-director")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CreateMarceloDirector(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Criando membro Marcelo Martins como diretor...");
+
+            var result = await _seedService.CreateMarceloDirectorAsync(cancellationToken);
+
+            if (!result.IsSuccess)
+            {
+                _logger.LogWarning("Falha ao criar membro Marcelo: {Error}", result.Message);
+                return BadRequest(result);
+            }
+
+            _logger.LogInformation("Membro Marcelo Martins criado como diretor com sucesso");
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro inesperado ao criar membro Marcelo");
+            return StatusCode(500, BaseResponse<bool>.ErrorResult("Erro interno do servidor"));
+        }
+    }
+
+    /// <summary>
+    /// Cria o membro Ricardo Ferreira Ortiz Gonzaga e o associa à unidade Falcão
+    /// </summary>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Resultado da operação</returns>
+    [HttpPost("ricardo-member")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CreateRicardoMember(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Criando membro Ricardo Gonzaga...");
+
+            var result = await _seedService.CreateRicardoMemberAsync(cancellationToken);
+
+            if (!result.IsSuccess)
+            {
+                _logger.LogWarning("Falha ao criar membro Ricardo: {Error}", result.Message);
+                return BadRequest(result);
+            }
+
+            _logger.LogInformation("Membro Ricardo Gonzaga criado com sucesso");
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro inesperado ao criar membro Ricardo");
+            return StatusCode(500, BaseResponse<bool>.ErrorResult("Erro interno do servidor"));
+        }
+    }
+
 }

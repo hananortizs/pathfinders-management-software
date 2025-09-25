@@ -18,9 +18,11 @@ public class MemberMappingProfile : Profile
     {
         // Member mappings
         CreateMap<Member, MemberDto>()
-            .ForMember(dest => dest.PrimaryEmail, opt => opt.MapFrom(src => GetPrimaryEmail(src)))
-            .ForMember(dest => dest.PrimaryPhone, opt => opt.MapFrom(src => GetPrimaryPhone(src)))
+            .ForMember(dest => dest.PrimaryEmail, opt => opt.MapFrom(src => MemberMappingHelpers.GetPrimaryEmail(src)))
+            .ForMember(dest => dest.PrimaryPhone, opt => opt.MapFrom(src => MemberMappingHelpers.GetPrimaryPhone(src)))
             .ForMember(dest => dest.MiddleNames, opt => opt.MapFrom(src => src.MiddleNames))
+            .ForMember(dest => dest.ClubName, opt => opt.MapFrom(src => MemberMappingHelpers.GetClubName(src)))
+            .ForMember(dest => dest.UnitName, opt => opt.MapFrom(src => MemberMappingHelpers.GetUnitName(src)))
             .ReverseMap();
 
         // Optimized member list mapping
@@ -183,6 +185,7 @@ public class MemberMappingProfile : Profile
 
         // Auth mappings
         CreateMap<Member, UserInfoDto>()
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => GetPrimaryEmail(src)))
             .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.Assignments
                 .Where(a => a.IsActive)
                 .Select(a => a.RoleCatalog.Name)
@@ -416,4 +419,50 @@ public class CreateUserCredentialDto
     /// Whether the account is active
     /// </summary>
     public bool IsActive { get; set; } = true;
+}
+
+/// <summary>
+/// Helper methods for MemberMappingProfile
+/// </summary>
+public static class MemberMappingHelpers
+{
+    /// <summary>
+    /// Helper method to get primary email from member contacts
+    /// </summary>
+    public static string GetPrimaryEmail(Member member)
+    {
+        return member.Contacts?
+            .FirstOrDefault(c => c.Type == ContactType.Email && c.IsPrimary && c.IsActive)?
+            .Value ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Helper method to get primary phone from member contacts
+    /// </summary>
+    public static string GetPrimaryPhone(Member member)
+    {
+        return member.Contacts?
+            .FirstOrDefault(c => c.Type == ContactType.Mobile && c.IsPrimary && c.IsActive)?
+            .Value ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Helper method to get club name from active membership
+    /// </summary>
+    public static string GetClubName(Member member)
+    {
+        var activeMembership = member.Memberships?
+            .FirstOrDefault(m => m.IsActive && !m.IsDeleted);
+        return activeMembership?.Club?.Name ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Helper method to get unit name from active membership
+    /// </summary>
+    public static string GetUnitName(Member member)
+    {
+        var activeMembership = member.Memberships?
+            .FirstOrDefault(m => m.IsActive && !m.IsDeleted);
+        return activeMembership?.Unit?.Name ?? string.Empty;
+    }
 }

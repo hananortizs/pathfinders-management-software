@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Pms.Backend.Application.DTOs.Members;
 using Pms.Backend.Application.Interfaces;
 using Pms.Backend.Application.DTOs;
+using Pms.Backend.Application.DTOs.Auth;
 
 namespace Pms.Backend.Api.Controllers
 {
@@ -160,5 +161,56 @@ namespace Pms.Backend.Api.Controllers
             return ProcessResponse(result);
         }
 
+        /// <summary>
+        /// Obtém dados do perfil do usuário autenticado
+        /// </summary>
+        /// <param name="request">Token de autenticação</param>
+        /// <param name="cancellationToken">Token de cancelamento</param>
+        /// <returns>Dados do perfil do usuário</returns>
+        [HttpPost("me")]
+        [ProducesResponseType(typeof(BaseResponse<MemberDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetMyProfile(
+            [FromBody] TokenRequestDto request,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Buscando perfil do usuário autenticado");
+
+            // Validar token e obter informações do usuário
+            var userInfo = _authService.GetUserInfoFromToken(request.Token);
+            if (!userInfo.IsSuccess || userInfo.Data == null)
+            {
+                return Unauthorized(new BaseResponse<object>
+                {
+                    IsSuccess = false,
+                    Message = "Token inválido ou expirado",
+                    StatusCode = 401
+                });
+            }
+
+            var userId = userInfo.Data.Id;
+            var result = await _memberService.GetMemberAsync(userId, cancellationToken);
+            return ProcessResponse(result);
+        }
+
+        /// <summary>
+        /// Atualiza contatos do usuário autenticado
+        /// </summary>
+        /// <param name="request">Dados dos contatos atualizados</param>
+        /// <param name="cancellationToken">Token de cancelamento</param>
+        /// <returns>Contatos atualizados</returns>
+        [HttpPatch("me/contacts")]
+        [ProducesResponseType(typeof(BaseResponse<IEnumerable<MemberContactDto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> UpdateMyContacts(
+            [FromBody] UpdateMyContactsRequestDto request,
+            CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Atualizando contatos do usuário autenticado");
+
+            var result = await _memberService.UpdateMyContactsAsync(request, cancellationToken);
+            return ProcessResponse(result);
+        }
     }
 }

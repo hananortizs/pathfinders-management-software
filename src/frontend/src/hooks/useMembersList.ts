@@ -305,7 +305,7 @@ export const useMembersList = (
 
     const grouped: Record<string, MemberSummary[]> = {};
 
-    members.forEach((member) => {
+    members.forEach((member: any) => {
       const groupKey = getGroupKey(member, groupingStrategy);
       if (!grouped[groupKey]) {
         grouped[groupKey] = [];

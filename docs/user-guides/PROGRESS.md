@@ -5,6 +5,7 @@ o noá e# PROGRESS.md - PathfinderManagementSoftware
 - **MVP Atual**: MVP-0 (Núcleo operacional)
 - **Status**: 🚧 EM DESENVOLVIMENTO
 - **Última Atualização**: 2024-12-19
+- **Foco Atual**: Sistema de Validação e Interface de Usuário
 
 ## Milestones MVP-0
 
@@ -13,6 +14,18 @@ o noá e# PROGRESS.md - PathfinderManagementSoftware
 - [x] Estrutura base da solution (Clean Architecture)
 - [x] Configuração de projetos (.csproj)
 - [x] EditorConfig e ferramentas dotnet
+- [x] **Sistema de Validação Frontend/Backend**
+  - [x] Validação de contatos (telefone, email)
+  - [x] Formatação internacional de telefones
+  - [x] Validação de contatos primários
+  - [x] Design responsivo mobile-first
+  - [x] Validação de autenticação JWT
+  - [x] Refatoração de arquitetura (Controller → Service)
+- [x] **Interface de Usuário**
+  - [x] Componente PhoneInputWithDDI
+  - [x] SensitiveDataField com formatação
+  - [x] Validação visual de formulários
+  - [x] Espaçamento e responsividade otimizados
 
 ### 🚧 Em Progresso
 

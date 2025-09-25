@@ -36,9 +36,9 @@ public class TimelineService : Pms.Backend.Application.Interfaces.Timeline.ITime
             var query = _context.TimelineEntries
                 .Include(t => t.Member)
                 .Include(t => t.Membership)
-                    .ThenInclude(m => m.Club)
+                    .ThenInclude(m => m!.Club)
                 .Include(t => t.Assignment)
-                    .ThenInclude(a => a.RoleCatalog)
+                    .ThenInclude(a => a!.RoleCatalog)
                 .Include(t => t.Event)
                 .Where(t => t.MemberId == memberId);
 
@@ -69,9 +69,9 @@ public class TimelineService : Pms.Backend.Application.Interfaces.Timeline.ITime
             var query = _context.TimelineEntries
                 .Include(t => t.Member)
                 .Include(t => t.Membership)
-                    .ThenInclude(m => m.Club)
+                    .ThenInclude(m => m!.Club)
                 .Include(t => t.Assignment)
-                    .ThenInclude(a => a.RoleCatalog)
+                    .ThenInclude(a => a!.RoleCatalog)
                 .Include(t => t.Event)
                 .Where(t => t.Membership != null && t.Membership.ClubId == clubId);
 
@@ -102,9 +102,9 @@ public class TimelineService : Pms.Backend.Application.Interfaces.Timeline.ITime
             var query = _context.TimelineEntries
                 .Include(t => t.Member)
                 .Include(t => t.Membership)
-                    .ThenInclude(m => m.Club)
+                    .ThenInclude(m => m!.Club)
                 .Include(t => t.Assignment)
-                    .ThenInclude(a => a.RoleCatalog)
+                    .ThenInclude(a => a!.RoleCatalog)
                 .Include(t => t.Event)
                 .AsQueryable();
 
@@ -181,9 +181,9 @@ public class TimelineService : Pms.Backend.Application.Interfaces.Timeline.ITime
             var query = _context.TimelineEntries
                 .Include(t => t.Member)
                 .Include(t => t.Membership)
-                    .ThenInclude(m => m.Club)
+                    .ThenInclude(m => m!.Club)
                 .Include(t => t.Assignment)
-                    .ThenInclude(a => a.RoleCatalog)
+                    .ThenInclude(a => a!.RoleCatalog)
                 .Include(t => t.Event)
                 .AsQueryable();
 
@@ -338,9 +338,9 @@ public class TimelineService : Pms.Backend.Application.Interfaces.Timeline.ITime
             var entry = await _context.TimelineEntries
                 .Include(t => t.Member)
                 .Include(t => t.Membership)
-                    .ThenInclude(m => m.Club)
+                    .ThenInclude(m => m!.Club)
                 .Include(t => t.Assignment)
-                    .ThenInclude(a => a.RoleCatalog)
+                    .ThenInclude(a => a!.RoleCatalog)
                 .Include(t => t.Event)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
@@ -546,12 +546,12 @@ public class TimelineService : Pms.Backend.Application.Interfaces.Timeline.ITime
     /// <summary>
     /// Mapeia entidade para DTO
     /// </summary>
-    private async Task<TimelineEntryDto> MapToTimelineEntryDtoAsync(TimelineEntry entry)
+    private Task<TimelineEntryDto> MapToTimelineEntryDtoAsync(TimelineEntry entry)
     {
         // Converter UTC para BRT (UTC-3)
         var eventDateBrt = entry.EventDateUtc.AddHours(-3);
 
-        return new TimelineEntryDto
+        return Task.FromResult(new TimelineEntryDto
         {
             Id = entry.Id,
             MemberId = entry.MemberId,
@@ -573,7 +573,7 @@ public class TimelineService : Pms.Backend.Application.Interfaces.Timeline.ITime
             IsManual = entry.Data != null && entry.Data.Contains("\"IsManual\":true"),
                 CreatedAt = entry.CreatedAtUtc,
                 UpdatedAt = entry.UpdatedAtUtc
-        };
+        });
     }
 
     /// <summary>

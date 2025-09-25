@@ -815,6 +815,74 @@ InvestitureWitness {
 
 ---
 
+## 🩹 PATCH — Dashboard, Eventos por Hierarquia e Edição de Dados (MVP0)
+
+> **Incorporação:** anexar este bloco ao final do arquivo `.mdc` existente.  
+> **Objetivo:** definir regras de backend para Dashboard, eventos hierárquicos e edição de dados pessoais.
+
+### 1) Dashboard — APIs e Endpoints
+- **GET /dashboard** - Dados da dashboard por papel do usuário
+  - **Response**: KPIs agregados, seções específicas por papel, filtros persistentes
+  - **Escopo**: baseado no papel (clube/distrito/região/global)
+  - **Performance**: cache de 5 minutos para KPIs, 1 minuto para dados dinâmicos
+- **GET /dashboard/kpis** - KPIs específicos com drill-down
+  - **Query params**: período, unidade, status, papel
+  - **Response**: dados agregados sem PII individual
+- **GET /dashboard/sections** - Seções específicas por papel
+  - **Response**: convites pendentes, aprovações, capacidades, eventos próximos
+
+### 2) Eventos por Hierarquia — Backend
+- **GET /events/hierarchy** - Eventos do encadeamento hierárquico do usuário
+  - **Regra**: Unidade → Clube → Distrito → Região → Associação → União
+  - **Query params**: nível, período, elegibilidade
+  - **Response**: eventos ordenados cronologicamente, badges de elegibilidade
+- **GET /events/eligibility/{eventId}** - Verificar elegibilidade do usuário
+  - **Response**: Elegível/Pendente/Inelegível com motivos
+- **POST /events/{eventId}/register** - Inscrição em evento
+  - **Validações**: elegibilidade, capacidade, regras do evento
+- **GET /events/{eventId}/participants** - Participantes (por papel)
+  - **Admin/Regional/Distrital**: visão agregada sem PII
+  - **Diretor/Secretário**: lista completa do clube
+
+### 3) Edição de Dados Pessoais — Regras de Backend
+- **PUT /members/{id}/personal-data** - Edição de dados pessoais
+  - **Validações RBAC**: usuário próprio ou diretor/secretário do clube
+  - **Campos editáveis**: nome social, contatos, endereço, foto
+  - **Campos restritos**: CPF, data nascimento (não editáveis no MVP0)
+- **PUT /members/{id}/contacts** - Edição de contatos
+  - **Validações**: unicidade de email/telefone, verificação
+  - **Auditoria**: log de alterações de contato primário
+- **GET /members/{id}/sensitive-data** - Dados sensíveis com auditoria
+  - **Response**: dados mascarados, botão "revelar" com auditoria
+  - **Auditoria**: quem, quando, qual campo, requestId
+- **PUT /members/{id}/medical-info** - Dados médicos
+  - **RBAC**: apenas o próprio membro pode editar
+  - **Secretário**: apenas leitura
+
+### 4) Validações e Regras de Negócio
+- **Unicidade**: CPF, email, telefone (global, incluindo arquivados)
+- **Consistência hierárquica**: membro deve estar no mesmo clube da unidade
+- **Capacidade de unidade**: verificar antes de associar membro
+- **Elegibilidade de eventos**: idade, cargo, sexo, investidura de lenço
+- **Auditoria de dados sensíveis**: log completo de visualizações
+
+### 5) Códigos de Erro Adicionais
+| Código | Significado                       | Uso                                                    |
+| --- | --- | --- |
+| 403    | DataEditNotAllowed                | Tentativa de editar dados restritos                    |
+| 422    | DataValidationFailed              | Validação de dados pessoais falhou                     |
+| 422    | ContactAlreadyExists              | Email/telefone já existe em outro membro               |
+| 422    | EventNotEligible                  | Membro não elegível para o evento                      |
+| 422    | UnitCapacityExceeded              | Unidade sem capacidade disponível                      |
+
+### 6) Performance e Cache
+- **Dashboard KPIs**: cache de 5 minutos (Redis se habilitado)
+- **Eventos hierárquicos**: cache de 2 minutos
+- **Dados de membros**: cache de 1 minuto para dados não sensíveis
+- **Dados sensíveis**: sem cache, sempre fresh
+
+---
+
 ## 📝 Notas Importantes
 
 ### ⚠️ Orientações Finais

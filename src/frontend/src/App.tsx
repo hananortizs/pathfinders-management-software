@@ -17,11 +17,13 @@ import { ThemeProvider } from "./theme";
 import MainLayout from "./components/layout/MainLayout";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AuthInitializer from "./components/auth/AuthInitializer";
+import { SidebarProvider } from "./contexts/SidebarContext";
 
 // Lazy loading para otimizar bundle size
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const MembersPage = lazy(() => import("./pages/MembersPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 
 // Configuração do React Query
 const queryClient = new QueryClient({
@@ -40,67 +42,80 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthInitializer>
-          <Router>
-            <Suspense
-              fallback={
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    height: "100vh",
-                  }}
-                >
-                  <div>Carregando...</div>
-                </div>
-              }
-            >
-              <Routes>
-                {/* Rota de Login */}
-                <Route path="/login" element={<LoginPage />} />
+          <SidebarProvider>
+            <Router>
+              <Suspense
+                fallback={
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      height: "100vh",
+                    }}
+                  >
+                    <div>Carregando...</div>
+                  </div>
+                }
+              >
+                <Routes>
+                  {/* Rota de Login */}
+                  <Route path="/login" element={<LoginPage />} />
 
-                {/* Rotas Protegidas */}
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <Navigate to="/dashboard" replace />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  }
-                />
+                  {/* Rotas Protegidas */}
+                  <Route
+                    path="/"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <Navigate to="/dashboard" replace />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <DashboardPage />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  }
-                />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <DashboardPage />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-                <Route
-                  path="/members"
-                  element={
-                    <ProtectedRoute>
-                      <MainLayout>
-                        <MembersPage />
-                      </MainLayout>
-                    </ProtectedRoute>
-                  }
-                />
+                  <Route
+                    path="/members"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <MembersPage />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
 
-                {/* Rota de fallback */}
-                <Route
-                  path="*"
-                  element={<Navigate to="/dashboard" replace />}
-                />
-              </Routes>
-            </Suspense>
-          </Router>
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout>
+                          <ProfilePage />
+                        </MainLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Rota de fallback */}
+                  <Route
+                    path="*"
+                    element={<Navigate to="/dashboard" replace />}
+                  />
+                </Routes>
+              </Suspense>
+            </Router>
+          </SidebarProvider>
         </AuthInitializer>
       </ThemeProvider>
 
@@ -111,3 +126,4 @@ function App() {
 }
 
 export default App;
+

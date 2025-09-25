@@ -14,13 +14,16 @@ public class EventParticipationService : Pms.Backend.Application.Interfaces.Even
 {
     private readonly PmsDbContext _context;
     private readonly ILogger<EventParticipationService> _logger;
+    private readonly ILoggerFactory _loggerFactory;
 
     public EventParticipationService(
         PmsDbContext context,
-        ILogger<EventParticipationService> logger)
+        ILogger<EventParticipationService> logger,
+        ILoggerFactory loggerFactory)
     {
         _context = context;
         _logger = logger;
+        _loggerFactory = loggerFactory;
     }
 
     /// <summary>
@@ -66,7 +69,8 @@ public class EventParticipationService : Pms.Backend.Application.Interfaces.Even
             }
 
             // Verificar elegibilidade
-            var eligibilityService = new EventService(_context, _logger as ILogger<EventService>);
+            var eventLogger = _loggerFactory.CreateLogger<EventService>();
+            var eligibilityService = new EventService(_context, eventLogger);
             var eligibilityResult = await eligibilityService.ValidateEligibilityAsync(eventId, request.MemberId);
 
             if (!eligibilityResult.IsSuccess || !eligibilityResult.Data!.IsEligible)
@@ -514,9 +518,9 @@ public class EventParticipationService : Pms.Backend.Application.Interfaces.Even
     /// <summary>
     /// Mapeia entidade para DTO
     /// </summary>
-    private async Task<EventParticipationDto> MapToParticipationDtoAsync(MemberEventParticipation participation)
+    private Task<EventParticipationDto> MapToParticipationDtoAsync(MemberEventParticipation participation)
     {
-        return new EventParticipationDto
+        return Task.FromResult(new EventParticipationDto
         {
             Id = participation.Id,
             EventId = participation.EventId,
@@ -535,6 +539,6 @@ public class EventParticipationService : Pms.Backend.Application.Interfaces.Even
             HasCheckedIn = participation.CheckedInAtUtc.HasValue,
             CreatedAt = participation.CreatedAtUtc,
             UpdatedAt = participation.UpdatedAtUtc
-        };
+        });
     }
 }

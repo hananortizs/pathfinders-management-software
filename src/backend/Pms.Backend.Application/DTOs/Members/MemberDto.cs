@@ -1,5 +1,7 @@
 using Pms.Backend.Domain.Entities;
 using Pms.Backend.Application.DTOs.Common;
+using Pms.Backend.Application.DTOs.Contacts;
+using Pms.Backend.Application.DTOs.Address;
 using Pms.Backend.Application.Validators;
 using System.Text.Json.Serialization;
 
@@ -39,6 +41,16 @@ public class MemberDto : AddressableEntityDtoBase
     /// Member's full name (computed property)
     /// </summary>
     public string FullName => $"{FirstName} {MiddleNames} {LastName}".Trim().Replace("  ", " ");
+
+    /// <summary>
+    /// Name of the club the member belongs to (if any)
+    /// </summary>
+    public string? ClubName { get; set; }
+
+    /// <summary>
+    /// Name of the unit the member belongs to (if any)
+    /// </summary>
+    public string? UnitName { get; set; }
 
 
     /// <summary>
@@ -161,4 +173,14 @@ public class MemberDto : AddressableEntityDtoBase
     /// Member's primary phone number (computed from contacts)
     /// </summary>
     public string? PrimaryPhone { get; set; }
+
+    /// <summary>
+    /// Member's contacts (emails, phones, etc.)
+    /// </summary>
+    public List<ContactDto>? Contacts { get; set; }
+
+    /// <summary>
+    /// Member's addresses
+    /// </summary>
+    public List<AddressDto>? Addresses { get; set; }
 }

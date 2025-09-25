@@ -780,6 +780,208 @@ const UserLevelContext = createContext<UserLevel>("admin");
 
 ---
 
+## 🩹 PATCH — Dashboard, Eventos por Hierarquia, Navegação e Edição de Dados (MVP0)
+
+> **Incorporação:** anexar este bloco ao final do arquivo `.mdc` existente.  
+> **Objetivo:** organizar a Dashboard, definir visibilidade de eventos por hierarquia, navbar/avatar menu, sidebar por papel, e regras de edição de dados pessoais.
+
+### 1) Dashboard — Princípios e Layout Base
+- **Rota inicial pós-login**: `/dashboard` (sempre).
+- **Linha comum para todos os papéis (topo)**: KPIs agregados **sem PII**  
+  - **Cadastrados** | **Ativos** | **Novos (30d)** — sempre no **escopo do papel** (clube/distrito/região/global).  
+  - Cada KPI tem **drill-down** com filtros (período, unidade, status).  
+- **Seções por papel (linhas seguintes)** — exemplos (descrição macro, sem detalhar cards):
+  - **Admin**: Convites Pendentes (global), Transferências em aprovação, Unidades com lotação, Próximos eventos globais.  
+  - **Regional/Distrital**: Aprovações no meu escopo, Próximos eventos do escopo, Onboarding pendente (agregado).  
+  - **Diretor/Secretário**: Pendências de onboarding (membros), Convites do clube, Capacidade por unidade, Próximos eventos do clube.  
+  - **Membro**: Próximos eventos (no seu escopo), Progresso em classes/especialidades.  
+- **Ações sempre acopladas ao dado** (ex.: "Ver pendentes", "Convidar", "Gerenciar inscrições").  
+- **Estados padrão**: `loading` (spinner/linear), `empty` com CTA útil, `error` com retry.  
+- **Filtros persistentes** (por sessão): período (7/30/90), unidade (quando aplicável), status.  
+- **Acessibilidade**: KPIs e cards com `aria-label` descritivo; navegação por teclado.
+
+### 2) Eventos por Hierarquia — Visibilidade para Qualquer Membro
+- **Regra:** todo usuário vê **eventos do seu encadeamento hierárquico**, do **mais próximo ao mais amplo**:  
+  **Unidade → Clube → Distrito → Região → Associação → União** (quando existirem no backend).  
+- **Comportamento:** na Dashboard e nas páginas de Eventos:  
+  - **Aba/filtragem por nível** (ex.: "Unidade", "Clube", "Distrito"…).  
+  - Por padrão, mostrar **todos** com um **filtro de origem** selecionável; ordem cronológica ascendente; destacar **próximos 30 dias**.  
+- **Elegibilidade:** respeitar regras do evento (idade/cargo/sexo) e exibir **badge**: Elegível / Pendente / Inelegível (sem PII).  
+- **Ações por papel:**  
+  - **Membro**: inscrever-se (quando permitido), ver requisitos, confirmar presença.  
+  - **Diretor/Secretário**: gerenciar inscrições do clube (toggle por membro) e ver totais.  
+  - **Distrital/Regional/Admin**: visão agregada; sem PII detalhado por padrão no MVP0.
+
+### 3) Navbar (topo) e Avatar Menu
+- **Navbar fixa no topo**, sempre visível na Dashboard e demais páginas.  
+- **Avatar (direita)** — menu ao clicar:  
+  - **Meu Perfil** (visualizar)  
+  - **Editar dados pessoais** (restrições abaixo)  
+  - **Sair** (logout)  
+- **Itens opcionais** (MVP1+): "Preferências" (tema, idioma), "Dispositivos/Sessões ativas".
+
+### 4) Sidebar (esquerda) — Itens por Papel (RBAC)
+- **Sempre presente**, colapsável em `sm`. Rótulos i18n, ícones consistentes (MUI).  
+- **Admin**: Dashboard, Membros (global), Unidades (agregado), Eventos (global), Relatórios (globais), Configurações.  
+- **Regional**: Dashboard, Membros (regional), Eventos (regionais), Relatórios (regionais), Delegações (MVP1).  
+- **Distrital**: Dashboard, Membros (distrital), Eventos (distritais), Relatórios (distritais).  
+- **Diretor/Secretário**: Dashboard, **Membros do Clube**, **Unidades**, **Eventos**, **Relatórios (CSV quando permitido)**, **Especialidades**, **Classes**.  
+- **Membro**: Dashboard, **Minhas Especialidades**, **Minhas Classes**, **Meus Eventos**, Meu Perfil.
+
+### 5) Edição de Dados Pessoais — Regras (MVP0)
+- **Quem pode editar**:
+  - **Usuário (autoedição):** pode editar **nome social**, **contatos (email/telefone)**, **endereço**, **foto/avatar** (quando existir), preferências.  
+  - **Diretor/Secretário (do clube)**: pode editar campos administrativos do membro do seu clube **que não sejam de identidade jurídica**.  
+- **Campos com restrição**:
+  - **CPF** e **data de nascimento**: **não editáveis** no MVP0 via UI padrão. Alteração requer **processo administrativo** (MVP1) ou **solicitação** com evidência; exibir nota: "Para alterar CPF/Data de nascimento, contate a secretaria".  
+  - **Dados médicos**: **somente leitura** para Secretário; edição pelo próprio membro (com "Revelar por 10s").  
+- **Dados sensíveis** (CPF, telefone, email não verificado, data de nascimento, endereço completo, médicos, anotações):  
+  - Exibir **mascarado**; botão **"Revelar por 10s"** com contador e **auditoria** (quem, quando, qual campo, id do membro, requestId).  
+  - **Não persistir** no storage do navegador.  
+- **Validações**:
+  - **Frontend**: formato/máscaras; obrigatoriedade visual.  
+  - **Backend**: unicidade (CPF/email/telefone), RBAC e consistência.  
+- **Confirmações/guardas**:
+  - `useConfirm` antes de atualizar campos de contato primário.  
+  - **Guardas de navegação** para formulário sujo (Router blocker + `beforeunload`).  
+- **MVP1+**: reautenticação leve (senha/TOTP) para editar campos sensíveis específicos; fluxo de **solicitação de alteração** para CPF/DOB.
+
+### 6) Regras de Navegação Inicial e Acessos
+- Após login, **redirecionar para `/dashboard`** com **navbar** e **sidebar** montadas de acordo com o papel.  
+- A **dashboard** é o **hub**: de lá partem os acessos a Membros, Unidades, Eventos, Especialidades, Classes, Relatórios e Configurações (conforme RBAC).
+
+### 7) Considerações de UX e Performance
+- **Responsivo (≥320px)**; tabelas "cardificadas" em `xs/sm`.  
+- **Skeletons** ficam para o **MVP1**; no MVP0, usar spinners/linear progress.  
+- **Linguagem clara**: títulos, descrições curtas e CTAs objetivas.  
+- **Ações em 1 clique** onde fizer sentido (ex.: "Ver pendentes", "Convidar", "Gerenciar inscrições").  
+- **Acessibilidade**: `aria-label` consistente, foco visível, navegação por teclado, contraste AA.
+
+---
+
+## 🩹 PATCH — Tela "Meu Perfil" (MVP0)
+
+> **Objetivo:** especificar a página "Meu Perfil" para qualquer usuário autenticado. Define layout, seções, regras de edição, dados sensíveis, auditoria e ações.  
+> **Rota:** `/profile` (acesso também via avatar menu: Meu Perfil / Editar dados pessoais / Sair)
+
+### 1) Layout Geral
+- **Header do Perfil** (topo, sticky):
+  - Avatar do usuário (placeholder se ausente) + nome completo + papel principal (ex.: "Diretor de Clube").
+  - Badges: **Status do cadastro** (Ativo/Pendente) e clube/unidade atual (quando aplicável).
+  - Ações rápidas:
+    - **Editar Perfil** (entra em modo edição nos blocos permitidos).
+    - **Alterar senha** (abre diálogo/modal).
+    - **Ver auditoria** (MVP1).
+- **Tabs/Seções** (stack vertical em mobile):
+  1. **Dados Pessoais**
+  2. **Contatos**
+  3. **Endereço**
+  4. **Saúde** (dados médicos e contato de emergência) — **sensível**
+  5. **Documentos** (CPF, RG) — **sensível**
+  6. **Preferências** (idioma, tema)
+  7. **Segurança da Conta** (senha; MVP1: 2FA, sessões)
+  8. **Atividade/Auditoria** (MVP1)
+
+> Navegação: tabs com rolagem suave e âncoras (`/profile#contatos` etc.). Em `xs`, renderizar como acordeão.
+
+### 2) Regras de Edição (MVP0)
+- **Autoedição permitida** (pelo próprio usuário):
+  - **Nome social**, **contatos** (email/telefone), **endereço**, **avatar**, **preferências**.
+  - **Dados médicos** (o próprio usuário pode editar; exibidos com "Revelar por 10s").
+- **Campos com restrição**:
+  - **CPF** e **Data de Nascimento**: **não editáveis** via UI padrão (somente leitura + máscara + "Revelar por 10s").  
+    - Mostrar aviso: "Para alterar CPF/Data de Nascimento, contate a secretaria."
+- **Validações**:
+  - Client-side: formato/máscaras (CPF, CEP, telefone), obrigatoriedade visual, e-mail válido.
+  - Server-side: unicidade (CPF/email/telefone), RBAC, consistência.
+- **Confirmação e guardas**:
+  - `useConfirm` antes de salvar **contato primário** (mudança de email/telefone).
+  - **Form sujo**: bloqueio de navegação (router blocker + `beforeunload`).
+- **Auditoria**:
+  - "Revelar por 10s" registra: **quem**, **quando**, **qual campo**, **id do usuário**, **requestId**.
+  - MVP1: registrar **motivo** + **IP/UA**.
+
+### 3) Dados Sensíveis — Exibição
+- **Campos sensíveis**: CPF, telefone, **email não verificado**, data de nascimento, endereço completo, dados médicos, contato de emergência, anotações disciplinares (se houver).
+- **Comportamento**:
+  - Renderizar **mascarado** por padrão.
+  - Botão **"Revelar por 10s"** com contador, opção **"Ocultar agora"** e **auditoria** habilitada.
+  - **Não** persistir valores sensíveis em cache/armazenamento cliente.
+
+### 4) Seções — Conteúdo (MVP0)
+
+**(A) Dados Pessoais**
+- Nome completo (leitura), **Nome Social** (editável), Data de Nascimento (somente leitura), Gênero (quando aplicável), Clube/Unidade (leitura).
+- Caso menor, exibir campos de **responsável** (nome, contato) — ver "Saúde/Contato de emergência".
+
+**(B) Contatos**
+- E-mail (com status **verificado/não verificado**), Telefone(s).  
+- Ações: **verificar** (MVP1: enviar código/link), **tornar primário**.  
+- Confirmar alterações com `useConfirm`.
+
+**(C) Endereço**
+- CEP, Rua, Número, Complemento, Bairro, Cidade, Estado, País.  
+- Máscaras padrão (CEP). Sem sensível no armazenamento local.
+
+**(D) Saúde (sensível)**
+- Alergias, Medicações, Observações; **Contato de Emergência** (nome + telefone).  
+- Exibição mascarada + **Revelar por 10s**; edição pelo próprio usuário.  
+- Secretary vê somente **leitura** (sem exportar).
+
+**(E) Documentos (sensível)**
+- CPF (somente leitura + máscara), RG (editável opcional), **Data de Nascimento** (somente leitura).  
+- Observação: fluxo de **solicitação de alteração** de CPF/DOB entra no MVP1.
+
+**(F) Preferências**
+- Idioma (MVP0: **pt-BR**; MVP1: en-US).  
+- Tema (Light/Dark), notificações (placeholder se não houver ainda).  
+- Persistência por usuário.
+
+**(G) Segurança da Conta**
+- **Alterar senha**: modal com campos (senha atual, nova, confirmar); requisitos mínimos (comprimento, complexidade).  
+- MVP1: **2FA (TOTP/SMS)**, **gerenciar sessões ativas** (logout de outros dispositivos).
+
+**(H) Atividade/Auditoria (MVP1)**
+- Lista paginada de eventos: login, alteração de dados, revelações de campos sensíveis, etc.
+
+### 5) Avatar Menu (Navbar)
+- Ao clicar no avatar (canto superior direito):  
+  - **Meu Perfil** → `/profile`  
+  - **Editar dados pessoais** → foca no primeiro campo editável  
+  - **Sair** → logout com confirmação opcional
+
+### 6) Ações e Estados
+- **Salvar/Cancelar** por seção; botões desativados enquanto request pendente.  
+- **Toasts** padronizados para sucesso/erro; **422** exibe erros por campo.  
+- **Loading** inline durante fetch; skeletons só no **MVP1**.  
+- **Requisições** idempotentes nas mutações críticas (headers `X-Request-Id` / `Idempotency-Key`).
+
+### 7) APIs (exemplos – ajustar aos endpoints reais)
+- `GET /me` → carrega perfil (dados pessoais, contatos, endereço, docs, preferências).  
+- `PATCH /me` → atualiza seções editáveis.  
+- `POST /me/avatar` → upload de avatar (quando habilitar).  
+- `POST /me/change-password` → alteração de senha.  
+- `POST /audit/reveal` → registrar revelação de campo sensível.  
+- **MVP1**: `POST /me/verify-email`, `POST /me/verify-phone`, `POST /me/2fa/setup`, `GET /me/sessions`.
+
+### 8) RBAC — Considerações
+- **Autoedição**: sempre restrita ao próprio registro autenticado.  
+- **Diretor/Secretário**: podem **ver** Meu Perfil (deles) e editar nos mesmos termos; para **outros membros**, edição limitada conforme regra de módulo *Membros* (fora desta tela).  
+- **Distrital/Regional/Admin**: esta tela é **pessoal**; gestão de terceiros ocorre nas páginas de gestão (não em "Meu Perfil").
+
+### 9) Acessibilidade e Responsividade
+- Layout **mobile-first** (≥320px); seções em acordeão no `xs`.  
+- Labels e `aria-describedby` claros; foco visível; contraste AA.  
+- Inputs com toque mínimo 44×44px.
+
+### 10) Evoluções (MVP1+)
+- **Verificação de contato** (email/telefone) com OTP/link.  
+- **2FA (TOTP/SMS)** e **sessões ativas**.  
+- **Solicitação de alteração** de CPF/DOB com workflow de aprovação.  
+- **Auditoria visível** ao usuário: últimas revelações/alterações.
+
+---
+
 ## ⚡ Instrução para Cursor
 
 Sempre respeitar este script como fonte de verdade para arquitetura, UX e regras de negócio ao gerar código ou componentes do frontend PathfinderManagementSoftware.
