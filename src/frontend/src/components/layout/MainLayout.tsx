@@ -31,6 +31,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { Sidebar } from "./Sidebar";
 import { useSidebar } from "../../contexts/SidebarContext";
+import { PmsIcon } from "../common/PmsIcon";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -79,21 +80,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               minWidth: 0,
             }}
           >
-            <Box
+            <PmsIcon 
+              size={40}
+              variant="circular"
               sx={{
-                width: { xs: 32, sm: 40 },
-                height: { xs: 32, sm: 40 },
-                background: "linear-gradient(135deg, #0D47A1, #1976D2)",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
                 marginRight: { xs: 1, sm: 2 },
-                boxShadow: "0 2px 8px rgba(13, 71, 161, 0.3)",
-                "&::before": {
-                  content: '"🏕️"',
-                  fontSize: { xs: "1rem", sm: "1.2rem" },
-                },
+                filter: "drop-shadow(0 2px 8px rgba(13, 71, 161, 0.3))",
               }}
             />
             <Typography

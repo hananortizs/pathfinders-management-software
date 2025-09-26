@@ -18,6 +18,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import HomeIcon from "@mui/icons-material/Home";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { useProfilePendencies } from "../hooks/useProfilePendencies";
 import { profileService } from "../services/profileService";
 import type { ProfileSections } from "../types/profile";
@@ -42,6 +43,9 @@ const ProfilePage: React.FC = () => {
   const isXs = useMediaQuery(theme.breakpoints.down("xs"));
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  // Definir título da página
+  usePageTitle("Meu Perfil");
 
   // Estado local
   const [activeTab, setActiveTab] = useState("personal");
@@ -145,6 +149,7 @@ const ProfilePage: React.FC = () => {
           address: [
             {
               id: "1",
+              name: "Endereço Principal",
               zipCode: "",
               street: "",
               number: "",
@@ -243,6 +248,7 @@ const ProfilePage: React.FC = () => {
         address: [
           {
             id: "1",
+            name: "Endereço Principal",
             zipCode: "",
             street: "",
             number: "",

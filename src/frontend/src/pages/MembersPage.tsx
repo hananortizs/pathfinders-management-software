@@ -36,11 +36,15 @@ import {
   Delete,
 } from "@mui/icons-material";
 import { useMembersList } from "../hooks/useMembersList";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { MemberFiltersComponent as MemberFilters } from "../components/members/MemberFilters";
 import { MembersList } from "../components/members/MembersList";
 import { UserLevel } from "../types/members";
 
 const MembersPage: React.FC = () => {
+  // Definir título da página
+  usePageTitle("Membros");
+
   const [groupingStrategy, setGroupingStrategy] = useState<
     "hierarchical" | "flat" | "by_club" | "by_unit"
   >("hierarchical");

@@ -23,6 +23,7 @@ import {
 } from "@mui/icons-material";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../hooks/useAuth";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { DashboardKPIs } from "../components/dashboard/DashboardKPIs";
 import { DashboardSections } from "../components/dashboard/DashboardSections";
 import { Navbar } from "../components/layout/Navbar";
@@ -35,6 +36,9 @@ import { dashboardService } from "../services/dashboardService";
  */
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
+
+  // Definir título da página
+  usePageTitle("Dashboard");
 
   // Buscar dados da dashboard
   const { isLoading, error, refetch } = useQuery({

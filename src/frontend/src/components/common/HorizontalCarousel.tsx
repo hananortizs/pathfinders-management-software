@@ -118,9 +118,11 @@ export const HorizontalCarousel: React.FC<HorizontalCarouselProps> = ({
       setCurrentIndex(activeIndex);
 
       // Resetar flag de scrolling após animação
-      setTimeout(() => {
-        setIsScrolling(false);
-      }, 300);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsScrolling(false);
+        });
+      });
     }
   };
 
@@ -322,9 +324,9 @@ export const HorizontalCarousel: React.FC<HorizontalCarouselProps> = ({
     setIsDragging(false);
     checkScrollButtons();
     // Detecção suave após o drag
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       smoothDetectCenter();
-    }, 150);
+    });
   };
 
   const handleMouseLeave = () => {
@@ -411,9 +413,9 @@ export const HorizontalCarousel: React.FC<HorizontalCarouselProps> = ({
     const handleTouchEndNative = () => {
       setIsDragging(false);
       checkScrollButtons();
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         smoothDetectCenter();
-      }, 100);
+      });
     };
 
     // Adicionar listeners com passive: false para permitir preventDefault
@@ -440,7 +442,11 @@ export const HorizontalCarousel: React.FC<HorizontalCarouselProps> = ({
       {showArrows && (
         <>
           <IconButton
-            onClick={scrollToLeft}
+            onClick={() => {
+              requestAnimationFrame(() => {
+                scrollToLeft();
+              });
+            }}
             disabled={!canScrollLeft}
             sx={{
               position: "absolute",
@@ -462,7 +468,11 @@ export const HorizontalCarousel: React.FC<HorizontalCarouselProps> = ({
           </IconButton>
 
           <IconButton
-            onClick={scrollToRight}
+            onClick={() => {
+              requestAnimationFrame(() => {
+                scrollToRight();
+              });
+            }}
             disabled={!canScrollRight}
             sx={{
               position: "absolute",
@@ -517,7 +527,11 @@ export const HorizontalCarousel: React.FC<HorizontalCarouselProps> = ({
           return (
             <Paper
               key={item.id}
-              onClick={() => onItemChange(item.id)}
+              onClick={() => {
+                requestAnimationFrame(() => {
+                  onItemChange(item.id);
+                });
+              }}
               sx={{
                 minWidth: actualItemWidth,
                 maxWidth: actualItemWidth,
@@ -595,7 +609,11 @@ export const HorizontalCarousel: React.FC<HorizontalCarouselProps> = ({
                   showSuccess={true}
                   clickable={!!onPendencyClick && (item.pendencyCount || 0) > 0}
                   onClick={
-                    onPendencyClick ? () => onPendencyClick(item.id) : undefined
+                    onPendencyClick ? () => {
+                      requestAnimationFrame(() => {
+                        onPendencyClick(item.id);
+                      });
+                    } : undefined
                   }
                 />
               </Box>

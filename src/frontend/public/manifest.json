@@ -1,0 +1,21 @@
+{
+  "name": "Pathfinder Management Software",
+  "short_name": "PMS",
+  "description": "Sistema de Gestão de Desbravadores - Pathfinder Management Software",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0D47A1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/pms-icon-circular.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity", "utilities"],
+  "lang": "pt-BR",
+  "dir": "ltr"
+}

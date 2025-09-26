@@ -23,8 +23,10 @@ import {
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useForm, Controller } from "react-hook-form";
+import { usePageTitle } from "../hooks/usePageTitle";
 import { useAuth } from "../hooks/useAuth";
 import { AppTextField, PrimaryButton } from "../components/styled";
+import { PmsIcon } from "../components/common/PmsIcon";
 
 // Tipo do formulário
 interface LoginFormData {
@@ -37,6 +39,9 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
+
+  // Definir título da página
+  usePageTitle("Login");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -157,22 +162,20 @@ const LoginPage: React.FC = () => {
             {/* Logo/Ícone dos Desbravadores */}
             <Box
               sx={{
-                width: 80,
-                height: 80,
                 margin: "0 auto 24px auto",
-                background: "linear-gradient(135deg, #0D47A1, #1976D2)",
-                borderRadius: "50%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 4px 20px rgba(13, 71, 161, 0.3)",
-                position: "relative",
-                "&::before": {
-                  content: '"🏕️"',
-                  fontSize: "2.5rem",
-                },
               }}
-            />
+            >
+              <PmsIcon 
+                size={80} 
+                variant="circular"
+                sx={{
+                  filter: "drop-shadow(0 4px 20px rgba(13, 71, 161, 0.3))",
+                }}
+              />
+            </Box>
 
             <Typography
               variant="h4"

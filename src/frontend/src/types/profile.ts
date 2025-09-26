@@ -31,6 +31,7 @@ export interface ContactInfo {
 
 export interface AddressInfo {
   id: string;
+  name: string;
   zipCode: string;
   street: string;
   number: string;

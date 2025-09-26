@@ -57,7 +57,7 @@ export class ProfileService {
     } catch (error) {
       console.error("Erro ao buscar perfil:", error);
       console.log("Usando dados mockados como fallback");
-      return this.getMockProfile();
+      return await this.getMockProfile();
     }
   }
 
@@ -99,32 +99,46 @@ export class ProfileService {
         category: contact.Category || "Personal",
       })),
       address: (() => {
-        const addresses = (memberData.Addresses || []).map((address: any) => ({
-          id: address.Id || "",
-          zipCode: address.Cep || "",
-          street: address.Street || "",
-          number: address.Number || "",
-          complement: address.Complement || "",
-          neighborhood: address.Neighborhood || "",
-          city: address.City || "",
-          state: address.State || "",
-          country: address.Country || "Brasil",
-          type: address.Type || "Residential",
-        }));
+        const addresses = (memberData.Addresses || []).map(
+          (address: any, index: number) => {
+            console.log(`🔍 Mapeando endereço ${index}:`, {
+              Id: address.Id,
+              Name: address.Name,
+              Street: address.Street,
+              City: address.City
+            });
+            
+            return {
+              id: address.Id || `temp-${Date.now()}-${index}`,
+              name: address.Name || `Endereço ${index + 1}`,
+              zipCode: address.Cep || "",
+              street: address.Street || "",
+              number: address.Number || "",
+              complement: address.Complement || "",
+              neighborhood: address.Neighborhood || "",
+              city: address.City || "",
+              state: address.State || "",
+              country: address.Country || "Brasil",
+              type: address.Type || "Residential",
+            };
+          }
+        );
 
         // Validar se há pelo menos um endereço válido
-        const hasValidAddress = addresses.some((addr: any) => 
-          addr.zipCode && 
-          addr.street && 
-          addr.number && 
-          addr.city && 
-          addr.state
+        const hasValidAddress = addresses.some(
+          (addr: any) =>
+            addr.zipCode &&
+            addr.street &&
+            addr.number &&
+            addr.city &&
+            addr.state
         );
 
         if (!hasValidAddress && addresses.length === 0) {
           // Se não há endereços, adicionar um endereço vazio para validação
           addresses.push({
             id: "temp-1",
+            name: "Endereço Principal",
             zipCode: "",
             street: "",
             number: "",
@@ -329,7 +343,10 @@ export class ProfileService {
    */
   async updateAddress(address: AddressInfo): Promise<AddressInfo> {
     try {
-      const response = await apiClient.patch("/me/address", address);
+      const response = await apiClient.put(
+        `/address/${address.id}`,
+        address
+      );
       return (response as any).data;
     } catch (error) {
       console.error("Erro ao atualizar endereço:", error);
@@ -571,6 +588,7 @@ export class ProfileService {
       address: [
         {
           id: "1",
+          name: "Casa",
           zipCode: "01234-567",
           street: "Rua das Flores",
           number: "123",
